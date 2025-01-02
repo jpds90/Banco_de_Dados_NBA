@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela: <%= tableName %></title>
+</head>
+<body>
+    <h1>Tabela: <%= tableName %></h1>
+    <table border="1">
+        <thead>
+            <tr>
+                <% columns.forEach(column => { %>
+                    <th><%= column %></th>
+                <% }); %>
+            </tr>
+        </thead>
+        <tbody>
+            <% rows.forEach(row => { %>
+                <tr>
+                    <% columns.forEach(column => { %>
+                        <td><%= row[column] %></td>
+                    <% }); %>
+                </tr>
+            <% }); %>
+        </tbody>
+    </table>
+    <a href="/">Voltar para a lista de tabelas</a>
+</body>
+</html>

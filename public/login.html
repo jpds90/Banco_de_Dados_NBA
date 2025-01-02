@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Apostas</title>
+</head>
+<body>
+    <h1>Gestão de Apostas</h1>
+
+    <!-- Formulário de Login -->
+    <div>
+        <h2>Login</h2>
+        <form id="login-form">
+            <label>Email:</label>
+            <input type="email" id="login-email" required>
+            <label>Senha:</label>
+            <input type="password" id="login-password" required>
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+
+    <!-- Formulário de Registro -->
+    <div>
+        <h2>Registro</h2>
+        <form id="register-form">
+            <label>Nome:</label>
+            <input type="text" id="register-username" required>
+            <label>Email:</label>
+            <input type="email" id="register-email" required>
+            <label>Senha:</label>
+            <input type="password" id="register-password" required>
+            <label>Banca Inicial:</label>
+            <input type="number" id="register-balance" required>
+            <button type="submit">Registrar</button>
+        </form>
+    </div>
+
+    <div id="protected-data" style="display:none;">
+        <h2>Histórico de Apostas</h2>
+        <div id="bet-history"></div>
+        <h3>Banca Atual: <span id="bankroll"></span></h3>
+    </div>
+
+    <script src="client.js"></script>
+</body>
+</html>

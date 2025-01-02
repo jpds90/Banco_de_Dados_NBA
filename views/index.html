@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tabelas</title>
+</head>
+<body>
+    <h1>Tabelas Disponíveis</h1>
+    <button id="clearAllTablesExceptLinksButton">Apagar Todas as Tabelas (Exceto Links)</button>
+    <ul>
+        <% tables.forEach(table => { %>
+            <li>
+                <a href="/table/<%= table %>"><%= table %></a>
+            </li>
+        <% }); %>
+    </ul>
+
+    <script>
+        const clearAllTablesExceptLinks = async () => {
+            const button = document.querySelector('#clearAllTablesExceptLinksButton');
+            button.disabled = true; // Desativa o botão enquanto a operação está em andamento
+            button.textContent = 'Apagando...';
+    
+            try {
+                const response = await fetch('/clear-all-tables-except-links', { method: 'POST' });
+    
+                if (response.ok) {
+                    alert('Todas as tabelas (exceto links) foram apagadas com sucesso!');
+                    window.location.reload(); // Recarrega a página para refletir as mudanças
+                } else {
+                    alert('Erro ao apagar as tabelas.');
+                }
+            } catch (error) {
+                console.error('Erro na solicitação:', error);
+                alert('Erro ao apagar as tabelas.');
+            } finally {
+                button.disabled = false; // Reativa o botão
+                button.textContent = 'Apagar Todas as Tabelas (Exceto Links)';
+            }
+        };
+    
+        document.querySelector('#clearAllTablesExceptLinksButton').addEventListener('click', clearAllTablesExceptLinks);
+    </script>
+    
+    
+</body>
+</html>

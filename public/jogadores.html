@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogadores - NBA</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #0084a2;
+            font-size: 2em;
+        }
+        .navigation {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .navigation button {
+            padding: 10px 20px;
+            margin: 0 10px;
+            font-size: 1em;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+        .navigation button:hover {
+            background-color: #0056b3;
+        }
+        .tab-content {
+            display: none;
+        }
+        .active-tab {
+            display: block;
+        }
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 1.1em;
+            transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out; /* Adicionando transição para cor */
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            background-color: #38c2d1; /* Cor de fundo ao passar o mouse */
+        }
+        .card h3 {
+            font-size: 1.3em;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        .card .team-name {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333333;
+            margin-bottom: 10px;
+        }
+        .card table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .card .injured {
+            color: red;
+            font-size: 1.1em;
+            margin-left: 5px;
+        }
+        .card table th,
+        .card table td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        .card table th {
+            background-color: #025f69;
+            color: white;
+        }
+        .card table td {
+            background-color: #f9f9f9;
+        }
+        .player-info {
+            font-size: 1em;
+            color: #555;
+            margin-top: 10px;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* Alinhar verticalmente */
+            font-weight: 500;
+            gap: 10px; /* Adicionar espaço entre os itens */
+        }
+        .player-name {
+            background: linear-gradient(90deg, #ff7f50, #ff6347, #ff4500); /* Efeito de degrade */
+            color: transparent;
+            -webkit-background-clip: text;
+            background-clip: text;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .bold {
+            font-weight: bold;
+            color: #333;
+        }
+        @media (max-width: 768px) {
+            .card-container {
+                grid-template-columns: 1fr 1fr; /* Duas colunas em telas menores */
+            }
+        }
+        @media (max-width: 480px) {
+            .card-container {
+                grid-template-columns: 1fr; /* Uma coluna em telas muito pequenas */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Dados dos Jogadores - NBA</h1>
+
+    <div class="navigation">
+        <button onclick="showTab('tempo')">Tempo de Quadra</button>
+        <button onclick="showTab('pontos')">Média de Pontos</button>
+        <button onclick="window.location.href='odds.html';">Voltar</button>
+        <button onclick="window.location.href='principal.html';">Home</button>
+    </div>
+
+    <div id="tempo" class="tab-content">
+        <h2>Jogadores Tempo em Quadra</h2>
+        <div id="tempoData" class="card-container"></div>
+    </div>
+
+    <div id="pontos" class="tab-content">
+        <h2>Jogadores Média Pontos</h2>
+        <div id="pontosData" class="card-container"></div>
+    </div>
+
+    <script>
+        // Função para exibir a aba ativa
+        function showTab(tabName) {
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active-tab'));
+            document.getElementById(tabName).classList.add('active-tab');
+            
+            // Carregar dados específicos para cada aba
+            if (tabName === 'tempo') {
+                fetchTempoData();
+            } else if (tabName === 'pontos') {
+                fetchPointsData();
+            }
+        }
+
+        // Função para buscar jogadores lesionados
+        async function fetchInjuredPlayers() {
+            try {
+                const response = await fetch('/jogadoreslesionados');
+                return await response.json();
+            } catch (error) {
+                console.error('Erro ao buscar jogadores lesionados:', error);
+                return [];
+            }
+        }
+    
+        // Função para "normalizar" o nome (abrir e comparar o nome completo com abreviado)
+        function normalizePlayerName(playerName) {
+            const nameParts = playerName.split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts[1];
+            const abbreviatedLastName = lastName.charAt(0) + '.';
+            return firstName + ' ' + abbreviatedLastName;
+        }
+
+        // Função para pegar os jogadores lesionados de um time específico
+        function getInjuredPlayers(teamName, injuredPlayersData) {
+            const injuredPlayers = injuredPlayersData.filter(game => game.team_home === teamName || game.team_away === teamName);
+            const injuredHomePlayers = injuredPlayers.flatMap(game => game.team_home === teamName ? game.homePlayers : []);
+            const injuredAwayPlayers = injuredPlayers.flatMap(game => game.team_away === teamName ? game.awayPlayers : []);
+            return [...injuredHomePlayers, ...injuredAwayPlayers].map(normalizePlayerName);
+        }
+
+        // Função para renderizar a tabela de jogadores com lesões
+        function renderPlayersTable(players, injuredPlayers) {
+            if (!players.length) return '<p>Nenhum dado encontrado.</p>';
+    
+            let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome do Jogador</th>
+                            <th>Tempo de Quadra</th>
+                            <th>Média de Pontos</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+    
+            players.forEach(player => {
+                const normalizedPlayerName = normalizePlayerName(player.player_name);
+                const isInjured = injuredPlayers.includes(normalizedPlayerName);
+                const roundedPoints = Math.ceil(player.avg_points); // arredondando os pontos para cima
+    
+                tableHTML += `
+                    <tr>
+                        <td>${player.player_name} ${isInjured ? '<span class="injured">✗</span>' : ''}</td>
+                        <td>${player.avg_minutes_played} minutos</td>
+                        <td><strong>${roundedPoints}</strong></td>
+                    </tr>
+                `;
+            });
+    
+            tableHTML += '</tbody></table>';
+            return tableHTML;
+        }
+
+        // Função para buscar dados dos jogadores em tempo de quadra
+        async function fetchTempoData() {
+            const injuredPlayersData = await fetchInjuredPlayers();
+            try {
+                const response = await fetch('jogadoresnbatempo');
+                const data = await response.json();
+    
+                const tempoDiv = document.getElementById('tempoData');
+                tempoDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
+                data.forEach(game => {
+                    const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+                    const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+    
+                    tempoDiv.innerHTML += `
+                        <div class="card">
+                            <h3 class="team-name">${game.homeTeam}</h3>
+                            ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers)}
+                        </div>
+                        <div class="card">
+                            <h3 class="team-name">${game.awayTeam}</h3>
+                            ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers)}
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+            }
+        }
+
+        // Função para buscar dados dos jogadores e suas médias de pontos
+        async function fetchPointsData() {
+            const injuredPlayersData = await fetchInjuredPlayers();
+            try {
+                const response = await fetch('jogadorespontos');
+                const data = await response.json();
+    
+                const pontosDiv = document.getElementById('pontosData');
+                pontosDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
+                data.forEach(game => {
+                    const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+                    const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+    
+                    pontosDiv.innerHTML += `
+                        <div class="card">
+                            <h3 class="team-name">${game.homeTeam}</h3>
+                            ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers)}
+                        </div>
+                        <div class="card">
+                            <h3 class="team-name">${game.awayTeam}</h3>
+                            ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers)}
+                        </div>
+                    `;
+                });
+            } catch (error) {
+                console.error('Erro ao buscar dados:', error);
+            }
+        }
+
+        // Inicializar carregando a aba 'tempo'
+        showTab('tempo');
+    </script>
+</body>
+</html>

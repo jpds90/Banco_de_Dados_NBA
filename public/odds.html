@@ -1,0 +1,525 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odds NBA</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+            font-size: 1.5em; /* Tamanho menor */
+        }
+        form {
+            text-align: center;
+            margin: 20px;
+        }
+        form label {
+            margin-right: 10px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        input {
+            padding: 6px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Layout das Tabelas */
+        .table-container {
+            margin: 0 10px; /* Menos margem */
+        }
+        .table-main {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        .side-by-side {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px; /* Menor espaço entre as tabelas */
+            margin-bottom: 20px;
+        }
+        /* Estilos das Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px; /* Menos padding */
+            text-align: center;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        td {
+            background-color: #f9f9f9;
+        }
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .side-by-side {
+                grid-template-columns: 1fr; /* Empilha as tabelas em uma coluna */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>NBA - 2025</h1>
+    <form id="date-form">
+        <label for="start-date">Data Início:</label>
+        <input type="text" id="start-date" value="01/01" placeholder="Ex: 08.12" required>
+        
+        <label for="end-date">Data Fim:</label>
+        <input type="text" id="end-date" value="31/12" placeholder="Ex: 15.12" required>
+        
+        
+        <button type="submit">Buscar Confrontos</button>
+        <!-- Parte da página principal (index.html) -->
+        <button onclick="window.location.href='jogadores.html';">Jogadores</button>
+        <button onclick="window.location.href='principal.html';">Home</button>
+
+    </form>
+
+    <div class="table-container">
+        <!-- Tabela Principal -->
+        <table class="table-main">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all" /></th>
+                    <th>Data do Jogo</th>
+                    <th>Casa</th>
+                    <th>Visitante</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>Odds Mais/Menos</th>
+                    <th>Mais/Menos</th>
+                </tr>
+            </thead>
+            <tbody id="oddsTable"></tbody>
+        </table>
+
+        <!-- Tabelas Lado a Lado (2 em 2) -->
+        <div class="side-by-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>Vitórias Casa (1)</th>
+                        <th>Vitórias Fora (1)</th>
+                        <th>Vitórias Casa (2)</th>
+                        <th>Vitórias Fora (2)</th>
+                        <th>Total Vitórias (1)</th>
+                        <th>Total Vitórias (2)</th>
+                        <th>Total Vitórias Casa (1)</th>
+                        <th>% Vitória Casa (1)</th>
+                        <th>Total Vitórias Fora (2)</th>
+                        <th>% Vitórias Fora (2)</th>
+                    </tr>
+                </thead>
+                <tbody id="confrontationTable"></tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Casa</th>
+                        <th>Visitante</th>
+                        <th>Média (Casa)</th>
+                        <th>Média (Fora)</th>
+                        <th>Média (Total)</th>
+                    </tr>
+                </thead>
+                <tbody id="averagesTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Segunda Linha de Tabelas Lado a Lado (2 em 2) -->
+        <div class="side-by-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Casa</th>
+                        <th>Visitante</th>
+                        <th>Média Confronto (Casa)</th>
+                        <th>Média Confronto (Visitante)</th>
+                        <th>Total de Pontos</th>
+                    </tr>
+                </thead>
+                <tbody id="headToHeadTable"></tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Casa</th>
+                        <th>Time Visitante</th>
+                        <th>Classificação (Casa)</th>
+                        <th>Classificação (Visitante)</th>
+                    </tr>
+                </thead>
+                <tbody id="pointsAnalysisTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Última Linha de Tabelas Lado a Lado -->
+        <div class="side-by-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Casa</th>
+                        <th>Time Visitante</th>
+                        <th>OverOdds/2</th>
+                        <th>Superações (Casa)</th>
+                        <th>Superações (Visitante)</th>
+                        <th>% Pontos 1+2</th>
+                    </tr>
+                </thead>
+                <tbody id="overOddsTable"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <button id="deleteButton">Excluir Selecionados</button>
+</body>
+    
+            
+    
+    <script>
+        document.getElementById('date-form').addEventListener('submit', function(event) {
+    event.preventDefault();  // Impede o envio padrão do formulário
+
+    // Captura as datas de início e fim (no formato DD.MM)
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+
+    // Validação simples para garantir que as datas foram fornecidas
+    if (!startDate || !endDate) {
+        alert("Por favor, insira as duas datas.");
+        return;
+    }
+
+    // Verifica e loga o formato das datas antes de enviar
+    console.log(`Início da data: ${startDate}`);
+    console.log(`Fim da data: ${endDate}`);
+
+        // Excluir Odds Selecionadas
+        document.getElementById('deleteButton').addEventListener('click', () => {
+            const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked'))
+                .map(checkbox => checkbox.dataset.id);
+
+            if (selectedIds.length === 0) {
+                alert('Nenhuma linha selecionada para exclusão.');
+                return;
+            }
+
+            fetch('/delete-odds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Odds excluídas com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro ao excluir odds.');
+                }
+            })
+            .catch(error => console.error('Erro ao excluir odds:', error));
+        });
+
+        // Selecionar e desmarcar todos os checkboxes
+        document.getElementById("select-all").addEventListener("change", function() {
+            const checkboxes = document.querySelectorAll(".select-checkbox");
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // Atualiza a caixa "Selecionar tudo" se todas as caixas individuais forem selecionadas ou desmarcadas
+        document.querySelectorAll(".select-checkbox").forEach(checkbox => {
+            checkbox.addEventListener("change", function() {
+                const allCheckboxes = document.querySelectorAll(".select-checkbox");
+                const selectAllCheckbox = document.getElementById("select-all");
+                selectAllCheckbox.checked = allCheckboxes.length === Array.from(allCheckboxes).filter(cb => cb.checked).length;
+            });
+        });
+
+        // Análise de Pontos
+        fetch('/team-points-analysis')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('pointsAnalysisTable');
+                data.forEach(analysis => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${analysis.time_home}</td>
+                        <td>${analysis.time_away}</td>
+                        <td>${analysis.home_classification}</td>
+                        <td>${analysis.away_classification}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar análise de pontos:', error));
+// Usar Promise.all para requisições paralelas
+Promise.all([
+    fetch('/odds').then(response => response.json()),
+    fetch(`/team-averages?start_date=${startDate}&end_date=${endDate}`).then(response => response.json()),
+    fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`).then(response => response.json()),
+    fetch('/over-odds-analysis').then(response => response.json())
+])
+.then(([oddsData, averagesData, confrontationData, overOddsData]) => {
+    // Carregar Odds
+    const tableBody = document.getElementById('oddsTable');
+    oddsData.forEach(odd => {
+        const gameDateTime = new Date(odd.data_jogo); // Converter para objeto Date
+        const formattedDate = gameDateTime.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'UTC' // Ajuste se necessário para o fuso horário correto
+        });
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="checkbox" class="select-checkbox" data-id="${odd.id}"></td>
+            <td>${formattedDate}</td> <!-- Data formatada -->
+            <td>${odd.time_home}</td>
+            <td>${odd.time_away}</td>
+            <td>${odd.home_odds}</td>
+            <td>${odd.away_odds}</td>
+            <td>${odd.over_dois_meio}</td>
+            <td>${odd.over_odds}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    // Carregar Médias de Pontos
+    const tableBodyAverages = document.getElementById('averagesTable');
+    averagesData.forEach(average => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${average.time_home}</td>
+            <td>${average.time_away}</td>
+            <td>${average.home_avg}</td>
+            <td>${average.away_avg}</td>
+            <td>${average.total_pontos}</td>
+        `;
+        tableBodyAverages.appendChild(row);
+    });
+
+    // Carregar Confrontos Diretos
+    const tableBodyHeadToHead = document.getElementById('headToHeadTable');
+    confrontationData.forEach(confrontation => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${confrontation.time_home}</td>
+            <td>${confrontation.time_away}</td>
+            <td>${confrontation.total_home_Average_Points}</td>
+            <td>${confrontation.total_away_Average_Points}</td>
+            <td>${confrontation.total_media_Average_Points}</td>
+        `;
+        tableBodyHeadToHead.appendChild(row);
+    });
+
+    // Carregar Análise de Over Odds
+    const tableBodyOverOdds = document.getElementById('overOddsTable');
+    overOddsData.forEach((analysis, index) => {
+        const odd = oddsData[index]; // Associando as odds à análise
+        const confrontation = confrontationData[index]; // Associando os confrontos à análise
+        const average = averagesData[index]; // Associando as médias de pontos à análise
+
+        // Calcular a diferença considerando a fórmula solicitada
+        const difference = (confrontation.total_media_Average_Points + average.total_pontos / 2) - odd.over_odds;
+
+        // Ajuste na porcentagem, 1% por ponto acima de 5
+        let adjustedPercentage = parseFloat(analysis.percentage);
+        if (difference > 5) {
+            adjustedPercentage += (difference - 5); // Acrescenta 1% por ponto acima de 5
+        }
+
+        // Garantir que a porcentagem ajustada tenha 2 casas decimais
+        adjustedPercentage = parseFloat(adjustedPercentage).toFixed(2);
+
+        // Definir cor baseado na porcentagem ajustada
+        const porcentagemColor = adjustedPercentage > 55 ? 'green' : 'red';
+
+        // Criar a linha da tabela
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${analysis.time_home}</td>
+            <td>${analysis.time_away}</td>
+            <td>${analysis.overThreshold}</td>
+            <td>${analysis.homeExceedCount} (${analysis.homeIdCount})</td>
+            <td>${analysis.awayExceedCount} (${analysis.awayIdCount})</td>
+            <td style="background-color: ${porcentagemColor}">${adjustedPercentage}% (${odd.over_odds})</td>
+        `;
+        tableBodyOverOdds.appendChild(row);
+    });
+})
+.catch(error => console.error('Erro ao carregar dados:', error));
+
+
+
+
+
+
+
+// Função para determinar o peso com base no ranking
+function getRankWeight(rank) {
+    if (rank === 1) return 10;
+    if (rank === 2) return 9.5;
+    if (rank === 3) return 9;
+    if (rank === 4) return 8;
+    if (rank === 5) return 7;
+    if (rank === 6) return 6.5;
+    if (rank === 7) return 6;
+    if (rank === 8) return 5.5;
+    if (rank === 9) return 5;
+    if (rank === 10) return 5;
+    if (rank === 11) return 2.5;
+    if (rank === 12) return 2.5;
+    if (rank === 13) return 2;
+    if (rank === 14) return 1;
+    if (rank === 15) return 1;
+    return 0;  // Se o rank não for de 1 a 15
+}
+
+// Carregar Confrontos
+fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
+    .then(response => response.json())
+    .then(confrontationData => {
+        // Depois de carregar os confrontos, carregar as odds-nba
+        fetch('/odds-nba')
+            .then(response => response.json())
+            .then(oddsnbaData => {
+                const tableBody = document.getElementById('confrontationTable');
+                
+                confrontationData.forEach(confrontation => {
+                    const row = document.createElement('tr');
+
+                    // Encontrar a classificação do time da casa e do visitante
+                    const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
+                    const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
+
+                    // Determinar o peso do rank
+                    const homeRank = parseInt(homeClassification);
+                    const awayRank = parseInt(awayClassification);
+                    const homeRankWeight = getRankWeight(homeRank);
+                    const awayRankWeight = getRankWeight(awayRank);
+
+                    // Garantir que os valores sejam números usando parseFloat
+                    const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
+                    const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
+                    const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
+                    const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
+                    const homeWins = parseFloat(confrontation.total_home_general_wins) || 0;
+                    const awayWins = parseFloat(confrontation.total_away_general_wins) || 0;
+
+                    // Calcular peso das vitórias
+                    const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
+                    const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
+
+                    // Exibir os valores para debugar
+                    console.log(`Time de casa: ${confrontation.time_home}`);
+                    console.log(`Classificação casa: ${homeClassification} (Peso: ${homeRankWeight})`);
+                    console.log(`Vitórias casa: ${homeHomeWins} | Percentual de vitórias casa: ${homeWinPercentage} | Peso das vitórias: ${homeWinWeight}`);
+                    console.log(`Time visitante: ${confrontation.time_away}`);
+                    console.log(`Classificação visitante: ${awayClassification} (Peso: ${awayRankWeight})`);
+                    console.log(`Vitórias visitante: ${awayAwayWins} | Percentual de vitórias visitante: ${awayWinPercentage} | Peso das vitórias: ${awayWinWeight}`);
+                    console.log('---');
+
+                    // Adicionar vantagem se a diferença de vitórias gerais for maior que 5
+                    const winsDifference = Math.abs(homeWins - awayWins);
+                    let adjustedHomeWinPercentage = homeWinPercentage;
+                    let adjustedAwayWinPercentage = awayWinPercentage;
+
+                    if (winsDifference > 5) {
+                        const advantage = winsDifference - 5; // Cada ponto acima de 5 dá 1% de vantagem
+                        if (homeWins > awayWins) {
+                            adjustedHomeWinPercentage += advantage; // Adiciona vantagem à casa
+                        } else {
+                            adjustedAwayWinPercentage += advantage; // Adiciona vantagem ao visitante
+                        }
+                    }
+
+                    // Condição para cor verde ou vermelha para Casa e Visitante
+                    let homeColor = homeWinWeight > awayWinWeight ? 'green' : 'red';
+                    let awayColor = awayWinWeight > homeWinWeight ? 'green' : 'red';
+
+                    // Adicionar os dados na linha
+                    row.innerHTML = `
+                        <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
+                        <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
+                        <td>${homeHomeWins}</td>
+                        <td>${confrontation.home_away_wins}</td>
+                        <td>${confrontation.away_home_wins}</td>
+                        <td>${awayAwayWins}</td>
+                        <td>${confrontation.total_home_wins}</td>
+                        <td>${confrontation.total_away_wins}</td>
+                        <td>${homeWins} (${confrontation.total_home_games})</td>
+                        <td>${adjustedHomeWinPercentage.toFixed(2)}%</td>
+                        <td>${awayWins} (${confrontation.total_away_games})</td>
+                        <td>${adjustedAwayWinPercentage.toFixed(2)}%</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar odds-nba:', error));
+    })
+    .catch(error => console.error('Erro ao carregar confrontos:', error));
+
+        // Seleciona todas as caixas de seleção
+        document.getElementById("select-all").addEventListener("change", function() {
+            const checkboxes = document.querySelectorAll(".select-row");
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Funcionalidade para garantir que "Selecionar tudo" está correto quando uma caixa é desmarcada
+        document.querySelectorAll(".select-row").forEach(checkbox => {
+            checkbox.addEventListener("change", function() {
+                const allCheckboxes = document.querySelectorAll(".select-row");
+                const selectAllCheckbox = document.getElementById("select-all");
+                selectAllCheckbox.checked = allCheckboxes.length === Array.from(allCheckboxes).filter(cb => cb.checked).length;
+            });
+        });
+
+});
+ 
+
+    </script>
+</body>
+</html>

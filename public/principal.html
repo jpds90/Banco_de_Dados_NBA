@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Esportiva</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #00509e;
+            color: white;
+        }
+        .choice-buttons label {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .rank-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .table-container {
+            width: 48%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #00509e;
+            color: white;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #003366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background-color: #00509e;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 16px;
+        }
+        main {
+            display: flex;
+            margin: 20px;
+        }
+        .content {
+            flex: 3;
+            margin-right: 20px;
+        }
+        .sidebar {
+            flex: 1;
+            background-color: #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .card h2 {
+            color: #00509e;
+        }
+        .highlight {
+            background-color: #ffc107;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+       
+        .selected {
+           background-color: #28a745; /* Cor de fundo verde, você pode personalizar */
+           color: white;              /* Cor do texto, para contrastar com o fundo */
+           font-weight: bold;         /* Altera o peso da fonte para destacar o botão */
+        }
+
+</style>
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Análise Esportiva</h1>
+        <h2>Login</h2>
+        <form id="login-form">
+            <label>Email:</label>
+            <input type="email" id="login-email" required>
+            <label>Senha:</label>
+            <input type="password" id="login-password" required>
+            <button type="submit">Entrar</button>
+        </form> 
+        <div id="user-info">
+            <span id="loggedInUser">Usuário não logado</span>
+            <button id="logoutButton" style="display: none;">Sair</button>
+        </div> 
+    </header>
+    <nav>
+        <a href="#">Home</a>
+        <a href="http://localhost:3099/odds.html">Estatísticas</a>
+        <a href="http://localhost:3099/jogadores.html">Jogadores</a>
+        <a href="http://localhost:3099/links.html">Atualizar Sistema</a>
+    </nav>
+    <main>
+        <div class="card">
+            <h2>Planejamento de Apostas</h2>
+           
+            <label for="daysOption">Escolher Tipo de Dias:</label>
+            <select id="daysOption">
+                <option value="fixa">Fixa</option>
+                <option value="variavel">Variável</option>
+            </select>
+        
+            <label for="days">Dias de Aposta:</label>
+            <input type="number" id="days" placeholder="Quantidade de dias" disabled><br>
+            
+            <label for="bankroll">Valor da Banca:</label>
+            <input type="number" id="bankroll" placeholder="Insira o valor da banca"><br>
+            
+            <label for="targetProfit">Lucro Desejado:</label>
+            <input type="number" id="targetProfit" placeholder="Quanto deseja ganhar"><br>
+            
+            <div id="dailyTarget" class="highlight">Meta Diária: R$ 0,00</div>
+        
+            <button id="submitPlanningForm">Salvar Planejamento</button>
+
+
+        </div>
+        
+        <div class="card" id="bet-slip">
+            <h2>Talão de Aposta</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Jogo</th>
+                        <th>Escolha</th>
+                        <th>Odds</th>
+                        <th>Valor da Aposta</th>
+                        <th>Lucro</th> <!-- Nova coluna de Lucro -->
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="betSlipTable">
+                    <!-- Apostas aparecerão aqui -->
+                </tbody>
+            </table>
+            
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <h2>Jogos e Previsões</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Data do Jogo</th>
+                            <th>Time Casa</th>
+                            <th>Time Visitante</th>
+                            <th>1</th>
+                            <th>2</th>
+                            <th>Escolha</th>
+                        </tr>
+                        <button id="addSingleBetButton" onclick="addSingleBet()">Adicionar Aposta Única</button>
+                        <button id="combineBetsButton" onclick="combineBets()">Confirmar Apostas Combinadas</button>
+                    
+                    </thead>
+                    <tbody id="oddsTable">
+                        <!-- Dados serão preenchidos dinamicamente -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h2>Ranking NBA</h2>
+                <div class="rank-container">
+                    <div class="table-container">
+                        <h3>Conferência Oeste</h3>
+                        <table id="west-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Os dados serão preenchidos dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="table-container">
+                        <h3>Conferência Este</h3>
+                        <table id="east-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Os dados serão preenchidos dinamicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <aside class="sidebar">
+            <h2>Links Rápidos</h2>
+            <ul>
+                <li><a href="http://localhost:3099/jogadores.html">Jogadores em Destaque</a></li>
+                <li><a href="http://localhost:3099/odds.html">Análises Detalhadas</a></li>
+            </ul>
+        </aside>
+    </main>
+
+    <div class="card" id="history-card">
+    <h2>Histórico de Apostas</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Jogo</th>
+                <th>Escolha</th>
+                <th>Odds</th>
+                <th>Valor da Aposta</th>
+                <th>Lucro</th>
+                <th>Resultado</th>
+            </tr>
+        </thead>
+        <tbody id="historyTable">
+            <!-- Histórico de apostas vai aparecer aqui -->
+        </tbody>
+    </table>
+</div>
+
+    <script src="client.js"></script>
+    <script>
+
+    // Busca os dados do endpoint
+    fetch('http://localhost:3099/nba-classificacao')
+        .then(response => response.json())
+        .then(data => {
+            const westTable = document.querySelector('#west-table tbody');
+            const eastTable = document.querySelector('#east-table tbody');
+
+            // Preencher a tabela da Conferência Oeste
+            data.west.forEach(({ rank, team_name }) => {
+                westTable.innerHTML += `
+                    <tr>
+                        <td>${rank}</td>
+                        <td>${team_name}</td>
+                    </tr>`;
+            });
+
+            // Preencher a tabela da Conferência Leste
+            data.east.forEach(({ rank, team_name }) => {
+                eastTable.innerHTML += `
+                    <tr>
+                        <td>${rank}</td>
+                        <td>${team_name}</td>
+                    </tr>`;
+            });
+        })
+        .catch(error => console.error('Erro ao carregar dados:', error));
+
+        
+        function toggleSelection(button) {
+    // Remove a seleção de todos os botões dentro da mesma célula (td)
+    const parent = button.parentNode;  // A célula (td) que contém os botões
+    const buttons = parent.querySelectorAll('button'); // Todos os botões dentro da célula
+    buttons.forEach(btn => btn.classList.remove('selected')); // Remove a classe 'selected' de todos os botões
+
+    // Adiciona a classe "selected" ao botão clicado
+    button.classList.add('selected');
+    }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectedBets = []; // Armazena as apostas selecionadas para múltiplas
+
+    const bankrollInput = document.getElementById('bankroll');
+    const daysInput = document.getElementById('days');
+    const targetProfitInput = document.getElementById('targetProfit');
+    const dailyTargetDisplay = document.getElementById('dailyTarget');
+    const oddsTable = document.getElementById('oddsTable');
+    const betSlipTable = document.getElementById('betSlipTable');
+    const daysOptionSelect = document.getElementById('daysOption');
+
+    let dailyTarget = 0;
+    let startDate = new Date();
+
+    // Atualiza a meta diária
+    function updateDailyTarget() {
+        const daysOption = daysOptionSelect.value;
+        let days = parseInt(daysInput.value, 10) || 0;
+
+        if (daysOption === 'variavel') {
+            // Calcula dias restantes com base na data atual
+            const today = new Date();
+            const timeDiff = today - startDate;
+            const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24)); // Converte de ms para dias
+            days = Math.max(0, parseInt(daysInput.value, 10) - daysPassed); // Não permitir dias negativos
+            daysInput.value = days; // Atualiza o campo de dias com os dias restantes
+        }
+
+        const targetProfit = parseFloat(targetProfitInput.value) || 0;
+
+        if (days > 0 && targetProfit > 0) {
+            dailyTarget = targetProfit / days;
+            dailyTargetDisplay.textContent = `Meta Diária: R$ ${dailyTarget.toFixed(2)}`;
+        } else {
+            dailyTarget = 0;
+            dailyTargetDisplay.textContent = 'Meta Diária: R$ 0,00';
+        }
+    }
+
+    // Atualiza os dias quando mudar a seleção de dias
+    daysOptionSelect.addEventListener('change', () => {
+        const daysOption = daysOptionSelect.value;
+        if (daysOption === 'variavel') {
+            // Permitir a contagem regressiva de dias variáveis
+            const today = new Date();
+            const timeDiff = today - startDate;
+            const daysPassed = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            let initialDays = parseInt(daysInput.value, 10) || 0;
+            daysInput.value = Math.max(0, initialDays - daysPassed); // Atualiza os dias restantes
+            daysInput.disabled = true; // Desabilita para evitar mudanças manuais
+        } else {
+            daysInput.disabled = false; // Habilita para o modo "fixo"
+        }
+        updateDailyTarget();
+    });
+
+    // Inicializa a meta de dias e o tipo de dias
+    updateDailyTarget();
+
+    // Adiciona jogos dinamicamente da API
+    fetch('/odds')
+    .then(response => response.json())
+    .then(data => {
+        const now = new Date();
+        data.forEach(odd => {
+            const gameDateTime = new Date(odd.data_jogo);
+            if (gameDateTime >= now) {
+                const formattedDate = gameDateTime.toLocaleString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: 'UTC'
+                });
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formattedDate}</td>
+                    <td>${odd.time_home}</td>
+                    <td>${odd.time_away}</td>
+                    <td>${odd.home_odds}</td>
+                    <td>${odd.away_odds}</td>
+                    <td>
+                        <button onclick="addToBetSlip('${formattedDate}', '${odd.time_home}', '${odd.time_away}', 1, ${odd.home_odds}); toggleSelection(this);">1</button>
+                        <button onclick="addToBetSlip('${formattedDate}', '${odd.time_home}', '${odd.time_away}', 2, ${odd.away_odds}); toggleSelection(this);">2</button>
+                    </td>
+                `;
+                oddsTable.appendChild(row);
+            }
+        });
+    })
+    .catch(error => console.error('Erro ao carregar dados:', error));
+
+// Limpar seleção de todos os botões
+function clearSelections() {
+    const buttons = document.querySelectorAll('td button');
+    buttons.forEach(button => button.classList.remove('selected'));
+}
+
+
+// Exemplo para os botões "Adicionar Aposta Única" e "Confirmar Apostas Combinadas"
+document.getElementById('addSingleBetButton').addEventListener('click', clearSelections);
+document.getElementById('combineBetsButton').addEventListener('click', clearSelections);
+
+    // Adiciona uma aposta ao conjunto de apostas selecionadas para combinar
+    window.addToBetSlip = (date, homeTeam, awayTeam, choice, odds) => {
+        const choiceText = choice === 1 ? 'Vencedor: Casa' : 'Vencedor: Visitante';
+
+        // Evitar duplicatas
+        const existingBet = selectedBets.find(
+            bet => bet.date === date && bet.homeTeam === homeTeam && bet.awayTeam === awayTeam
+        );
+        if (existingBet) {
+            return;
+        }
+
+        selectedBets.push({ date, homeTeam, awayTeam, choiceText, odds });
+    };
+
+// Adicionar aposta única diretamente ao talão
+window.addSingleBet = () => {
+    if (selectedBets.length === 0) {
+        alert('Nenhuma aposta selecionada.');
+        return;
+    }
+
+    selectedBets.forEach(bet => {
+        const betValue = dailyTarget / (bet.odds - 1);
+        const profit = betValue * (bet.odds - 1);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${bet.date}</td>
+            <td>${bet.homeTeam} x ${bet.awayTeam}</td>
+            <td>${bet.choiceText}</td>
+            <td>${bet.odds.toFixed(2)}</td>
+            <td>R$ ${betValue.toFixed(2)}</td>
+            <td>R$ ${profit.toFixed(2)}</td>
+            <td class="action-buttons">
+                <button onclick="markAsWinner(this, ${betValue.toFixed(2)}, ${profit.toFixed(2)}, ${bet.odds})">Vencedor</button>
+                <button onclick="markAsLoser(this, ${betValue.toFixed(2)})">Perdeu</button>
+                <button onclick="removeBetSlipRow(this)">Excluir</button>
+            </td>
+        `;
+        betSlipTable.appendChild(row);
+    });
+
+    // Limpa as apostas selecionadas
+    selectedBets.length = 0;
+};
+
+    // Combina as apostas selecionadas e adiciona ao talão
+    window.combineBets = () => {
+        if (selectedBets.length < 2) {
+            alert('Selecione pelo menos duas apostas para combinar.');
+            return;
+        }
+
+        const combinedOdds = selectedBets.reduce((acc, bet) => acc * bet.odds, 1);
+        const betValue = dailyTarget / (combinedOdds - 1);
+        const profit = betValue * (combinedOdds - 1);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${selectedBets.map(bet => bet.date).join('<br>')}</td>
+            <td>${selectedBets.map(bet => `${bet.homeTeam} x ${bet.awayTeam}`).join('<br>')}</td>
+            <td>${selectedBets.map(bet => bet.choiceText).join('<br>')}</td>
+            <td>${combinedOdds.toFixed(2)}</td>
+            <td>R$ ${betValue.toFixed(2)}</td>
+            <td>R$ ${profit.toFixed(2)}</td>
+            <td class="action-buttons">
+                <button onclick="markAsWinner(this, ${betValue.toFixed(2)}, ${profit.toFixed(2)}, ${combinedOdds})">Vencedor</button>
+                <button onclick="markAsLoser(this, ${betValue.toFixed(2)})">Perdeu</button>
+                <button onclick="removeBetSlipRow(this)">Excluir</button>
+            </td>
+        `;
+        betSlipTable.appendChild(row);
+
+        // Limpa as apostas selecionadas
+        selectedBets.length = 0;
+    };
+
+// Função para remover uma linha do talão
+window.removeBetSlipRow = (button) => {
+    button.closest('tr').remove(); // Remove a linha correspondente
+};
+
+
+
+// Mover aposta para o histórico
+function moveToHistory(row, result) {
+    const historyRow = row.cloneNode(true);
+
+    // A célula 5 (índice 5, que corresponde à 6ª coluna na tabela) será a de "Resultado"
+    const resultCell = historyRow.cells[6]; // A célula 6 é a de "Resultado" no índice base 0
+
+    // Verifica o resultado e insere o emoji correspondente
+    if (result === 'Vencedor') {
+        resultCell.textContent = '✅'; // Emoji de "Vencedor"
+    } else if (result === 'Perdeu') {
+        resultCell.textContent = '❌'; // Emoji de "Perdeu"
+    }
+
+    // Adiciona a linha clonada ao histórico
+    const historyTable = document.getElementById('historyTable');
+    historyTable.appendChild(historyRow);
+}
+
+
+// Ajuste no método de marcar como vencedor
+window.markAsWinner = (button, betValue, profit, odds) => {
+    const row = button.closest('tr');
+    const date = row.cells[0].textContent; // Data do jogo
+    const teams = row.cells[1].textContent.split(' x '); // Separar times
+    const homeTeam = teams[0].trim(); // Time da casa
+    const awayTeam = teams[1].trim(); // Time visitante
+    const choice = 'Vencedor: Casa'; // Escolha (você pode ajustar conforme necessário)
+    const user_id = localStorage.getItem('userId'); // Pega o ID do usuário do localStorage
+    const outcome = 'Vencedor';
+
+    if (!user_id) {
+        alert('Erro: ID do usuário não encontrado.');
+        return;
+    }
+
+    // Enviar para o backend
+    fetch('/save-bet-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            user_id,
+            game_date: date,
+            home_team: homeTeam,
+            away_team: awayTeam,
+            bet_choice: choice,
+            odds,
+            bet_value: betValue,
+            Lucro: profit,
+            outcome,
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Aposta salva:', data);
+        const bankroll = parseFloat(bankrollInput.value) || 0;
+        bankrollInput.value = (bankroll + profit).toFixed(2); // Atualiza a banca com o lucro
+        targetProfitInput.value = (parseFloat(targetProfitInput.value) - profit).toFixed(2);
+        updateDailyTarget();
+        row.remove(); // Remove a aposta do talão
+        moveToHistory(row, 'Vencedor');
+    })
+    .catch(error => console.error('Erro ao salvar aposta:', error));
+};
+
+// Ajuste no método de marcar como perdedor
+window.markAsLoser = (button, betValue) => {
+
+    const row = button.closest('tr');
+    console.log(row);
+    const date = row.cells[0].textContent; // Data do jogo
+    const teams = row.cells[1].textContent.split(' x '); // Separar times
+    const homeTeam = teams[0].trim(); // Time da casa
+    const awayTeam = teams[1].trim(); // Time visitante
+    const choice = 'Vencedor: Visitante'; // Escolha (ajustado conforme necessário)
+    const user_id = localStorage.getItem('userId'); // Pega o ID do usuário do localStorage
+    const outcome = 'Perdeu';
+    const profit = 0; // Definindo profit como 0 para perda
+
+    if (!user_id) {
+        alert('Erro: ID do usuário não encontrado.');
+        return;
+    }
+
+    // Enviar para o backend
+    fetch('/save-bet-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            user_id,
+            game_date: date,
+            home_team: homeTeam,
+            away_team: awayTeam,
+            bet_choice: choice,
+            odds: 0, // Odds são irrelevantes em caso de perda
+            bet_value: betValue,
+            Lucro: profit,
+            outcome,
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Aposta salva:', data);
+        const bankroll = parseFloat(bankrollInput.value) || 0;
+        bankrollInput.value = (bankroll - betValue).toFixed(2); // Diminui a aposta da banca
+        targetProfitInput.value = (parseFloat(targetProfitInput.value) + betValue).toFixed(2);
+        updateDailyTarget();
+        row.remove(); // Remove a aposta do talão
+        moveToHistory(row, 'Perdeu'); // Passando 'Perdeu' para a função
+    })
+    .catch(error => console.error('Erro ao salvar aposta:', error));
+};
+
+
+    // Atualiza valores ao mudar inputs
+    bankrollInput.addEventListener('input', updateDailyTarget);
+    targetProfitInput.addEventListener('input', updateDailyTarget);
+});
+
+
+    </script>
+</body>
+</html>
