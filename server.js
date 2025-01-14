@@ -368,17 +368,97 @@ app.get('/team-averages', async (req, res) => {
 
             const tableNames = tablesResult.rows.map(row => row.table_name);
 
+// Calcular média de pontos do time da casa
+let homeAvg = 0;
+if (tableNames.includes(homeTable)) {
+    const homeScoresResult = await pool.query(`
+        SELECT home_score, datahora 
+        FROM ${homeTable} 
+        WHERE home_team = $1
+        AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
+        ORDER BY id DESC
+        LIMIT 12
+    `, [time_home, formattedStartDate, formattedEndDate]);
+
+    const homeScores = homeScoresResult.rows
+        .map(row => parseInt(row.home_score, 10))
+        .filter(score => !isNaN(score));
+
+    homeAvg = homeScores.length 
+        ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
+        : 0;
+}
+
+// Calcular média de pontos do time visitante
+let awayAvg = 0;
+if (tableNames.includes(awayTable)) {
+    const awayScoresResult = await pool.query(`
+        SELECT away_score, datahora 
+        FROM ${awayTable} 
+        WHERE away_team = $1
+        AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
+        ORDER BY id DESC
+        LIMIT 12
+    `, [time_away, formattedStartDate, formattedEndDate]);
+
+    const awayScores = awayScoresResult.rows
+        .map(row => parseInt(row.away_score, 10))
+        .filter(score => !isNaN(score));
+
+    awayAvg = awayScores.length 
+        ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
+        : 0;
+}
+
+
+            // Garantir soma inteira para total_pontos
+            results.push({
+                time_home,
+                time_away,
+                home_avg: homeAvg,
+                away_avg: awayAvg,
+                total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
+            });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
+app.get('/mediapontosgeral', async (req, res) => {
+    try {
+        // Consultar times na tabela "odds"
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
+
+            // Verificar tabelas existentes
+            const tablesResult = await pool.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = $1 OR table_name = $2
+            `, [homeTable, awayTable]);
+
+            const tableNames = tablesResult.rows.map(row => row.table_name);
+
             // Calcular média de pontos do time da casa
             let homeAvg = 0;
             if (tableNames.includes(homeTable)) {
                 const homeScoresResult = await pool.query(`
-                    SELECT home_score, datahora 
+                    SELECT home_score 
                     FROM ${homeTable} 
                     WHERE home_team = $1
-                    AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
-                    ORDER BY datahora DESC
+                    ORDER BY id DESC
                     LIMIT 12
-                `, [time_home, formattedStartDate, formattedEndDate]);
+                `, [time_home]);
 
                 const homeScores = homeScoresResult.rows
                     .map(row => parseInt(row.home_score, 10))
@@ -393,13 +473,12 @@ app.get('/team-averages', async (req, res) => {
             let awayAvg = 0;
             if (tableNames.includes(awayTable)) {
                 const awayScoresResult = await pool.query(`
-                    SELECT away_score, datahora 
+                    SELECT away_score 
                     FROM ${awayTable} 
                     WHERE away_team = $1
-                    AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
-                    ORDER BY datahora DESC
+                    ORDER BY id DESC
                     LIMIT 12
-                `, [time_away, formattedStartDate, formattedEndDate]);
+                `, [time_away]);
 
                 const awayScores = awayScoresResult.rows
                     .map(row => parseInt(row.away_score, 10))
@@ -416,10 +495,11 @@ app.get('/team-averages', async (req, res) => {
                 time_away,
                 home_avg: homeAvg,
                 away_avg: awayAvg,
-                total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
+                total_pontos: homeAvg + awayAvg,
             });
         }
 
+        // Enviar resultados em JSON
         res.json(results);
     } catch (error) {
         console.error('Erro ao processar os dados:', error);
@@ -1046,9 +1126,13 @@ app.get('/jogadorespontos', async (req, res) => {
 
             const homeQuery = `
                 SELECT 
-                    player_name, 
+                    player_name,
+                    AVG(CAST(points AS FLOAT)) AS avg_points,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists,
                     AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
-                    AVG(CAST(points AS FLOAT)) AS avg_points
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked 
                 FROM "${homeTable}"
                 GROUP BY player_name
                 ORDER BY avg_points DESC
@@ -1057,8 +1141,12 @@ app.get('/jogadorespontos', async (req, res) => {
             const awayQuery = `
                 SELECT 
                     player_name, 
+                    AVG(CAST(points AS FLOAT)) AS avg_points,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists,
                     AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
-                    AVG(CAST(points AS FLOAT)) AS avg_points
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked
                 FROM "${awayTable}"
                 GROUP BY player_name
                 ORDER BY avg_points DESC
@@ -1105,6 +1193,510 @@ app.get('/jogadorespontos', async (req, res) => {
     }
 });
 
+app.get('/jogadorespra', async (req, res) => {
+    try {
+        console.log('Iniciando a busca dos jogadores...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            const homeQuery = `
+                SELECT 
+                    player_name,
+                    AVG(CAST(points AS FLOAT)) AS avg_points,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked,
+                    AVG(CAST(points AS FLOAT)) +
+                    AVG(CAST(total_rebounds AS FLOAT)) +
+                    AVG(CAST(assists AS FLOAT)) +
+                    AVG(CAST(steals AS FLOAT)) +
+                    AVG(CAST(shots_blocked AS FLOAT)) AS total_contribution
+                FROM "${homeTable}"
+                GROUP BY player_name
+                ORDER BY total_contribution DESC
+                LIMIT 5;
+            `;
+            const awayQuery = `
+                SELECT 
+                    player_name, 
+                    AVG(CAST(points AS FLOAT)) AS avg_points,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked,
+                    AVG(CAST(points AS FLOAT)) +
+                    AVG(CAST(total_rebounds AS FLOAT)) +
+                    AVG(CAST(assists AS FLOAT)) +
+                    AVG(CAST(steals AS FLOAT)) +
+                    AVG(CAST(shots_blocked AS FLOAT)) AS total_contribution
+                FROM "${awayTable}"
+                GROUP BY player_name
+                ORDER BY total_contribution DESC
+                LIMIT 5;
+            `;
+
+            try {
+                console.log('Executando consultas SQL...');
+                const [homePlayersResult, awayPlayersResult] = await Promise.all([
+                    pool.query(homeQuery),
+                    pool.query(awayQuery),
+                ]);
+
+                console.log('Resultado da consulta home:', homePlayersResult.rows);
+                console.log('Resultado da consulta away:', awayPlayersResult.rows);
+
+                results.push({
+                    homeTeam: time_home,
+                    topHomePlayers: homePlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_points: player.avg_points,
+                        avg_total_rebounds: player.avg_total_rebounds,
+                        avg_assists: player.avg_assists,
+                        avg_steals: player.avg_steals,
+                        avg_shots_blocked: player.avg_shots_blocked,
+                        total_contribution: player.total_contribution
+                    })),
+                    awayTeam: time_away,
+                    topAwayPlayers: awayPlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_points: player.avg_points,
+                        avg_total_rebounds: player.avg_total_rebounds,
+                        avg_assists: player.avg_assists,
+                        avg_steals: player.avg_steals,
+                        avg_shots_blocked: player.avg_shots_blocked,
+                        total_contribution: player.total_contribution
+                    })),
+                });
+            } catch (queryError) {
+                console.error(
+                    `Erro ao consultar dados para as tabelas: ${homeTable} ou ${awayTable}. Verifique os dados do time ${time_home} ou ${time_away}.`
+                );
+                console.error(queryError.message);
+            }
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
+
+app.get('/jogadoresprarb', async (req, res) => {
+    try {
+        console.log('Iniciando a busca dos jogadores...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            const homeQuery = `
+                SELECT 
+                    player_name,
+                    AVG(CAST(points AS FLOAT)) AS avg_points,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked,
+                    AVG(CAST(points AS FLOAT)) +
+                    AVG(CAST(total_rebounds AS FLOAT)) +
+                    AVG(CAST(assists AS FLOAT)) +
+                    AVG(CAST(steals AS FLOAT)) +
+                    AVG(CAST(shots_blocked AS FLOAT)) AS total_contribution
+                FROM "${homeTable}"
+                GROUP BY player_name
+                ORDER BY total_contribution DESC
+                LIMIT 5;
+            `;
+            const awayQuery = `
+                SELECT 
+                    player_name, 
+                    AVG(CAST(points AS FLOAT)) AS avg_points,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked,
+                    AVG(CAST(points AS FLOAT)) +
+                    AVG(CAST(total_rebounds AS FLOAT)) +
+                    AVG(CAST(assists AS FLOAT)) +
+                    AVG(CAST(steals AS FLOAT)) +
+                    AVG(CAST(shots_blocked AS FLOAT)) AS total_contribution
+                FROM "${awayTable}"
+                GROUP BY player_name
+                ORDER BY total_contribution DESC
+                LIMIT 5;
+            `;
+
+            try {
+                console.log('Executando consultas SQL...');
+                const [homePlayersResult, awayPlayersResult] = await Promise.all([
+                    pool.query(homeQuery),
+                    pool.query(awayQuery),
+                ]);
+
+                console.log('Resultado da consulta home:', homePlayersResult.rows);
+                console.log('Resultado da consulta away:', awayPlayersResult.rows);
+
+                results.push({
+                    homeTeam: time_home,
+                    topHomePlayers: homePlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        total_contribution: player.total_contribution,
+                        team: time_home  // Adiciona o nome do time ao jogador
+                    })),
+                    awayTeam: time_away,
+                    topAwayPlayers: awayPlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        total_contribution: player.total_contribution,
+                        team: time_away  // Adiciona o nome do time ao jogador
+                    })),
+                });
+                
+            } catch (queryError) {
+                console.error(
+                    `Erro ao consultar dados para as tabelas: ${homeTable} ou ${awayTable}. Verifique os dados do time ${time_home} ou ${time_away}.`
+                );
+                console.error(queryError.message);
+            }
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
+
+app.get('/jogadoresassistencias', async (req, res) => {
+    try {
+        console.log('Iniciando a busca dos jogadores...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            const homeQuery = `
+                SELECT 
+                    player_name,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(assists AS FLOAT)) AS avg_assists
+                FROM "${homeTable}"
+                GROUP BY player_name
+                ORDER BY avg_assists DESC
+                LIMIT 5;
+            `;
+            const awayQuery = `
+                SELECT
+                player_name,
+                AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                AVG(CAST(assists AS FLOAT)) AS avg_assists
+            FROM "${awayTable}"
+            GROUP BY player_name
+            ORDER BY avg_assists DESC
+            LIMIT 5;
+            `;
+
+            try {
+                console.log('Executando consultas SQL...');
+                const [homePlayersResult, awayPlayersResult] = await Promise.all([
+                    pool.query(homeQuery),
+                    pool.query(awayQuery),
+                ]);
+
+                console.log('Resultado da consulta home:', homePlayersResult.rows);
+                console.log('Resultado da consulta away:', awayPlayersResult.rows);
+
+                results.push({
+                    homeTeam: time_home,
+                    topHomePlayers: homePlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_assists: player.avg_assists
+                    })),
+                    awayTeam: time_away,
+                    topAwayPlayers: awayPlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_assists: player.avg_assists
+                    })),
+                });
+            } catch (queryError) {
+                // Log específico para tabelas faltantes
+                console.error(
+                    `Erro ao consultar dados para as tabelas: ${homeTable} ou ${awayTable}. Verifique os dados do time ${time_home} ou ${time_away}.`
+                );
+                console.error(queryError.message);
+            }
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
+
+
+app.get('/jogadoresrebotes', async (req, res) => {
+    try {
+        console.log('Iniciando a busca dos jogadores...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            const homeQuery = `
+                SELECT 
+                    player_name,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds
+                FROM "${homeTable}"
+                GROUP BY player_name
+                ORDER BY avg_total_rebounds DESC
+                LIMIT 5;
+            `;
+            const awayQuery = `
+                SELECT
+                player_name,
+                AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                AVG(CAST(total_rebounds AS FLOAT)) AS avg_total_rebounds
+            FROM "${awayTable}"
+            GROUP BY player_name
+            ORDER BY avg_total_rebounds DESC
+            LIMIT 5;
+            `;
+
+            try {
+                console.log('Executando consultas SQL...');
+                const [homePlayersResult, awayPlayersResult] = await Promise.all([
+                    pool.query(homeQuery),
+                    pool.query(awayQuery),
+                ]);
+
+                console.log('Resultado da consulta home:', homePlayersResult.rows);
+                console.log('Resultado da consulta away:', awayPlayersResult.rows);
+
+                results.push({
+                    homeTeam: time_home,
+                    topHomePlayers: homePlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_total_rebounds: player.avg_total_rebounds
+                    })),
+                    awayTeam: time_away,
+                    topAwayPlayers: awayPlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_total_rebounds: player.avg_total_rebounds
+                    })),
+                });
+            } catch (queryError) {
+                // Log específico para tabelas faltantes
+                console.error(
+                    `Erro ao consultar dados para as tabelas: ${homeTable} ou ${awayTable}. Verifique os dados do time ${time_home} ou ${time_away}.`
+                );
+                console.error(queryError.message);
+            }
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
+
+
+app.get('/jogadoresroubos', async (req, res) => {
+    try {
+        console.log('Iniciando a busca dos jogadores...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            const homeQuery = `
+                SELECT 
+                    player_name,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(steals AS FLOAT)) AS avg_steals
+                FROM "${homeTable}"
+                GROUP BY player_name
+                ORDER BY avg_steals DESC
+                LIMIT 5;
+            `;
+            const awayQuery = `
+                SELECT
+                player_name,
+                AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                AVG(CAST(steals AS FLOAT)) AS avg_steals
+            FROM "${awayTable}"
+            GROUP BY player_name
+            ORDER BY avg_steals DESC
+            LIMIT 5;
+            `;
+
+            try {
+                console.log('Executando consultas SQL...');
+                const [homePlayersResult, awayPlayersResult] = await Promise.all([
+                    pool.query(homeQuery),
+                    pool.query(awayQuery),
+                ]);
+
+                console.log('Resultado da consulta home:', homePlayersResult.rows);
+                console.log('Resultado da consulta away:', awayPlayersResult.rows);
+
+                results.push({
+                    homeTeam: time_home,
+                    topHomePlayers: homePlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_steals: player.avg_steals
+                    })),
+                    awayTeam: time_away,
+                    topAwayPlayers: awayPlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_steals: player.avg_steals
+                    })),
+                });
+            } catch (queryError) {
+                // Log específico para tabelas faltantes
+                console.error(
+                    `Erro ao consultar dados para as tabelas: ${homeTable} ou ${awayTable}. Verifique os dados do time ${time_home} ou ${time_away}.`
+                );
+                console.error(queryError.message);
+            }
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
+
+app.get('/jogadoresbloqueios', async (req, res) => {
+    try {
+        console.log('Iniciando a busca dos jogadores...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_jogadores';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            const homeQuery = `
+                SELECT 
+                    player_name,
+                    AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                    AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked
+                FROM "${homeTable}"
+                GROUP BY player_name
+                ORDER BY avg_shots_blocked DESC
+                LIMIT 5;
+            `;
+            const awayQuery = `
+                SELECT
+                player_name,
+                AVG(CAST(minutes_played AS FLOAT)) AS avg_minutes_played,
+                AVG(CAST(shots_blocked AS FLOAT)) AS avg_shots_blocked
+            FROM "${awayTable}"
+            GROUP BY player_name
+            ORDER BY avg_shots_blocked DESC
+            LIMIT 5;
+            `;
+
+            try {
+                console.log('Executando consultas SQL...');
+                const [homePlayersResult, awayPlayersResult] = await Promise.all([
+                    pool.query(homeQuery),
+                    pool.query(awayQuery),
+                ]);
+
+                console.log('Resultado da consulta home:', homePlayersResult.rows);
+                console.log('Resultado da consulta away:', awayPlayersResult.rows);
+
+                results.push({
+                    homeTeam: time_home,
+                    topHomePlayers: homePlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_shots_blocked: player.avg_shots_blocked
+                    })),
+                    awayTeam: time_away,
+                    topAwayPlayers: awayPlayersResult.rows.map(player => ({
+                        player_name: player.player_name,
+                        avg_minutes_played: (player.avg_minutes_played / 60).toFixed(2),
+                        avg_shots_blocked: player.avg_shots_blocked
+                    })),
+                });
+            } catch (queryError) {
+                // Log específico para tabelas faltantes
+                console.error(
+                    `Erro ao consultar dados para as tabelas: ${homeTable} ou ${awayTable}. Verifique os dados do time ${time_home} ou ${time_away}.`
+                );
+                console.error(queryError.message);
+            }
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
 
 
 // Endpoint para buscar os dados da tabela nba_classificacao
@@ -1258,6 +1850,74 @@ app.get('/jogadoreslesionados', async (req, res) => {
     }
 });
 
+// Rota para buscar quantidade de jogadores lesionados
+app.get('/jogadoreslesionados/contagem', async (req, res) => {
+    try {
+        console.log('Iniciando a busca das quantidades de jogadores lesionados...');
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        console.log('Odds encontradas:', oddsRows);
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + '_lesoes';
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + '_lesoes';
+
+            console.log(`Consultando tabelas: ${homeTable}, ${awayTable}`);
+
+            // Função para verificar se a tabela existe
+            const checkTableExists = async (tableName) => {
+                const query = `
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM information_schema.tables
+                        WHERE table_name = '${tableName}'
+                    )
+                `;
+                const result = await pool.query(query);
+                return result.rows[0].exists;
+            };
+
+            const homeTableExists = await checkTableExists(homeTable);
+            const awayTableExists = await checkTableExists(awayTable);
+
+            if (!homeTableExists || !awayTableExists) {
+                console.log(`Uma ou ambas as tabelas não existem: ${homeTable}, ${awayTable}. Pulando jogo.`);
+                continue;
+            }
+
+            // Consulta para a contagem de jogadores lesionados em cada time
+            const homeCountQuery = `
+                SELECT COUNT(*) as count
+                FROM "${homeTable}"
+            `;
+            const awayCountQuery = `
+                SELECT COUNT(*) as count
+                FROM "${awayTable}"
+            `;
+
+            const homeCountResult = await pool.query(homeCountQuery);
+            const awayCountResult = await pool.query(awayCountQuery);
+
+            const homeCount = homeCountResult.rows[0].count;
+            const awayCount = awayCountResult.rows[0].count;
+
+            results.push({
+                team_home: time_home,
+                team_away: time_away,
+                homeInjuredCount: homeCount,
+                awayInjuredCount: awayCount
+            });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao buscar contagem de jogadores lesionados:', error);
+        res.status(500).send('Erro ao buscar dados.');
+    }
+});
+
 
 // Atualizar a banca
 app.post('/update-bankroll', async (req, res) => {
@@ -1298,6 +1958,8 @@ app.post('/save-bet', async (req, res) => {
 
     try {
         // Formata a data antes de enviar para o banco de dados
+
+        console.log('game_date recebido:', game_date);
         const formattedGameDate = formatDateToISO(game_date);
 
         // Insere a aposta no banco de dados
@@ -1337,23 +1999,23 @@ app.put('/update-bet-outcome/:id', async (req, res) => {
 });
 
 app.post('/save-bet-history', async (req, res) => {
-    const { user_id, game_date, home_team, away_team, bet_choice, odds, bet_value, Lucro, outcome } = req.body;
+    const { user_id, game_date, games, choices, odds, bet_value, Lucro, outcome } = req.body;
 
     try {
-        // Formata a data antes de enviar para o banco de dados
-        const formattedGameDate = formatDateToISO(game_date);
-
-        // Insere a aposta no banco de dados
+        // Insere os dados diretamente no banco de dados
         const result = await pool.query(
-            `INSERT INTO bets (user_id, game_date, home_team, away_team, bet_choice, odds, bet_value, Lucro, outcome, created_at) 
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW()) RETURNING *`,
-            [user_id, formattedGameDate, home_team, away_team, bet_choice, odds, bet_value, Lucro, outcome]
+            `INSERT INTO bets (user_id, game_date, games, choices, odds, bet_value, Lucro, outcome, created_at) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING *`,
+            [user_id, game_date, games, choices, odds, bet_value, Lucro, outcome]
         );
-        
+
         res.status(201).json(result.rows[0]);
     } catch (err) {
-        console.error('Erro ao salvar aposta:', err);
-        res.status(500).json({ error: 'Erro ao salvar aposta' });
+        console.error('Erro ao salvar aposta:', err); // Log completo do erro no console do backend
+        res.status(500).json({ 
+            error: 'Erro ao salvar aposta', 
+            details: err.message // Retorna detalhes do erro para debug
+        });
     }
 });
 

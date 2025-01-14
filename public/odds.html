@@ -142,6 +142,8 @@
                         <th>% Vitória Casa (1)</th>
                         <th>Total Vitórias Fora (2)</th>
                         <th>% Vitórias Fora (2)</th>
+                        <th>% (1)</th>
+                        <th>% (2)</th>
                     </tr>
                 </thead>
                 <tbody id="confrontationTable"></tbody>
@@ -189,7 +191,7 @@
             </table>
         </div>
 
-        <!-- Última Linha de Tabelas Lado a Lado -->
+        <!-- Terceira Linha de Tabelas Lado a Lado (2 em 2) -->
         <div class="side-by-side">
             <table>
                 <thead>
@@ -204,7 +206,20 @@
                 </thead>
                 <tbody id="overOddsTable"></tbody>
             </table>
-        </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time da Casa</th>
+                                <th>Lesionados (Casa)</th>
+                                <th>Time Visitante</th>
+                                <th>Lesionados (Visitante)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="injuryTableBody">
+                        </tbody>
+                    </table>
+                </div>
     </div>
 
     <button id="deleteButton">Excluir Selecionados</button>
@@ -214,7 +229,113 @@
     
     <script>
         document.getElementById('date-form').addEventListener('submit', function(event) {
-    event.preventDefault();  // Impede o envio padrão do formulário
+    event.preventDefault();
+// Função para buscar dados de jogadores lesionados
+function fetchInjuredPlayers() {
+    console.log('Buscando jogadores lesionados...');
+    return fetch('/jogadoreslesionados')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Jogadores lesionados recebidos:', data);
+            handleInjuredPlayersData(data); // Manipula os dados de jogadores lesionados
+            return data; // Retorna os dados dos jogadores lesionados
+        })
+        .catch(error => {
+            console.error('Erro ao buscar jogadores lesionados:', error);
+            return []; // Retorna um array vazio em caso de erro
+        });
+}
+
+// Função para "normalizar" o nome
+function normalizePlayerName(playerName) {
+    console.log('Normalizando nome do jogador:', playerName);
+    const nameParts = playerName.split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts[1];
+    const abbreviatedLastName = lastName.charAt(0) + '.';
+    const normalizedName = firstName + ' ' + abbreviatedLastName;
+    console.log('Nome normalizado:', normalizedName);
+    return normalizedName;
+}
+
+// Função para pegar os jogadores lesionados de um time específico
+function getInjuredPlayers(teamName, injuredPlayersData) {
+    console.log(`Buscando jogadores lesionados para o time: ${teamName}`);
+    const injuredPlayers = injuredPlayersData.filter(game => game.team_home === teamName || game.team_away === teamName);
+    const injuredHomePlayers = injuredPlayers.flatMap(game => game.team_home === teamName ? game.homePlayers : []);
+    const injuredAwayPlayers = injuredPlayers.flatMap(game => game.team_away === teamName ? game.awayPlayers : []);
+    const allInjuredPlayers = [...injuredHomePlayers, ...injuredAwayPlayers].map(normalizePlayerName);
+    console.log(`Jogadores lesionados encontrados para o time ${teamName}:`, allInjuredPlayers);
+    return allInjuredPlayers;
+}
+
+// Função para contar quantos dos 5 jogadores com mais pontos estão lesionados
+function countInjuredPlayers(topPlayers, injuredPlayersData) {
+    console.log('Contando jogadores lesionados entre os 5 melhores jogadores:', topPlayers);
+
+    // Normaliza os nomes dos jogadores com mais pontos
+    const normalizedTopPlayers = topPlayers.map(player => normalizePlayerName(player.player_name));
+
+    // Conta quantos dos 5 melhores jogadores estão lesionados
+    const injuredCount = normalizedTopPlayers.filter(player => injuredPlayersData.includes(player)).length;
+
+    console.log(`Jogadores lesionados encontrados: ${injuredCount}`);
+    return injuredCount;
+}
+
+// Função para processar os dados de total_contribution
+function fetchPointsData(injuredPlayersData) {
+    console.log('Buscando dados de total_contribution dos jogadores...');
+    fetch('/jogadoresprarb') // Endpoint deve retornar total_contribution já calculado
+        .then(response => response.json())
+        .then(data => {
+            console.log('Dados de total_contribution dos jogadores recebidos:', data);
+
+            const injuryTableBody = document.getElementById('injuryTableBody');
+            injuryTableBody.innerHTML = ''; // Limpa o conteúdo da tabela antes de preenchê-la novamente
+            console.log('Tabela limpa e pronta para preenchimento.');
+
+            data.forEach(game => {
+                console.log(`Processando jogo: ${game.homeTeam} vs ${game.awayTeam}`);
+
+                // Busca jogadores lesionados para os times
+                const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+                const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+                // Conta lesionados nos jogadores com maior total_contribution
+                const homeInjuredCount = countInjuredPlayers(game.topHomePlayers, injuredHomePlayers);
+                const awayInjuredCount = countInjuredPlayers(game.topAwayPlayers, injuredAwayPlayers);
+
+                console.log(`Lesionados (Casa): ${homeInjuredCount}, Lesionados (Visitante): ${awayInjuredCount}`);
+
+                // Preenche a tabela com os dados
+                injuryTableBody.innerHTML += 
+                    `<tr>
+                        <td>${game.homeTeam}</td>
+                        <td>${homeInjuredCount}</td>
+                        <td>${game.awayTeam}</td>
+                        <td>${awayInjuredCount}</td>
+                    </tr>`;
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao buscar dados de total_contribution:', error);
+        });
+}
+
+
+// Função para manipular os dados dos jogadores lesionados e chamar a função de pontos
+let injuredPlayersData = []; // Para armazenar os dados dos jogadores lesionados
+function handleInjuredPlayersData(data) {
+    injuredPlayersData = data;
+    // Após buscar os dados de jogadores lesionados, agora busca os pontos
+    fetchPointsData(injuredPlayersData);
+}
+
+// Chama a função para buscar os dados de lesões
+fetchInjuredPlayers();
+
+
 
     // Captura as datas de início e fim (no formato DD.MM)
     const startDate = document.getElementById('start-date').value;
@@ -290,6 +411,10 @@
                 });
             })
             .catch(error => console.error('Erro ao carregar análise de pontos:', error));
+
+
+
+
 // Usar Promise.all para requisições paralelas
 Promise.all([
     fetch('/odds').then(response => response.json()),
@@ -451,13 +576,31 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                     const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
                     const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
 
-                    // Exibir os valores para debugar
+// Somar os valores para o time casa e visitante
+const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
+const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
+
+// Calcular a soma total para gerar percentuais
+const totalSum = homeTotal + awayTotal;
+
+// Calcular as porcentagens
+const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0); // Exemplo: 60
+const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0); // Exemplo: 40
+
+// Exibir os valores como porcentagens no console para debug
+console.log(`Time casa: ${homePercentage}%`);
+console.log(`Time visitante: ${awayPercentage}%`);
+
+                    // Exibir os valores somados para debugar
                     console.log(`Time de casa: ${confrontation.time_home}`);
                     console.log(`Classificação casa: ${homeClassification} (Peso: ${homeRankWeight})`);
                     console.log(`Vitórias casa: ${homeHomeWins} | Percentual de vitórias casa: ${homeWinPercentage} | Peso das vitórias: ${homeWinWeight}`);
+                    console.log(`Soma para Time Casa: ${homeTotal}`);
+                    console.log('---');
                     console.log(`Time visitante: ${confrontation.time_away}`);
                     console.log(`Classificação visitante: ${awayClassification} (Peso: ${awayRankWeight})`);
                     console.log(`Vitórias visitante: ${awayAwayWins} | Percentual de vitórias visitante: ${awayWinPercentage} | Peso das vitórias: ${awayWinWeight}`);
+                    console.log(`Soma para Time Visitante: ${awayTotal}`);
                     console.log('---');
 
                     // Adicionar vantagem se a diferença de vitórias gerais for maior que 5
@@ -475,8 +618,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                     }
 
                     // Condição para cor verde ou vermelha para Casa e Visitante
-                    let homeColor = homeWinWeight > awayWinWeight ? 'green' : 'red';
-                    let awayColor = awayWinWeight > homeWinWeight ? 'green' : 'red';
+                    let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
+                    let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
 
                     // Adicionar os dados na linha
                     row.innerHTML = `
@@ -492,6 +635,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                         <td>${adjustedHomeWinPercentage.toFixed(2)}%</td>
                         <td>${awayWins} (${confrontation.total_away_games})</td>
                         <td>${adjustedAwayWinPercentage.toFixed(2)}%</td>
+                        <td>${homePercentage}%</td>
+                        <td>${awayPercentage}%</td>
                     `;
                     tableBody.appendChild(row);
                 });
@@ -499,6 +644,7 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
             .catch(error => console.error('Erro ao carregar odds-nba:', error));
     })
     .catch(error => console.error('Erro ao carregar confrontos:', error));
+
 
         // Seleciona todas as caixas de seleção
         document.getElementById("select-all").addEventListener("change", function() {
@@ -517,8 +663,12 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
             });
         });
 
+
+
+
 });
- 
+
+
 
     </script>
 </body>

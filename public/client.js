@@ -1,3 +1,5 @@
+
+
 const loginForm = document.getElementById('login-form');
 const protectedDataDiv = document.getElementById('protected-data');
 const betHistoryDiv = document.getElementById('bet-history');
@@ -7,14 +9,73 @@ const daysOptionInput = document.getElementById('daysOption');
 const daysInput = document.getElementById('days');
 const bankrollInput = document.getElementById('bankroll');
 const targetProfitInput = document.getElementById('targetProfit');
+
 // Salvar o token do usuário
 let authToken = null;
+
+// Função para obter o user_id do token
+function getUserIdFromToken(token) {
+    try {
+        const decoded = jwt_decode(token);
+        return decoded.userId;
+    } catch (error) {
+        console.error('Erro ao decodificar o token:', error);
+        return null;
+    }
+}
+
+// Função para mostrar o loader
+function showLoader(message) {
+    const loader = document.getElementById('loader');
+    loader.style.display = 'block';
+    loader.textContent = message || 'Carregando...';
+}
+
+// Função para esconder o loader
+function hideLoader() {
+    const loader = document.getElementById('loader');
+    loader.style.display = 'none';
+}
+
+// Função reutilizável para fetch com autenticação
+async function fetchWithAuth(url, options) {
+    let token = localStorage.getItem('authToken');
+
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            Authorization: `Bearer ${token}`
+        }
+    });
+
+    if (response.status === 401) {
+        const data = await response.json();
+        if (data.message === 'Token expirado') {
+            const newToken = data.newToken;
+            localStorage.setItem('authToken', newToken);
+
+            // Reenvia a requisição com o novo token
+            return fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    Authorization: `Bearer ${newToken}`
+                }
+            });
+        }
+    }
+
+    return response;
+}
 
 // Função de Login
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
+
+    showLoader('Fazendo login...');
 
     try {
         const response = await fetch('/login', {
@@ -23,12 +84,20 @@ loginForm.addEventListener('submit', async (e) => {
             body: JSON.stringify({ email, password })
         });
         const data = await response.json();
+        hideLoader();
 
         if (response.ok) {
             authToken = data.token;
-            localStorage.setItem('userName', data.username); // Salva o nome do usuário no localStorage
-            updateUserUI(); // Atualiza a interface para exibir o nome e o botão de logout
+            localStorage.setItem('userName', data.username); // Salva o nome do usuário
+            localStorage.setItem('authToken', authToken);
+            
+
+            const userId = getUserIdFromToken(authToken);
+            localStorage.setItem('userId', userId); // Salva o userId no localStorage
+            console.log('User ID:', userId);
+            updateUserUI();
             alert('Login realizado com sucesso!');
+
             displayBetHistory();
             loadUserPlanning();
         } else {
@@ -36,6 +105,7 @@ loginForm.addEventListener('submit', async (e) => {
         }
     } catch (error) {
         console.error('Erro no login:', error);
+        hideLoader();
     }
 });
 
@@ -62,12 +132,11 @@ logoutButton.addEventListener('click', () => {
     window.location.reload(); // Recarrega a página para redefinir o estado
 });
 
-
 // Carregar Dados Protegidos
 async function loadProtectedData() {
     try {
-        const response = await fetch('/protected', {
-            headers: { Authorization: `Bearer ${authToken}` }
+        const response = await fetchWithAuth('/protected', {
+            method: 'GET'
         });
         const data = await response.json();
 
@@ -84,31 +153,51 @@ async function loadProtectedData() {
 
 // Exibir Histórico de Apostas
 async function displayBetHistory() {
+    const authToken = localStorage.getItem('authToken'); // Recupera o token do armazenamento local
+
+    if (!authToken) {
+        alert('Você precisa estar logado para ver o histórico.');
+        return;
+    }
+
+    showLoader('Carregando histórico de apostas...');
     try {
-        const response = await fetch('/get-bet-history', {
+        const response = await fetchWithAuth('/get-bet-history', {
             headers: { Authorization: `Bearer ${authToken}` }
         });
         const data = await response.json();
+        hideLoader();
 
         if (response.ok) {
             const historyTable = document.getElementById('historyTable');
             historyTable.innerHTML = ''; // Limpa a tabela antes de adicionar novas apostas
 
             data.bets.forEach(bet => {
-                const profit = bet.outcome === 'Vencedor' ? (bet.bet_value * (parseFloat(bet.odds) - 1)).toFixed(2) : '0.00';
+                // Calcula o lucro como fallback se não for enviado pelo backend
+                let profit = parseFloat(bet.Lucro); // Backend deveria enviar este valor
+                if (isNaN(profit)) {
+                    profit = bet.outcome === 'Vencedor'
+                        ? (parseFloat(bet.bet_value) * (parseFloat(bet.odds) - 1)).toFixed(2)
+                        : '0.00';
+                }
 
                 // Criação de uma nova linha na tabela para cada aposta
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${new Date(bet.game_date).toLocaleString('pt-BR', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}</td>
-                    <td>${bet.home_team} x ${bet.away_team}</td>
-                    <td>${bet.bet_choice}</td>
+                    <td>
+                        ${bet.game_date
+                            .split('<br>')
+                            .map(date => new Date(date).toLocaleString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }))
+                            .join('<br>')}
+                    </td>
+                    <td>${bet.games.replaceAll('<br>', '<br>')}</td>
+                    <td>${bet.choices}</td>
                     <td>${parseFloat(bet.odds).toFixed(2)}</td>
                     <td>R$ ${parseFloat(bet.bet_value).toFixed(2)}</td>
                     <td>R$ ${profit}</td>
@@ -123,28 +212,49 @@ async function displayBetHistory() {
         }
     } catch (error) {
         console.error('Erro ao carregar histórico de apostas:', error);
+        hideLoader();
     }
 }
 
+
+
 // Atualizar a interface ao carregar a página
-document.addEventListener('DOMContentLoaded', () => {
-    updateUserUI(); // Atualiza o estado do usuário na interface ao carregar a página
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+        try {
+            const response = await fetchWithAuth('/protected', { method: 'GET' });
+            if (response.ok) {
+                updateUserUI();
+            } else {
+                alert('Sessão expirada. Faça login novamente.');
+                localStorage.removeItem('authToken');
+                updateUserUI();
+            }
+        } catch (error) {
+            console.error('Erro ao verificar o token:', error);
+        }
+    } else {
+        updateUserUI();
+    }
 });
-// Função para carregar o planejamento de apostas do usuário
+
 async function loadUserPlanning() {
     // Verifica se o usuário está logado e possui um token JWT
-    if (!authToken) {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
         alert('Você precisa estar logado para carregar o planejamento.');
         return;
     }
 
+    showLoader('Carregando planejamento...');
     try {
-        // Faz a requisição para a rota que retorna os dados do planejamento de apostas
-        const response = await fetch('/get-planning', {
-            headers: { Authorization: `Bearer ${authToken}` }
+        const response = await fetchWithAuth('/get-planning', {
+            method: 'GET'
         });
 
         const data = await response.json();
+        hideLoader();
 
         if (response.ok) {
             // Preenche os campos do formulário com os dados retornados do backend
@@ -152,14 +262,19 @@ async function loadUserPlanning() {
             document.getElementById('days').value = data.days;
             document.getElementById('bankroll').value = data.bankroll;
             document.getElementById('targetProfit').value = data.target_profit;
+
+            // Chama a função de atualização da meta diária após preencher os dados
+            updateDailyTarget();
         } else {
             // Se não houver dados de planejamento, permite ao usuário preencher o formulário
             alert('Nenhum planejamento encontrado. Preencha o formulário abaixo para salvar um novo planejamento.');
         }
     } catch (error) {
         console.error('Erro ao carregar o planejamento de apostas:', error);
+        hideLoader();
     }
 }
+
 
 document.getElementById('submitPlanningForm').addEventListener('click', async (e) => {
     e.preventDefault(); // Impede o envio tradicional do formulário
@@ -177,9 +292,9 @@ document.getElementById('submitPlanningForm').addEventListener('click', async (e
         return;
     }
 
-    // Envia os dados para o servidor
+    showLoader('Salvando planejamento...');
     try {
-        const response = await fetch('/save-planning', {
+        const response = await fetchWithAuth('/save-planning', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -194,41 +309,15 @@ document.getElementById('submitPlanningForm').addEventListener('click', async (e
         });
 
         const data = await response.json();
+        hideLoader();
 
-        if (response.status === 401 && data.message === 'Token expirado') {
-            console.log("Token expirado. Atualizando token...");
-            localStorage.setItem('authToken', data.newToken); // Atualiza o token no localStorage
-            token = data.newToken; // Atualiza o token atual
-
-            // Reenvia a requisição com o novo token
-            const retryResponse = await fetch('/save-planning', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}` // Usa o novo token
-                },
-                body: JSON.stringify({
-                    daysOption,
-                    days,
-                    bankroll,
-                    targetProfit
-                })
-            });
-
-            const retryData = await retryResponse.json();
-            if (retryResponse.ok) {
-                alert('Planejamento de apostas salvo com sucesso!');
-            } else {
-                alert(retryData.message || 'Erro ao salvar o planejamento');
-            }
-        } else if (response.ok) {
+        if (response.ok) {
             alert('Planejamento de apostas salvo com sucesso!');
         } else {
             alert(data.message || 'Erro ao salvar o planejamento');
         }
     } catch (error) {
         console.error('Erro ao enviar dados para o servidor:', error);
+        hideLoader();
     }
 });
-
-

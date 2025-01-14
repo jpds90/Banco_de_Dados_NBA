@@ -137,10 +137,17 @@
     <div class="navigation">
         <button onclick="showTab('tempo')">Tempo de Quadra</button>
         <button onclick="showTab('pontos')">Média de Pontos</button>
+        <button onclick="showTab('assistencias')">Assistências</button>
+        <button onclick="showTab('rebotes')">Rebotes</button>
+        <button onclick="showTab('roubos')">Roubos de Bola</button>
+        <button onclick="showTab('bloqueios')">Bloqueios</button>
+        <button onclick="showTab('jogadorespra')">Jogadores P+R+A</button>
+        <button onclick="showTab('jogadoresprarb')">Jogadores Impacto</button>
         <button onclick="window.location.href='odds.html';">Voltar</button>
         <button onclick="window.location.href='principal.html';">Home</button>
     </div>
 
+    <!-- Divs para cada aba -->
     <div id="tempo" class="tab-content">
         <h2>Jogadores Tempo em Quadra</h2>
         <div id="tempoData" class="card-container"></div>
@@ -151,33 +158,91 @@
         <div id="pontosData" class="card-container"></div>
     </div>
 
+    <div id="assistencias" class="tab-content">
+        <h2>Jogadores Assistências</h2>
+        <div id="assistenciasData" class="card-container"></div>
+    </div>
+
+    <div id="rebotes" class="tab-content">
+        <h2>Jogadores Rebotes</h2>
+        <div id="rebotesData" class="card-container"></div>
+    </div>
+
+    <div id="roubos" class="tab-content">
+        <h2>Jogadores Roubos de Bola</h2>
+        <div id="roubosData" class="card-container"></div>
+    </div>
+
+    <div id="bloqueios" class="tab-content">
+        <h2>Jogadores Bloqueios</h2>
+        <div id="bloqueiosData" class="card-container"></div>
+    </div>
+
+    <div id="media_pontos" class="tab-content">
+        <h2>Média de Pontos Geral</h2>
+        <div id="mediaPontosGeralData" class="card-container"></div>
+    </div>
+
+    <div id="jogadorespra" class="tab-content">
+        <h2>Jogadores P+R+A</h2>
+        <div id="jogadorespraData" class="card-container"></div>
+    </div>
+    
+
+    <div id="jogadoresprarb" class="tab-content">
+        <h2>Jogadores Impacto</h2>
+        <div id="ImpactogeralData" class="card-container"></div>
+    </div>
     <script>
+
+
+
         // Função para exibir a aba ativa
         function showTab(tabName) {
-            const tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.classList.remove('active-tab'));
-            document.getElementById(tabName).classList.add('active-tab');
-            
-            // Carregar dados específicos para cada aba
-            if (tabName === 'tempo') {
-                fetchTempoData();
-            } else if (tabName === 'pontos') {
-                fetchPointsData();
-            }
-        }
+    console.log('Aba selecionada:', tabName);  // Verificar a aba selecionada
 
-        // Função para buscar jogadores lesionados
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.classList.remove('active-tab'));
+    document.getElementById(tabName).classList.add('active-tab');
+    
+    // Carregar dados específicos para cada aba
+    if (tabName === 'tempo') {
+        fetchTempoData();
+    } else if (tabName === 'pontos') {
+        fetchPointsData();
+    } else if (tabName === 'assistencias') {
+        fetchAssistenciasData();
+    } else if (tabName === 'rebotes') {
+        fetchRebotesData();
+    } else if (tabName === 'roubos') {
+        fetchRoubosData();
+    } else if (tabName === 'bloqueios') {
+        fetchBloqueiosData();
+    } else if (tabName === 'media_pontos') {
+        fetchMediaPontosGeralData();
+    } else if (tabName === 'jogadorespra') {
+        fetchJogadoresData();  // Verificar quando a função é chamada
+    } else if (tabName === 'jogadoresprarb') {
+        fetchImpactoData();  // Verificar quando a função é chamada
+    }
+}
+
+
+
+
+        // Função para buscar dados de jogadores lesionados
         async function fetchInjuredPlayers() {
             try {
                 const response = await fetch('/jogadoreslesionados');
-                return await response.json();
+                const data = await response.json();
+                return data;
             } catch (error) {
                 console.error('Erro ao buscar jogadores lesionados:', error);
                 return [];
             }
         }
-    
-        // Função para "normalizar" o nome (abrir e comparar o nome completo com abreviado)
+
+        // Função para "normalizar" o nome
         function normalizePlayerName(playerName) {
             const nameParts = playerName.split(' ');
             const firstName = nameParts[0];
@@ -194,99 +259,535 @@
             return [...injuredHomePlayers, ...injuredAwayPlayers].map(normalizePlayerName);
         }
 
-        // Função para renderizar a tabela de jogadores com lesões
-        function renderPlayersTable(players, injuredPlayers) {
-            if (!players.length) return '<p>Nenhum dado encontrado.</p>';
-    
-            let tableHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Nome do Jogador</th>
-                            <th>Tempo de Quadra</th>
-                            <th>Média de Pontos</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+
+        function renderPlayersTable(players, injuredPlayers, statType, homeAvg, awayAvg, homeTeam, awayTeam) {
+    console.log('Jogadores para renderizar:', players);  // Verificar os jogadores
+
+    if (!players.length) return '<p>Nenhum dado encontrado.</p>';
+
+    let tableHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Nome do Jogador</th>
+                    <th>Tempo de Quadra</th>
+                    <th>Média de ${statType.charAt(0).toUpperCase() + statType.slice(1)}</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    players.forEach(player => {
+    console.log('Jogador:', player);  // Verificar os dados de cada jogador
+    const normalizedPlayerName = normalizePlayerName(player.player_name);  // Normaliza apenas o nome do jogador
+    console.log('Nome normalizado do jogador:', normalizedPlayerName); 
+    const isInjured = injuredPlayers.includes(normalizedPlayerName);
+    let statValue = '';
+    let Impacto = (
+        parseFloat(player.avg_points || 0) +
+        parseFloat(player.avg_total_rebounds || 0) +
+        parseFloat(player.avg_assists || 0) +
+        parseFloat(player.avg_steals || 0) +
+        parseFloat(player.avg_shots_blocked || 0)
+    ).toFixed(2); // Cálculo do impacto
+
+    // Adicionando a nova lógica para ImpactoG
+    if (statType === 'ImpactoG') {
+        console.log(`Média Pontos Casa: ${homeAvg}, Média Pontos Visitante: ${awayAvg}`); // Verificando as médias dos times
+        console.log(`Time Casa: ${homeTeam}, Time Vistante: ${awayTeam}`); // Verificando times
+
+        // Calcular a soma das contribuições
+        let totalContribuicao = players.reduce((sum, player) => sum + player.total_contribution, 0);
+        
+        // Calcular o fator de ajuste para garantir que a soma não ultrapasse 100%
+        const adjustmentFactor = totalContribuicao > 100 ? 100 / totalContribuicao : 1;
+        console.log(`Fator de ajuste: ${adjustmentFactor}`);
+
+        if (player.team === homeTeam && homeAvg) {
+            console.log(`Jogador: ${player.player_name}`);
+            console.log(`Time do jogador: ${player.team}`);
+            console.log(`Time da casa (homeTeam): ${homeTeam}`);
+            console.log(`Média de pontos da casa (homeAvg): ${homeAvg}`);
+            console.log(`Jogador ${player.player_name} pertence ao time da casa (${homeTeam}).`);
+
+            // Se o jogador for do time da casa, faz a divisão com homeAvg
+            statValue = (player.total_contribution / homeAvg) * 100;
+            // Aplicando o fator de ajuste
+            statValue = statValue * adjustmentFactor;
+            console.log(`Contribuição total do jogador: ${player.total_contribution}`);
+            console.log(`Valor ajustado de statValue: ${statValue}`);
+            // Arredondando para 2 casas decimais
+            statValue = statValue.toFixed(2);
+        } else if (player.team === awayTeam && awayAvg) {
+            console.log(`Jogador: ${player.player_name}`);
+            console.log(`Time do jogador: ${player.team}`);
+            console.log(`Time visitante (awayTeam): ${awayTeam}`);
+            console.log(`Média de pontos do visitante (awayAvg): ${awayAvg}`);
+            console.log(`Jogador ${player.player_name} pertence ao time visitante (${awayTeam}).`);
+
+            // Se o jogador for do time visitante, faz a divisão com awayAvg
+            statValue = (player.total_contribution / awayAvg) * 100;
+            // Aplicando o fator de ajuste
+            statValue = statValue * adjustmentFactor;
+            console.log(`Contribuição total do jogador: ${player.total_contribution}`);
+            console.log(`Valor ajustado de statValue: ${statValue}`);
+            // Arredondando para 2 casas decimais
+            statValue = statValue.toFixed(2);
+        } else {
+            console.log(`Jogador: ${player.player_name}`);
+            console.log(`Time do jogador: ${player.team}`);
+            console.log(`Time da casa (homeTeam): ${homeTeam}`);
+            console.log(`Time visitante (awayTeam): ${awayTeam}`);
+            console.log(`Média de pontos da casa (homeAvg): ${homeAvg}`);
+            console.log(`Média de pontos do visitante (awayAvg): ${awayAvg}`);
+            console.log(`Jogador ${player.player_name} não corresponde a nenhum time válido.`);
+
+            // Caso o time do jogador não seja identificado
+            statValue = 'Não disponível';
+            console.log(`Valor definido para statValue: ${statValue}`);
+        }
+
+    } else if (statType === 'points') {
+        statValue = Math.ceil(player.avg_points);
+    } else if (statType === 'assists') {
+        statValue = player.avg_assists;
+        if (isNaN(statValue)) {
+            statValue = 'Não disponível';
+        } else {
+            statValue = Math.ceil(statValue);
+        }
+    } else if (statType === 'rebounds') {
+        statValue = Math.ceil(player.avg_total_rebounds);
+    } else if (statType === 'steals') {
+        statValue = Math.ceil(player.avg_steals);
+    } else if (statType === 'blocks') {
+        statValue = Math.ceil(player.avg_shots_blocked);
+    } else if (statType === 'minutes') {
+        statValue = (player.avg_minutes_played / 60).toFixed(2) + ' horas';
+    } else if (statType === 'pra') {
+        // Calcular P+R+A
+        const totalPra = (
+            parseFloat(player.avg_points || 0) +
+            parseFloat(player.avg_total_rebounds || 0) +
+            parseFloat(player.avg_assists || 0)
+        );
+        statValue = totalPra.toFixed(2);
+    } else if (statType === 'Impacto') {
+        // Já calculado o Impacto, apenas definindo o statValue
+        statValue = Impacto;
+    } else if (statType === 'ImpactoG') {
+        statValue = Math.ceil(player.total_contribution);
+    }
+
+    console.log('Valor da estatística:', statValue);  // Verificar o valor de estatística calculado
+
+    tableHTML += `
+        <tr>
+            <td>${player.player_name} ${isInjured ? '<span class="injured">✗</span>' : ''}</td>
+            <td>${(player.avg_minutes_played / 60).toFixed(2)} horas</td>
+            <td><strong>${statValue}</strong></td>
+        </tr>
+    `;
+});
+
+tableHTML += '</tbody></table>';
+return tableHTML;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function fetchTempoData() {
+    const injuredPlayersData = await fetchInjuredPlayers();
+    try {
+        const responseTempo = await fetch('jogadoresnbatempo');
+        const dataTempo = await responseTempo.json();
+
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        const tempoDiv = document.getElementById('tempoData');
+        tempoDiv.innerHTML = ''; // Limpar o conteúdo antes de preencher novamente
+        dataTempo.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Exibir os dados com a média de pontos
+            tempoDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'minutes')}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'minutes')}
+                </div>
             `;
-    
-            players.forEach(player => {
-                const normalizedPlayerName = normalizePlayerName(player.player_name);
-                const isInjured = injuredPlayers.includes(normalizedPlayerName);
-                const roundedPoints = Math.ceil(player.avg_points); // arredondando os pontos para cima
-    
-                tableHTML += `
-                    <tr>
-                        <td>${player.player_name} ${isInjured ? '<span class="injured">✗</span>' : ''}</td>
-                        <td>${player.avg_minutes_played} minutos</td>
-                        <td><strong>${roundedPoints}</strong></td>
-                    </tr>
-                `;
-            });
-    
-            tableHTML += '</tbody></table>';
-            return tableHTML;
-        }
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de tempo de quadra ou de média de pontos:', error);
+    }
+}
 
-        // Função para buscar dados dos jogadores em tempo de quadra
-        async function fetchTempoData() {
-            const injuredPlayersData = await fetchInjuredPlayers();
-            try {
-                const response = await fetch('jogadoresnbatempo');
-                const data = await response.json();
-    
-                const tempoDiv = document.getElementById('tempoData');
-                tempoDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
-                data.forEach(game => {
-                    const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
-                    const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
-    
-                    tempoDiv.innerHTML += `
-                        <div class="card">
-                            <h3 class="team-name">${game.homeTeam}</h3>
-                            ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers)}
-                        </div>
-                        <div class="card">
-                            <h3 class="team-name">${game.awayTeam}</h3>
-                            ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers)}
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error('Erro ao buscar dados:', error);
-            }
-        }
+async function fetchPointsData() {
+    const injuredPlayersData = await fetchInjuredPlayers();
+    try {
+        const responsePoints = await fetch('jogadorespontos');
+        const dataPoints = await responsePoints.json();
 
-        // Função para buscar dados dos jogadores e suas médias de pontos
-        async function fetchPointsData() {
-            const injuredPlayersData = await fetchInjuredPlayers();
-            try {
-                const response = await fetch('jogadorespontos');
-                const data = await response.json();
-    
-                const pontosDiv = document.getElementById('pontosData');
-                pontosDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
-                data.forEach(game => {
-                    const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
-                    const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
-    
-                    pontosDiv.innerHTML += `
-                        <div class="card">
-                            <h3 class="team-name">${game.homeTeam}</h3>
-                            ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers)}
-                        </div>
-                        <div class="card">
-                            <h3 class="team-name">${game.awayTeam}</h3>
-                            ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers)}
-                        </div>
-                    `;
-                });
-            } catch (error) {
-                console.error('Erro ao buscar dados:', error);
-            }
-        }
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
 
-        // Inicializar carregando a aba 'tempo'
+        const pontosDiv = document.getElementById('pontosData');
+        pontosDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
+        dataPoints.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Exibir os dados com a média de pontos
+            pontosDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'points')}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'points')}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de pontos ou de média de pontos:', error);
+    }
+}
+
+async function fetchAssistenciasData() {
+    const injuredPlayersData = await fetchInjuredPlayers();
+    try {
+        const responseAssistencias = await fetch('jogadoresassistencias');
+        const dataAssistencias = await responseAssistencias.json();
+
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        const assistenciasDiv = document.getElementById('assistenciasData');
+        assistenciasDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
+        dataAssistencias.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Exibir os dados com a média de pontos
+            assistenciasDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'assists')}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'assists')}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de assistências ou de média de pontos:', error);
+    }
+}
+
+async function fetchRebotesData() {
+    const injuredPlayersData = await fetchInjuredPlayers();
+    try {
+        const responseRebotes = await fetch('jogadoresrebotes');
+        const dataRebotes = await responseRebotes.json();
+
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        const rebotesDiv = document.getElementById('rebotesData');
+        rebotesDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
+        dataRebotes.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Exibir os dados com a média de pontos
+            rebotesDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'rebounds')}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'rebounds')}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de rebotes ou de média de pontos:', error);
+    }
+}
+
+async function fetchRoubosData() {
+    const injuredPlayersData = await fetchInjuredPlayers();
+    try {
+        const responseRoubos = await fetch('jogadoresroubos');
+        const dataRoubos = await responseRoubos.json();
+
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        const roubosDiv = document.getElementById('roubosData');
+        roubosDiv.innerHTML = ''; // Limpa o conteúdo antes de preencher novamente
+        dataRoubos.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Exibir os dados com a média de pontos
+            roubosDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'steals')}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'steals')}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de roubos ou de média de pontos:', error);
+    }
+}
+
+        async function fetchBloqueiosData() {
+    const injuredPlayersData = await fetchInjuredPlayers();  // Buscar jogadores lesionados
+
+    try {
+        // Primeiro, buscar os dados de bloqueios
+        const responseBloqueios = await fetch('jogadoresbloqueios');
+        const dataBloqueios = await responseBloqueios.json();
+
+        // Em seguida, buscar os dados de média de pontos
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        // Encontrar a div onde os dados de bloqueios serão exibidos
+        const bloqueiosDiv = document.getElementById('bloqueiosData');
+        bloqueiosDiv.innerHTML = ''; // Limpar o conteúdo antes de preencher novamente
+
+        // Iterar sobre os jogos de bloqueios
+        dataBloqueios.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo (associar com os times)
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            
+            // Verifique se encontrou os dados de pontos do jogo
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Adicionar conteúdo do time da casa e time visitante com as médias de pontos
+            bloqueiosDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>  <!-- Exibindo média de pontos do time da casa -->
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'blocks')}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>  <!-- Exibindo média de pontos do time visitante -->
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'blocks')}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de bloqueios ou de média de pontos:', error);
+    }
+}
+
+async function fetchImpactoData() {
+    const injuredPlayersData = await fetchInjuredPlayers();  // Buscar jogadores lesionados
+
+    try {
+        // Primeiro, buscar os dados de Impacto
+        const responseImpacto = await fetch('jogadoresprarb');
+        const dataImpacto = await responseImpacto.json();
+
+        // Criar uma nova estrutura com `homeTeam` e `awayTeam` extraídos
+        const jogosComTimes = dataImpacto.map(jogo => ({
+            homeTeam: jogo.time_home,  // Extraindo o nome do time da casa
+            awayTeam: jogo.time_away, // Extraindo o nome do time visitante
+            ...jogo,  // Mantendo os demais dados
+        }));
+
+        // Em seguida, buscar os dados de média de pontos
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        // Encontrar a div onde os dados de Impacto serão exibidos
+        const ImpactoDiv = document.getElementById('ImpactogeralData');
+        ImpactoDiv.innerHTML = ''; // Limpar o conteúdo antes de preencher novamente
+
+        // Iterar sobre os jogos de Impacto
+        jogosComTimes.forEach(game => {
+            const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo (associar com os times)
+            const gamePontos = dataPontos.find(g => g.time_home === game.homeTeam && g.time_away === game.awayTeam);
+            
+            // Verifique se encontrou os dados de pontos do jogo
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Adicionar conteúdo do time da casa e time visitante com as médias de pontos
+            ImpactoDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="team-name">${game.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>  <!-- Exibindo média de pontos do time da casa -->
+                    ${renderPlayersTable(game.topHomePlayers, injuredHomePlayers, 'ImpactoG', homeAvg, awayAvg, game.homeTeam, game.awayTeam)}
+                </div>
+                <div class="card">
+                    <h3 class="team-name">${game.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>  <!-- Exibindo média de pontos do time visitante -->
+                    ${renderPlayersTable(game.topAwayPlayers, injuredAwayPlayers, 'ImpactoG', homeAvg, awayAvg, game.homeTeam, game.awayTeam)}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de Impacto ou de média de pontos:', error);
+    }
+}
+
+
+
+
+
+async function fetchMediaPontosGeralData() {
+    try {
+        // Fazer a requisição GET ao backend
+        const response = await fetch('/mediapontosgeral');
+        const data = await response.json(); // Receber os dados em formato JSON
+        
+        // Encontrar o elemento onde os dados serão exibidos
+        const mediaPontosDiv = document.getElementById('mediaPontosGeralData');
+        mediaPontosDiv.innerHTML = ''; // Limpar qualquer conteúdo anterior
+        
+        // Iterar sobre os dados e criar a estrutura de exibição
+        data.forEach(game => {
+            mediaPontosDiv.innerHTML += `
+                <div class="card">
+                    <h3 class="game-title">${game.time_home} vs ${game.time_away}</h3>
+                    <p><strong>Time da Casa:</strong> ${game.home_avg} pontos</p>
+                    <p><strong>Time Visitante:</strong> ${game.away_avg} pontos</p>
+                    <p><strong>Total de Pontos:</strong> ${game.total_pontos}</p>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de média de pontos:', error);
+    }
+}
+
+
+async function fetchJogadoresData() {
+    try {
+        // Busca os dados de jogadores P+R+A
+        const response = await fetch('/jogadorespra');
+        const data = await response.json();
+
+        // Busca os dados de jogadores lesionados
+        const injuredPlayersData = await fetchInjuredPlayers();
+
+        // Busca os dados de média de pontos
+        const responsePontos = await fetch('/mediapontosgeral');
+        const dataPontos = await responsePontos.json();  // Dados de média de pontos
+
+        const jogadoresDiv = document.getElementById('jogadorespraData');
+        jogadoresDiv.innerHTML = ''; // Limpa o conteúdo anterior
+
+        data.forEach(team => {
+            const players = [...team.topHomePlayers, ...team.topAwayPlayers];
+
+            // Pega os jogadores lesionados para os times
+            const injuredHomePlayers = getInjuredPlayers(team.homeTeam, injuredPlayersData);
+            const injuredAwayPlayers = getInjuredPlayers(team.awayTeam, injuredPlayersData);
+
+            // Encontrar os dados de média de pontos para cada jogo
+            const gamePontos = dataPontos.find(g => g.time_home === team.homeTeam && g.time_away === team.awayTeam);
+            const homeAvg = gamePontos ? gamePontos.home_avg : 'Não disponível';
+            const awayAvg = gamePontos ? gamePontos.away_avg : 'Não disponível';
+
+            // Exibindo dados para os jogadores na aba "Jogadores P+R+A" com a média de pontos
+            jogadoresDiv.innerHTML += `
+                <div class="card">
+                    <h3>${team.homeTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${homeAvg}</p>
+                    ${renderPlayersTable(team.topHomePlayers, injuredHomePlayers, 'pra')}
+                </div>
+                <div class="card">
+                    <h3>${team.awayTeam}</h3>
+                    <p><strong>Média de Pontos:</strong> ${awayAvg}</p>
+                    ${renderPlayersTable(team.topAwayPlayers, injuredAwayPlayers, 'pra')}
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dados de jogadores P+R+A ou de média de pontos:', error);
+    }
+}
+
+
+
+
+
+
+
+        
+        // Inicializa carregando a aba "tempo"
         showTab('tempo');
     </script>
 </body>

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="icon" href="/path/to/favicon.ico">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análise Esportiva</title>
@@ -123,10 +124,13 @@
             <input type="password" id="login-password" required>
             <button type="submit">Entrar</button>
         </form> 
+
         <div id="user-info">
             <span id="loggedInUser">Usuário não logado</span>
             <button id="logoutButton" style="display: none;">Sair</button>
         </div> 
+        <div id="loader" style="display:none;"></div>
+
     </header>
     <nav>
         <a href="#">Home</a>
@@ -160,6 +164,7 @@
 
         </div>
         
+    <script src="client.js"></script>
         <div class="card" id="bet-slip">
             <h2>Talão de Aposta</h2>
             <table>
@@ -266,9 +271,18 @@
         </tbody>
     </table>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 
-    <script src="client.js"></script>
     <script>
+function showLoader(message) {
+    const loader = document.getElementById('loader');
+    if (loader) {  // Verifica se o elemento existe
+        loader.style.display = 'block';
+        loader.textContent = message || 'Carregando...';
+    } else {
+        console.error('Elemento de loader não encontrado!');
+    }
+}
 
     // Busca os dados do endpoint
     fetch('http://localhost:3099/nba-classificacao')
@@ -309,7 +323,16 @@
     }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const selectedBets = []; // Armazena as apostas selecionadas para múltiplas
+     const userId = localStorage.getItem('userId');
+
+    if (userId) {
+        console.log("User ID:", userId);
+    // Use o userId para fazer as requisições ou atualizar a interface
+    } else {
+       console.log("Erro: User ID não encontrado.");
+    }
+
+    const selectedBets = []; // Armazena as apostas selecionadas para múltiplas
 
     const bankrollInput = document.getElementById('bankroll');
     const daysInput = document.getElementById('days');
@@ -345,6 +368,7 @@
             dailyTarget = 0;
             dailyTargetDisplay.textContent = 'Meta Diária: R$ 0,00';
         }
+        
     }
 
     // Atualiza os dias quando mudar a seleção de dias
@@ -409,9 +433,21 @@ function clearSelections() {
 }
 
 
-// Exemplo para os botões "Adicionar Aposta Única" e "Confirmar Apostas Combinadas"
-document.getElementById('addSingleBetButton').addEventListener('click', clearSelections);
-document.getElementById('combineBetsButton').addEventListener('click', clearSelections);
+
+    // Recupera apostas do localStorage ao carregar a página
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedBetSlip = localStorage.getItem('betSlip');
+        if (savedBetSlip) {
+            const bets = JSON.parse(savedBetSlip);
+            bets.forEach(bet => addBetToSlip(bet));
+        }
+    });
+
+    // Função para limpar seleções
+    function clearSelections() {
+        selectedBets.length = 0;
+        alert('Seleções limpas.');
+    }
 
     // Adiciona uma aposta ao conjunto de apostas selecionadas para combinar
     window.addToBetSlip = (date, homeTeam, awayTeam, choice, odds) => {
@@ -428,37 +464,36 @@ document.getElementById('combineBetsButton').addEventListener('click', clearSele
         selectedBets.push({ date, homeTeam, awayTeam, choiceText, odds });
     };
 
-// Adicionar aposta única diretamente ao talão
-window.addSingleBet = () => {
-    if (selectedBets.length === 0) {
-        alert('Nenhuma aposta selecionada.');
-        return;
-    }
+    // Adicionar aposta única diretamente ao talão
+    window.addSingleBet = () => {
+        if (selectedBets.length === 0) {
+            alert('Nenhuma aposta selecionada.');
+            return;
+        }
 
-    selectedBets.forEach(bet => {
-        const betValue = dailyTarget / (bet.odds - 1);
-        const profit = betValue * (bet.odds - 1);
+        selectedBets.forEach(bet => {
+            const betValue = dailyTarget / (bet.odds - 1);
+            const profit = betValue * (bet.odds - 1);
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${bet.date}</td>
-            <td>${bet.homeTeam} x ${bet.awayTeam}</td>
-            <td>${bet.choiceText}</td>
-            <td>${bet.odds.toFixed(2)}</td>
-            <td>R$ ${betValue.toFixed(2)}</td>
-            <td>R$ ${profit.toFixed(2)}</td>
-            <td class="action-buttons">
-                <button onclick="markAsWinner(this, ${betValue.toFixed(2)}, ${profit.toFixed(2)}, ${bet.odds})">Vencedor</button>
-                <button onclick="markAsLoser(this, ${betValue.toFixed(2)})">Perdeu</button>
-                <button onclick="removeBetSlipRow(this)">Excluir</button>
-            </td>
-        `;
-        betSlipTable.appendChild(row);
-    });
+            const newBet = {
+                date: bet.date,
+                homeTeam: bet.homeTeam,
+                awayTeam: bet.awayTeam,
+                choiceText: bet.choiceText,
+                odds: bet.odds,
+                betValue,
+                profit,
+            };
 
-    // Limpa as apostas selecionadas
-    selectedBets.length = 0;
-};
+            addBetToSlip(newBet);
+        });
+
+        // Salva o talão no localStorage
+        saveBetSlip();
+
+        // Limpa as apostas selecionadas
+        selectedBets.length = 0;
+    };
 
     // Combina as apostas selecionadas e adiciona ao talão
     window.combineBets = () => {
@@ -471,79 +506,156 @@ window.addSingleBet = () => {
         const betValue = dailyTarget / (combinedOdds - 1);
         const profit = betValue * (combinedOdds - 1);
 
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${selectedBets.map(bet => bet.date).join('<br>')}</td>
-            <td>${selectedBets.map(bet => `${bet.homeTeam} x ${bet.awayTeam}`).join('<br>')}</td>
-            <td>${selectedBets.map(bet => bet.choiceText).join('<br>')}</td>
-            <td>${combinedOdds.toFixed(2)}</td>
-            <td>R$ ${betValue.toFixed(2)}</td>
-            <td>R$ ${profit.toFixed(2)}</td>
-            <td class="action-buttons">
-                <button onclick="markAsWinner(this, ${betValue.toFixed(2)}, ${profit.toFixed(2)}, ${combinedOdds})">Vencedor</button>
-                <button onclick="markAsLoser(this, ${betValue.toFixed(2)})">Perdeu</button>
-                <button onclick="removeBetSlipRow(this)">Excluir</button>
-            </td>
-        `;
-        betSlipTable.appendChild(row);
+        const newBet = {
+            date: selectedBets.map(bet => bet.date).join('<br>'),
+            homeTeam: selectedBets.map(bet => `${bet.homeTeam} x ${bet.awayTeam}`).join('<br>'),
+            choiceText: selectedBets.map(bet => bet.choiceText).join('<br>'),
+            odds: combinedOdds,
+            betValue,
+            profit,
+        };
+
+        addBetToSlip(newBet);
+
+        // Salva o talão no localStorage
+        saveBetSlip();
 
         // Limpa as apostas selecionadas
         selectedBets.length = 0;
     };
 
-// Função para remover uma linha do talão
-window.removeBetSlipRow = (button) => {
-    button.closest('tr').remove(); // Remove a linha correspondente
-};
+    // Função para adicionar uma aposta ao talão
+    function addBetToSlip(bet) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${bet.date}</td>
+            <td>${bet.homeTeam}</td>
+            <td>${bet.choiceText}</td>
+            <td>${bet.odds.toFixed(2)}</td>
+            <td>R$ ${bet.betValue.toFixed(2)}</td>
+            <td>R$ ${bet.profit.toFixed(2)}</td>
+            <td class="action-buttons">
+                <button onclick="markAsWinner(this, ${bet.betValue.toFixed(2)}, ${bet.profit.toFixed(2)}, ${bet.odds})">Vencedor</button>
+                <button onclick="markAsLoser(this, ${bet.betValue.toFixed(2)})">Perdeu</button>
+                <button onclick="removeBetSlipRow(this)">Excluir</button>
+            </td>
+        `;
+        document.getElementById('betSlipTable').appendChild(row);
+    }
+
+    // Função para salvar o talão no localStorage
+    function saveBetSlip() {
+        const rows = Array.from(document.getElementById('betSlipTable').rows);
+        const betSlip = rows.map(row => ({
+            date: row.cells[0].innerText,
+            homeTeam: row.cells[1].innerText,
+            choiceText: row.cells[2].innerText,
+            odds: parseFloat(row.cells[3].innerText),
+            betValue: parseFloat(row.cells[4].innerText.replace('R$ ', '')),
+            profit: parseFloat(row.cells[5].innerText.replace('R$ ', '')),
+        }));
+        localStorage.setItem('betSlip', JSON.stringify(betSlip));
+    }
+
+    // Função para remover uma linha do talão
+    window.removeBetSlipRow = (button) => {
+        button.closest('tr').remove();
+        saveBetSlip(); // Atualiza o localStorage
+    };
 
 
 
 // Mover aposta para o histórico
-function moveToHistory(row, result) {
-    const historyRow = row.cloneNode(true);
+// Mover aposta para o histórico
+function moveToHistory(row, result, profit) {
+    const historyRow = row.cloneNode(true); // Clona a linha da aposta
 
-    // A célula 5 (índice 5, que corresponde à 6ª coluna na tabela) será a de "Resultado"
-    const resultCell = historyRow.cells[6]; // A célula 6 é a de "Resultado" no índice base 0
+    // Verifique se a linha foi clonada corretamente
+    if (!historyRow) {
+        console.error('Erro ao clonar a linha da aposta.');
+        return;
+    }
+
+    // A célula 6 (índice 5) será a de "Resultado"
+    const resultCell = historyRow.cells[6]; 
+    const profitCell = historyRow.cells[5]; // Célula de lucro (se for o índice correto)
+
+    if (!resultCell || !profitCell) {
+        console.error('Erro: Células de resultado ou lucro não encontradas.');
+        return;
+    }
+
+    console.log('Resultado a ser exibido:', result);  // Log para verificar o valor do resultado
 
     // Verifica o resultado e insere o emoji correspondente
     if (result === 'Vencedor') {
         resultCell.textContent = '✅'; // Emoji de "Vencedor"
+        profitCell.textContent = `R$ ${(profit || 0).toFixed(2)}`; // Atualiza o lucro, tratando undefined
     } else if (result === 'Perdeu') {
         resultCell.textContent = '❌'; // Emoji de "Perdeu"
+        profitCell.textContent = 'R$ 0,00'; // Se perdeu, o lucro é zero
     }
 
     // Adiciona a linha clonada ao histórico
     const historyTable = document.getElementById('historyTable');
-    historyTable.appendChild(historyRow);
+    if (!historyTable) {
+        console.error('Erro: Tabela de histórico não encontrada.');
+        return;
+    }
+
+    historyTable.appendChild(historyRow);  // Adiciona a linha clonada ao histórico
+
+    console.log('Linha adicionada ao histórico:', historyRow);  // Log para verificar o que foi adicionado ao histórico
 }
 
 
-// Ajuste no método de marcar como vencedor
+
+
 window.markAsWinner = (button, betValue, profit, odds) => {
     const row = button.closest('tr');
-    const date = row.cells[0].textContent; // Data do jogo
-    const teams = row.cells[1].textContent.split(' x '); // Separar times
-    const homeTeam = teams[0].trim(); // Time da casa
-    const awayTeam = teams[1].trim(); // Time visitante
-    const choice = 'Vencedor: Casa'; // Escolha (você pode ajustar conforme necessário)
-    const user_id = localStorage.getItem('userId'); // Pega o ID do usuário do localStorage
-    const outcome = 'Vencedor';
+    if (!row) {
+        console.error('Erro: Linha da tabela não encontrada.');
+        return;
+    }
 
+    // Recupera o user_id do localStorage
+    const user_id = localStorage.getItem('userId');
     if (!user_id) {
         alert('Erro: ID do usuário não encontrado.');
         return;
     }
 
-    // Enviar para o backend
+    // Extrair as datas
+    const dateCell = row.cells[0]?.innerHTML; // Pega o HTML bruto das datas
+    const game_dates = dateCell.split('<br>').map(d => d.trim()); // Divide as datas e limpa espaços
+
+    // Extrair os jogos
+    const gamesHtml = row.cells[1]?.innerHTML; // Pega o HTML bruto dos jogos
+    const games = gamesHtml.split('<br>').map(g => g.trim()); // Divide os jogos e limpa espaços
+
+    if (!games || games.length === 0 || !game_dates || game_dates.length === 0) {
+        alert('Erro: Dados insuficientes para processar.');
+        return;
+    }
+
+    const choice = 'Vencedor: Casa'; // Escolha
+    const outcome = 'Vencedor';
+
+    // Certifique-se de que 'profit' seja válido antes de prosseguir
+    if (typeof profit !== 'number' || isNaN(profit)) {
+        console.error('Erro: O valor de profit não é válido.');
+        return;
+    }
+
+    // Enviar ao backend
     fetch('/save-bet-history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             user_id,
-            game_date: date,
-            home_team: homeTeam,
-            away_team: awayTeam,
-            bet_choice: choice,
+            game_date: game_dates.join('<br>'), // Corrigido para múltiplas datas
+            games: games.join('<br>'), // Corrigido para múltiplos jogos
+            choices: choice,
             odds,
             bet_value: betValue,
             Lucro: profit,
@@ -553,63 +665,128 @@ window.markAsWinner = (button, betValue, profit, odds) => {
     .then(response => response.json())
     .then(data => {
         console.log('Aposta salva:', data);
+
+        // Atualiza o saldo e a meta
         const bankroll = parseFloat(bankrollInput.value) || 0;
-        bankrollInput.value = (bankroll + profit).toFixed(2); // Atualiza a banca com o lucro
+        bankrollInput.value = (bankroll + profit).toFixed(2);
         targetProfitInput.value = (parseFloat(targetProfitInput.value) - profit).toFixed(2);
+
         updateDailyTarget();
         row.remove(); // Remove a aposta do talão
-        moveToHistory(row, 'Vencedor');
+        moveToHistory(row, 'Vencedor', profit); // Passa 'profit' para a função moveToHistory
     })
     .catch(error => console.error('Erro ao salvar aposta:', error));
+
+    console.log('Enviando dados:', {
+        user_id,
+        game_date: game_dates.join('<br>'),
+        games: games.join('<br>'),
+        choices: choice,
+        odds,
+        bet_value: betValue,
+        Lucro: profit,
+        outcome,
+    });
 };
 
-// Ajuste no método de marcar como perdedor
-window.markAsLoser = (button, betValue) => {
 
+
+
+window.markAsLoser = (button, betValue, odds) => {
     const row = button.closest('tr');
-    console.log(row);
-    const date = row.cells[0].textContent; // Data do jogo
-    const teams = row.cells[1].textContent.split(' x '); // Separar times
-    const homeTeam = teams[0].trim(); // Time da casa
-    const awayTeam = teams[1].trim(); // Time visitante
-    const choice = 'Vencedor: Visitante'; // Escolha (ajustado conforme necessário)
-    const user_id = localStorage.getItem('userId'); // Pega o ID do usuário do localStorage
-    const outcome = 'Perdeu';
-    const profit = 0; // Definindo profit como 0 para perda
+    if (!row) {
+        console.error('Erro: Linha da tabela não encontrada.');
+        return;
+    }
 
+    // Recupera o user_id do localStorage
+    const user_id = localStorage.getItem('userId');
     if (!user_id) {
         alert('Erro: ID do usuário não encontrado.');
         return;
     }
 
-    // Enviar para o backend
+    // Extrair as datas
+    const dateCell = row.cells[0]?.innerHTML; // Pega o HTML bruto das datas
+    const game_dates = dateCell.split('<br>').map(d => d.trim()); // Divide as datas e limpa espaços
+
+    // Extrair os jogos
+    const gamesHtml = row.cells[1]?.innerHTML; // Pega o HTML bruto dos jogos
+    const games = gamesHtml.split('<br>').map(g => g.trim()); // Divide os jogos e limpa espaços
+
+    if (!games || games.length === 0 || !game_dates || game_dates.length === 0) {
+        alert('Erro: Dados insuficientes para processar.');
+        return;
+    }
+
+    // Adicionar log para conferir o conteúdo das células
+    console.log('Conteúdo da célula de odds:', row.cells[3]?.innerText); // Verifique o conteúdo da célula de odds
+    const oddsCell = row.cells[3]?.innerText?.trim(); // Ajuste para acessar a célula da odds
+
+    // Certifique-se de que "odds" seja um número válido
+    let oddsParsed = parseFloat(oddsCell);
+
+    if (isNaN(oddsParsed)) {
+        console.error('Erro: "odds" não é um número válido. Atribuindo 0 como valor padrão.');
+        oddsParsed = 0; // Se não for um número válido, atribuímos 0
+    }
+
+    const choice = 'Vencedor: Visitante'; // Escolha
+    const outcome = 'Perdeu';
+    const profit = 0; // Em caso de derrota, o lucro será 0
+
+    // Enviar ao backend
     fetch('/save-bet-history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
             user_id,
-            game_date: date,
-            home_team: homeTeam,
-            away_team: awayTeam,
-            bet_choice: choice,
-            odds: 0, // Odds são irrelevantes em caso de perda
-            bet_value: betValue,
-            Lucro: profit,
+            game_date: game_dates.join('<br>'), // Corrigido para múltiplas datas
+            games: games.join('<br>'), // Corrigido para múltiplos jogos
+            choices: choice,
+            odds: oddsParsed, // Passa o valor de odds
+            bet_value: betValue, // O valor da aposta será o mesmo
+            Lucro: profit, // Lucro é 0 quando perde
             outcome,
         })
     })
     .then(response => response.json())
     .then(data => {
         console.log('Aposta salva:', data);
+
+        // Atualiza o saldo e a meta
         const bankroll = parseFloat(bankrollInput.value) || 0;
         bankrollInput.value = (bankroll - betValue).toFixed(2); // Diminui a aposta da banca
         targetProfitInput.value = (parseFloat(targetProfitInput.value) + betValue).toFixed(2);
+
         updateDailyTarget();
         row.remove(); // Remove a aposta do talão
         moveToHistory(row, 'Perdeu'); // Passando 'Perdeu' para a função
     })
     .catch(error => console.error('Erro ao salvar aposta:', error));
+
+    console.log('Enviando dados:', {
+        user_id,
+        game_date: game_dates.join('<br>'),
+        games: games.join('<br>'),
+        choices: choice,
+        odds: oddsParsed, // Passa o valor de odds
+        bet_value: betValue, // O valor da aposta
+        Lucro: profit, // Lucro é 0
+        outcome,
+    });
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
     // Atualiza valores ao mudar inputs
