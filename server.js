@@ -507,6 +507,334 @@ app.get('/mediapontosgeral', async (req, res) => {
     }
 });
 
+app.get('/ultimosjogos1', async (req, res) => {
+    try {
+        // Consultar times na tabela "odds"
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
+
+            // Verificar tabelas existentes
+            const tablesResult = await pool.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = $1 OR table_name = $2
+            `, [homeTable, awayTable]);
+
+            const tableNames = tablesResult.rows.map(row => row.table_name);
+
+            const homeGames = [];
+            const awayGames = [];
+
+            // Buscar os últimos 3 jogos do time da casa
+            if (tableNames.includes(homeTable)) {
+                const homeGamesResult = await pool.query(`
+                    SELECT 
+                        home_team, away_team, home_score, away_score 
+                    FROM ${homeTable} 
+                    WHERE home_team = $1
+                    ORDER BY id DESC
+                    LIMIT 5
+                `, [time_home]);
+
+                homeGamesResult.rows.forEach(game => {
+                    const homeScore = parseInt(game.home_score, 10);  // Converter para número
+                    const awayScore = parseInt(game.away_score, 10);  // Converter para número
+                    const totalPoints = homeScore + awayScore;  // Sumar os pontos corretamente
+                    const result = homeScore > awayScore ? 'Venceu' : 'Perdeu';
+                    homeGames.push({
+                        adversario: game.away_team,
+                        resultado: `${game.home_team} X ${game.away_team} Total Pontos = ${homeScore} x ${awayScore}`,
+                        status: `${game.home_team} ${result}`
+                    });
+                });
+            }
+
+            // Buscar os últimos 3 jogos do time visitante
+            if (tableNames.includes(awayTable)) {
+                const awayGamesResult = await pool.query(`
+                    SELECT 
+                        home_team, away_team, home_score, away_score 
+                    FROM ${awayTable} 
+                    WHERE away_team = $1
+                    ORDER BY id DESC
+                    LIMIT 5
+                `, [time_away]);
+
+                awayGamesResult.rows.forEach(game => {
+                    const homeScore = parseInt(game.home_score, 10);  // Converter para número
+                    const awayScore = parseInt(game.away_score, 10);  // Converter para número
+                    const totalPoints = homeScore + awayScore;  // Sumar os pontos corretamente
+                    const result = awayScore > homeScore ? 'Venceu' : 'Perdeu';
+                    awayGames.push({
+                        adversario: game.home_team,
+                        resultado: `${game.home_team} X ${game.away_team} Total Pontos = ${homeScore} x ${awayScore}`,
+                        status: `${game.away_team} ${result}`
+                    });
+                });
+            }
+
+            results.push({
+                time_home,
+                home_last_games: homeGames,
+                time_away,
+                away_last_games: awayGames,
+            });
+        }
+
+        // Enviar resultados em JSON
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
+
+app.get('/ultimosjogos', async (req, res) => {
+    try {
+        const { time } = req.query; // O time vem pela query params, por exemplo: /ultimosjogos?time=Oklahoma City Thunder
+        if (!time) {
+            return res.status(400).send('Time não informado');
+        }
+
+        const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
+        console.log(`Time recebido: ${time}`);
+        console.log(`Nome da tabela formatada: ${timeFormatado}`);
+        
+        // Verificar se a tabela do time existe
+        const tablesResult = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = $1
+        `, [timeFormatado]);
+
+        console.log(`Resultado da verificação da tabela:`, tablesResult.rows);
+
+        if (!tablesResult.rows.length) {
+            console.log('Tabela não encontrada para o time informado.');
+            return res.status(404).send('Tabela do time não encontrada');
+        }
+
+        // Buscar os 3 últimos jogos como time da casa
+        const queryCasa = `
+            SELECT home_team, away_team, home_score, away_score, id 
+            FROM ${timeFormatado} 
+            WHERE home_team = $1
+            ORDER BY id DESC
+            LIMIT 3
+        `;
+        console.log(`Query SQL para jogos em casa: ${queryCasa}`);
+
+        const jogosCasaResult = await pool.query(queryCasa, [time]);
+        console.log(`Jogos em casa retornados pela query:`, jogosCasaResult.rows);
+
+        // Buscar os 3 últimos jogos como time visitante
+        const queryVisitante = `
+            SELECT home_team, away_team, home_score, away_score, id 
+            FROM ${timeFormatado} 
+            WHERE away_team = $1
+            ORDER BY id DESC
+            LIMIT 3
+        `;
+        console.log(`Query SQL para jogos como visitante: ${queryVisitante}`);
+
+        const jogosVisitanteResult = await pool.query(queryVisitante, [time]);
+        console.log(`Jogos como visitante retornados pela query:`, jogosVisitanteResult.rows);
+
+        let vitoriasCasa = 0;  // Contador de vitórias como time da casa
+        let vitoriasVisitante = 0;  // Contador de vitórias como time visitante
+
+        // Processando os jogos da casa
+        const jogosCasa = jogosCasaResult.rows.map(row => {
+            const { home_team, away_team, home_score, away_score } = row;
+            let statusResultado;
+            const pontosTime = parseInt(home_score, 10);
+            const pontosAdversario = parseInt(away_score, 10);
+
+            if (pontosTime > pontosAdversario) {
+                statusResultado = `${time} ✅`;  // Venceu
+                vitoriasCasa++;  // Vitória como time da casa
+            } else if (pontosTime < pontosAdversario) {
+                statusResultado = `${time} ❌`;  // Perdeu
+            } else {
+                statusResultado = `Empate`;  // Caso de empate
+            }
+
+            return {
+                adversario: away_team,
+                pontos_time: home_score,
+                pontos_adversario: away_score,
+                resultado: statusResultado,
+            };
+        });
+
+        // Processando os jogos como visitante
+        const jogosVisitante = jogosVisitanteResult.rows.map(row => {
+            const { home_team, away_team, home_score, away_score } = row;
+            let statusResultado;
+            const pontosTime = parseInt(away_score, 10);
+            const pontosAdversario = parseInt(home_score, 10);
+
+            if (pontosTime > pontosAdversario) {
+                statusResultado = `${time} ✅`;  // Venceu
+                vitoriasVisitante++;  // Vitória como time visitante
+            } else if (pontosTime < pontosAdversario) {
+                statusResultado = `${time} ❌`;  // Perdeu
+            } else {
+                statusResultado = `Empate`;  // Caso de empate
+            }
+
+            return {
+                adversario: home_team,
+                pontos_time: away_score,
+                pontos_adversario: home_score,
+                resultado: statusResultado,
+            };
+        });
+
+        console.log('Jogos processados como time da casa:', jogosCasa);
+        console.log('Jogos processados como time visitante:', jogosVisitante);
+        console.log(`Vitórias como time da casa: ${vitoriasCasa}`);
+        console.log(`Vitórias como time visitante: ${vitoriasVisitante}`);
+
+        // Retornar os jogos e as vitórias em formato JSON
+        res.json({
+            jogosCasa,
+            jogosVisitante,
+            vitoriasCasa,
+            vitoriasVisitante
+        });
+
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
+
+
+app.get('/ultimosjogos2', async (req, res) => {
+    try {
+        const { time } = req.query; // O time vem pela query params, por exemplo: /ultimosjogos?time=Oklahoma City Thunder
+        if (!time) {
+            return res.status(400).send('Time não informado');
+        }
+
+        const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
+        console.log(`Time recebido: ${time}`);
+        console.log(`Nome da tabela formatada: ${timeFormatado}`);
+        
+        // Verificar se a tabela do time existe
+        const tablesResult = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = $1
+        `, [timeFormatado]);
+
+        console.log(`Resultado da verificação da tabela:`, tablesResult.rows);
+
+        if (!tablesResult.rows.length) {
+            console.log('Tabela não encontrada para o time informado.');
+            return res.status(404).send('Tabela do time não encontrada');
+        }
+
+        // Buscar os 3 últimos jogos do time, seja como time da casa ou visitante
+        const querySQL = `
+            SELECT home_team, away_team, home_score, away_score, datahora, id 
+            FROM ${timeFormatado} 
+            WHERE home_team = $1 OR away_team = $1
+            ORDER BY id DESC
+            LIMIT 5
+        `;
+        console.log(`Query SQL que será executada: ${querySQL}`);
+
+        const jogosResult = await pool.query(querySQL, [time]);
+        console.log(`Jogos retornados pela query:`, jogosResult.rows);
+
+        const jogos = jogosResult.rows.map(row => {
+            const { home_team, away_team, home_score, away_score, datahora } = row;
+        
+            let timeA, timeB, pontosA, pontosB;
+        
+            if (home_team.toLowerCase() === time.toLowerCase()) {
+                // Time é mandante
+                timeA = home_team; // Time do lado esquerdo
+                timeB = away_team; // Adversário
+                pontosA = home_score; // Pontos do time mandante
+                pontosB = away_score; // Pontos do adversário
+            } else if (away_team.toLowerCase() === time.toLowerCase()) {
+                // Time é visitante
+                timeB = away_team; // Time consultado no lado direito
+                timeA = home_team; // Adversário
+                pontosB = away_score; // Pontos do time visitante
+                pontosA = home_score; // Pontos do adversário
+            } else {
+                throw new Error('O time escolhido não participou deste jogo.');
+            }
+        
+            // Calculando o resultado baseado no time consultado
+            let statusResultado;
+            if (time.toLowerCase() === timeA.toLowerCase()) {
+                // Time consultado é o mandante
+                if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
+                    statusResultado = `${timeA} ✅`; // Venceu
+                } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
+                    statusResultado = `${timeA} ❌`; // Perdeu
+                } else {
+                    statusResultado = 'Empate';
+                }
+            } else if (time.toLowerCase() === timeB.toLowerCase()) {
+                // Time consultado é o visitante
+                if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
+                    statusResultado = `${timeB} ✅`; // Venceu
+                } else if (parseInt(pontosB, 10) < parseInt(pontosA, 10)) {
+                    statusResultado = `${timeB} ❌`; // Perdeu
+                } else {
+                    statusResultado = 'Empate';
+                }
+            }
+        
+            // Processar data e hora
+            const [data, hora] = datahora.split(' '); // Divide o formato "16.01. 01:00"
+            const dataFormatada = data.replace('.', '/').slice(0, -1); // Formatar "16.01." para "16/01"
+        
+            return {
+                timeA,
+                timeB,
+                pontosA,
+                pontosB,
+                resultado: statusResultado,
+                data: dataFormatada,
+                hora,
+            };
+        });
+        
+        
+        
+
+        console.log('Jogos processados finalizados:', jogos);
+
+        // Retornar os jogos com data e hora no formato JSON
+        res.json(jogos);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
+
+
+
+
+
+
+
 
 app.get('/head-to-head-averages', async (req, res) => {
     try {

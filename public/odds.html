@@ -62,6 +62,15 @@
             gap: 15px; /* Menor espaço entre as tabelas */
             margin-bottom: 20px;
         }
+           /* Estilo do "X" em destaque */
+        .highlight-x {
+           font-weight: bold;
+           text-transform: uppercase;
+           font-size: 1.6em; /* Tamanho ligeiramente maior */
+           color: #ff5733; /* Cor personalizada para o "X" */
+        }
+
+
         /* Estilos das Tabelas */
         table {
             width: 100%;
@@ -88,6 +97,75 @@
                 grid-template-columns: 1fr; /* Empilha as tabelas em uma coluna */
             }
         }
+    /* Estilo do contêiner dos cards */
+    .card-container {
+        display: flex;
+        justify-content: space-between; /* Espaçamento igual entre os cards */
+        gap: 15px; /* Espaçamento horizontal entre os cards */
+        margin: 20px auto; /* Centraliza o contêiner na página */
+        max-width: 900px; /* Limita a largura máxima */
+    }
+
+    /* Estilo geral dos cards */
+    .card {
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex: 1; /* Faz com que ambos os cards tenham o mesmo tamanho */
+        max-width: 400px; /* Largura máxima de cada card */
+    }
+
+    .card-header {
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .results {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+</style>
+
     </style>
 </head>
 <body>
@@ -221,6 +299,111 @@
                     </table>
                 </div>
     </div>
+    <div class="side-by-side">
+        <!-- Tabela de Resultados -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Time Casa "Casa V/D"</th>
+                    <th><span class="highlight-x">X</span></th>
+                    <th>Time Visitante "Vistante V/D"</th>
+                </tr>
+            </thead>
+            <tbody id="resultados"></tbody>
+        </table>
+    
+
+        <div class="card-container">
+            <!-- Card Esquerda -->
+            <div class="card" id="card-esquerda">
+                <div class="card-header">Casa</div>
+                <div class="card-body">
+                    <select id="team-select-left">
+                        <option value="">Selecione um time para ver os resultados</option>
+                        <!-- Lista de times -->
+                        <option value="Atlanta Hawks">Atlanta Hawks</option>
+                        <option value="Boston Celtics">Boston Celtics</option>
+                        <option value="Brooklyn Nets">Brooklyn Nets</option>
+                        <option value="Charlotte Hornets">Charlotte Hornets</option>
+                        <option value="Chicago Bulls">Chicago Bulls</option>
+                        <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                        <option value="Dallas Mavericks">Dallas Mavericks</option>
+                        <option value="Denver Nuggets">Denver Nuggets</option>
+                        <option value="Detroit Pistons">Detroit Pistons</option>
+                        <option value="Golden State Warriors">Golden State Warriors</option>
+                        <option value="Houston Rockets">Houston Rockets</option>
+                        <option value="Indiana Pacers">Indiana Pacers</option>
+                        <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                        <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                        <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                        <option value="Miami Heat">Miami Heat</option>
+                        <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                        <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                        <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                        <option value="New York Knicks">New York Knicks</option>
+                        <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                        <option value="Orlando Magic">Orlando Magic</option>
+                        <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                        <option value="Phoenix Suns">Phoenix Suns</option>
+                        <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                        <option value="Sacramento Kings">Sacramento Kings</option>
+                        <option value="San Antonio Spurs">San Antonio Spurs</option>
+                        <option value="Toronto Raptors">Toronto Raptors</option>
+                        <option value="Utah Jazz">Utah Jazz</option>
+                        <option value="Washington Wizards">Washington Wizards</option>
+                    </select>
+                    <button id="fetch-results-left">Ver Resultados</button>
+                    <div class="results" id="results-left"></div>
+                </div>
+            </div>
+    
+            <!-- Card Direita -->
+            <div class="card" id="card-direita">
+                <div class="card-header">Visitante</div>
+                <div class="card-body">
+                    <select id="team-select-right">
+                        <option value="">Selecione um time para ver os resultados</option>
+                        <!-- Mesma lista de times -->
+                        <option value="Atlanta Hawks">Atlanta Hawks</option>
+                        <option value="Boston Celtics">Boston Celtics</option>
+                        <option value="Brooklyn Nets">Brooklyn Nets</option>
+                        <option value="Charlotte Hornets">Charlotte Hornets</option>
+                        <option value="Chicago Bulls">Chicago Bulls</option>
+                        <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                        <option value="Dallas Mavericks">Dallas Mavericks</option>
+                        <option value="Denver Nuggets">Denver Nuggets</option>
+                        <option value="Detroit Pistons">Detroit Pistons</option>
+                        <option value="Golden State Warriors">Golden State Warriors</option>
+                        <option value="Houston Rockets">Houston Rockets</option>
+                        <option value="Indiana Pacers">Indiana Pacers</option>
+                        <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                        <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                        <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                        <option value="Miami Heat">Miami Heat</option>
+                        <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                        <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                        <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                        <option value="New York Knicks">New York Knicks</option>
+                        <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                        <option value="Orlando Magic">Orlando Magic</option>
+                        <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                        <option value="Phoenix Suns">Phoenix Suns</option>
+                        <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                        <option value="Sacramento Kings">Sacramento Kings</option>
+                        <option value="San Antonio Spurs">San Antonio Spurs</option>
+                        <option value="Toronto Raptors">Toronto Raptors</option>
+                        <option value="Utah Jazz">Utah Jazz</option>
+                        <option value="Washington Wizards">Washington Wizards</option>
+                    </select>
+                    <button id="fetch-results-right">Ver Resultados</button>
+                    <div class="results" id="results-right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    
 
     <button id="deleteButton">Excluir Selecionados</button>
 </body>
@@ -230,6 +413,8 @@
     <script>
         document.getElementById('date-form').addEventListener('submit', function(event) {
     event.preventDefault();
+    fetchResults();
+    fetchResults1();
 // Função para buscar dados de jogadores lesionados
 function fetchInjuredPlayers() {
     console.log('Buscando jogadores lesionados...');
@@ -664,8 +849,87 @@ console.log(`Time visitante: ${awayPercentage}%`);
         });
 
 
+        // Função para puxar os dados da API
+        async function fetchResults() {
+            const response = await fetch('http://localhost:3099/ultimosjogos1');  // Endereço da sua API
+            const data = await response.json();
+            displayResults(data);
+        }
+    
+        // Função para exibir os resultados na página
+        function displayResults(data) {
+            const container = document.getElementById('resultados');
+            container.innerHTML = ''; // Limpar resultados anteriores
+    
+            data.forEach((gameData) => {
+                const { time_home, home_last_games, time_away, away_last_games } = gameData;
+    
+                // Mapear resultados para emojis mantendo a ordem
+                const homeResults = home_last_games.map(game => 
+                    game.status.includes('Venceu') ? '✅' : '❌'
+                ).join('');
+    
+                const awayResults = away_last_games.map(game => 
+                    game.status.includes('Venceu') ? '✅' : '❌'
+                ).join('');
+    
+                // Criar a linha da tabela
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${time_home}: ${homeResults}</td>
+                    <td><span class="highlight-x">X</span></td>
+                    <td>${time_away}: ${awayResults}</td>
+                `;
+    
+                // Adicionar a linha na tabela
+                container.appendChild(row);
+            });
+        }
+        async function fetchResults1(team, resultsContainer) {
+    if (!team) {
+        alert('Por favor, selecione um time.');
+        return;
+    }
+    try {
+        const response = await fetch(`/ultimosjogos2?time=${encodeURIComponent(team)}`);
+        if (!response.ok) throw new Error('Erro ao buscar resultados');
+        const jogos = await response.json();
+        resultsContainer.innerHTML = ''; // Limpa resultados anteriores
+        if (jogos.length === 0) {
+            resultsContainer.innerHTML = '<p>Nenhum jogo encontrado.</p>';
+            return;
+        }
+        jogos.forEach(jogo => {
+            const resultItem = document.createElement('div');
+            resultItem.classList.add('result-item');
+            resultItem.innerHTML = `
+                <p><strong>Data:</strong> ${jogo.data}</p>
+                <p><strong>Hora:</strong> ${jogo.hora}</p>
+                <p><strong>Placar:</strong> ${jogo.timeA} ${jogo.pontosA} x ${jogo.pontosB} ${jogo.timeB}</p>
+                <p><strong>Resultado:</strong> ${jogo.resultado}</p>
+                <p><strong>---------------------</strong> </p>
+            `;
+            resultsContainer.appendChild(resultItem);
+        });
+    } catch (error) {
+        console.error(error);
+        alert('Erro ao buscar resultados.');
+    }
+}
 
 
+
+        document.getElementById('fetch-results-left').addEventListener('click', () => {
+            const team = document.getElementById('team-select-left').value;
+            const resultsContainer = document.getElementById('results-left');
+            fetchResults1(team, resultsContainer);
+        });
+
+        document.getElementById('fetch-results-right').addEventListener('click', () => {
+            const team = document.getElementById('team-select-right').value;
+            const resultsContainer = document.getElementById('results-right');
+            fetchResults1(team, resultsContainer);
+        });
 });
 
 

@@ -1,0 +1,163 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Odds NBA</title>
+
+    <button onclick="window.location.href='principal.html';">Home</button>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+            font-size: 1.5em; /* Tamanho menor */
+        }
+        form {
+            text-align: center;
+            margin: 20px;
+        }
+        form label {
+            margin-right: 10px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        input {
+            padding: 6px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Layout das Tabelas */
+        .table-container {
+            margin: 0 10px; /* Menos margem */
+        }
+        .table-main {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        .side-by-side {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px; /* Menor espaço entre as tabelas */
+            margin-bottom: 20px;
+        }
+        /* Estilo do "X" em destaque */
+        .highlight-x {
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 1.6em; /* Tamanho ligeiramente maior */
+            color: #ff5733; /* Cor personalizada para o "X" */
+        }
+
+        /* Estilos das Tabelas */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px; /* Menos padding */
+            text-align: center;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        td {
+            background-color: #f9f9f9;
+        }
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .side-by-side {
+                grid-template-columns: 1fr; /* Empilha as tabelas em uma coluna */
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <h1>NBA - 2025</h1>
+    <div class="side-by-side">
+        <!-- Tabela de Resultados -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Time da Casa</th>
+                    <th><span class="highlight-x">X</span></th>
+                    <th>Time Visitante</th>
+                </tr>
+            </thead>
+            <tbody id="resultados"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Função para puxar os dados da API
+        async function fetchResults() {
+            const response = await fetch('http://localhost:3099/ultimosjogos1');  // Endereço da sua API
+            const data = await response.json();
+            displayResults(data);
+        }
+    
+        // Função para exibir os resultados na página
+        function displayResults(data) {
+            const container = document.getElementById('resultados');
+            container.innerHTML = ''; // Limpar resultados anteriores
+    
+            data.forEach((gameData) => {
+                const { time_home, home_last_games, time_away, away_last_games } = gameData;
+    
+                // Mapear resultados para emojis mantendo a ordem
+                const homeResults = home_last_games.map(game => 
+                    game.status.includes('Venceu') ? '✅' : '❌'
+                ).join('');
+    
+                const awayResults = away_last_games.map(game => 
+                    game.status.includes('Venceu') ? '✅' : '❌'
+                ).join('');
+    
+                // Criar a linha da tabela
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${time_home}: ${homeResults}</td>
+                    <td><span class="highlight-x">X</span></td>
+                    <td>${time_away}: ${awayResults}</td>
+                `;
+    
+                // Adicionar a linha na tabela
+                container.appendChild(row);
+            });
+        }
+    
+        // Chamar a função quando a página carregar
+        window.onload = fetchResults;
+    </script>
+    
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados dos Últimos Jogos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        select, button {
+            display: block;
+            margin: 10px auto;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .result-item {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            transition: transform 0.3s ease-in-out;
+        }
+        .result-item:hover {
+            transform: translateY(-5px);
+        }
+        .result-item.success {
+            border-left: 5px solid green;
+        }
+        .result-item.failure {
+            border-left: 5px solid red;
+        }
+        .result-item p {
+            margin: 10px 0;
+        }
+        .result-item strong {
+            color: #333;
+        }
+        /* Botão de Home */
+        button.home {
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin-top: 20px;
+            width: 100%;
+        }
+        button.home:hover {
+            background-color: #0056b3;
+        }
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .results {
+                grid-template-columns: 1fr; /* Empilha os cards em uma coluna */
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Resultados dos Últimos Jogos</h1>
+    <h2>Selecione um time para ver os resultados</h2>
+
+    <!-- Seleção do time -->
+    <select id="team-select">
+        <option value="">Selecione um time para ver os resultados</option>
+        <option value="Atlanta Hawks">Atlanta Hawks</option>
+        <option value="Boston Celtics">Boston Celtics</option>
+        <option value="Brooklyn Nets">Brooklyn Nets</option>
+        <option value="Charlotte Hornets">Charlotte Hornets</option>
+        <option value="Chicago Bulls">Chicago Bulls</option>
+        <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+        <option value="Dallas Mavericks">Dallas Mavericks</option>
+        <option value="Denver Nuggets">Denver Nuggets</option>
+        <option value="Detroit Pistons">Detroit Pistons</option>
+        <option value="Golden State Warriors">Golden State Warriors</option>
+        <option value="Houston Rockets">Houston Rockets</option>
+        <option value="Indiana Pacers">Indiana Pacers</option>
+        <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+        <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+        <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+        <option value="Miami Heat">Miami Heat</option>
+        <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+        <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+        <option value="New York Knicks">New York Knicks</option>
+        <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+        <option value="Orlando Magic">Orlando Magic</option>
+        <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+        <option value="Phoenix Suns">Phoenix Suns</option>
+        <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+        <option value="Sacramento Kings">Sacramento Kings</option>
+        <option value="San Antonio Spurs">San Antonio Spurs</option>
+        <option value="Toronto Raptors">Toronto Raptors</option>
+        <option value="Utah Jazz">Utah Jazz</option>
+        <option value="Washington Wizards">Washington Wizards</option>
+    </select>
+
+    <!-- Botão para buscar resultados -->
+    <button id="fetch-results">Ver Resultados</button>
+
+    <!-- Botão Home -->
+    <button class="home" onclick="window.location.href='principal.html';">Home</button>
+
+    <!-- Resultados exibidos -->
+    <div class="results" id="results"></div>
+
+    <script>
+        document.getElementById('fetch-results').addEventListener('click', async () => {
+            const team = document.getElementById('team-select').value;
+            if (!team) {
+                alert('Por favor, selecione um time.');
+                return;
+            }
+
+            try {
+                // Fazendo requisição para o servidor
+                const response = await fetch(`/ultimosjogos2?time=${encodeURIComponent(team)}`);
+                if (!response.ok) {
+                    throw new Error('Erro ao buscar resultados');
+                }
+
+                const jogos = await response.json();
+
+                // Exibindo os resultados na página
+                const resultsContainer = document.getElementById('results');
+                resultsContainer.innerHTML = '';  // Limpa o conteúdo anterior
+
+                if (jogos.length === 0) {
+                    resultsContainer.innerHTML = '<p>Nenhum jogo encontrado para este time.</p>';
+                    return;
+                }
+
+                jogos.forEach(jogo => {
+            const resultItem = document.createElement('div');
+            resultItem.classList.add('result-item');
+            resultItem.innerHTML = `
+                <p><strong>Data:</strong> ${jogo.data}</p>
+                <p><strong>Hora:</strong> ${jogo.hora}</p>
+                <p><strong>Placar:</strong> ${jogo.timeA} ${jogo.pontosA} x ${jogo.pontosB} ${jogo.timeB}</p>
+                <p><strong>Resultado:</strong> ${jogo.resultado}</p>
+            `;
+            resultsContainer.appendChild(resultItem);
+});
+
+            } catch (error) {
+                console.error(error);
+                alert('Ocorreu um erro ao buscar os resultados. Tente novamente mais tarde.');
+            }
+        });
+    </script>
+</body>
+</html>
