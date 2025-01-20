@@ -3,11 +3,8 @@ const { Pool } = require('pg');
 
 // Configuração do pool de conexão ao banco de dados
 const pool = new Pool({
-  user: 'admin',
-  host: 'localhost',
-  database: 'nba',
-  password: '123456',
-  port: 5432,
+ connectionString: process.env.DATABASE_URL, // Usando a URL completa
+  ssl: { rejectUnauthorized: false },
 });
 
 (async () => {
