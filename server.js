@@ -13,7 +13,7 @@ const { scrapeResults3 } = require('./lesoes');
 
 
 const app = express();
-const port = 3099;
+const port = 5432;
 
 // Configuração do pool de conexão com o banco de dados
 const pool = new Pool({
