@@ -5,11 +5,8 @@ const sleep = require('sleep-promise');
 
 // Configuração do pool de conexão ao banco de dados
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
+ connectionString: process.env.DATABASE_URL, // Usando a URL completa
+  ssl: { rejectUnauthorized: false },
 });
 
 // Função para criar a tabela de jogadores para o time
