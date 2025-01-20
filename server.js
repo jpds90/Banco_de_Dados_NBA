@@ -13,14 +13,14 @@ const { scrapeResults3 } = require('./lesoes');
 
 
 const app = express();
-const port = 5432;
+// Configuração da porta para Render (usa a variável PORT ou padrão 3000)
+const port = process.env.PORT || 3000;
 
 // Configuração do pool de conexão com o banco de dados
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Usando a URL completa
+  connectionString: process.env.DATABASE_URL, // Usando a URL completa do Render
   ssl: { rejectUnauthorized: false }, // Necessário para conexões seguras
 });
-
 // Função para gerar um novo token
 function generateToken(userId, email) {
     const payload = { userId, email };
