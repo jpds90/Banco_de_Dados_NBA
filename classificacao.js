@@ -9,7 +9,10 @@ const pool = new Pool({
 
 (async () => {
   // Inicia o navegador
-  const browser = await puppeteer.launch({ headless: false });
+      const browser = await puppeteer.launch({
+        headless: true, // Garante que o navegador rode em modo headless
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
+    });
   const page = await browser.newPage();
 
   // Vai para o site especificado
