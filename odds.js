@@ -50,7 +50,10 @@ async function saveToDatabase(data) {
 
 
 async function scrapeResults() {
-    const browser = await puppeteer.launch({ headless: false });
+        const browser = await puppeteer.launch({
+        headless: true, // Garante que o navegador rode em modo headless
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
+    });
     const page = await browser.newPage();
     
     const currentDateTime = new Date();
