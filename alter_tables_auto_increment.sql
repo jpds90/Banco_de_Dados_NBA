@@ -1,14 +1,26 @@
-DO $$ 
+DO $$
 DECLARE
-    r RECORD;
+    tbl RECORD;
 BEGIN
-    -- Para cada tabela que tem uma coluna 'id'
-    FOR r IN 
-        SELECT table_name, column_name 
-        FROM information_schema.columns 
-        WHERE column_name = 'id' AND table_schema = 'public'
+    FOR tbl IN
+        SELECT table_name
+        FROM information_schema.columns
+        WHERE column_name = 'id'
+          AND table_schema = 'public'
     LOOP
-        -- Alterar a coluna 'id' para GENERATED ALWAYS AS IDENTITY
-        EXECUTE format('ALTER TABLE public.%I ALTER COLUMN %I SET GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1)', r.table_name, r.column_name);
+        EXECUTE format(
+            'DO $$
+             BEGIN
+                 IF EXISTS (SELECT 1 FROM information_schema.sequences WHERE sequence_name = ''%s_id_seq'') THEN
+                     -- Nada a fazer se a sequência já existe
+                     RAISE NOTICE ''Sequence already exists: %s_id_seq'';
+                 ELSE
+                     CREATE SEQUENCE %I_id_seq;
+                 END IF;
+                 ALTER TABLE %I ALTER COLUMN id DROP DEFAULT;
+                 ALTER TABLE %I ALTER COLUMN id SET DEFAULT nextval(''%I_id_seq'');
+             END $$;',
+            tbl.table_name, tbl.table_name, tbl.table_name, tbl.table_name, tbl.table_name
+        );
     END LOOP;
 END $$;
