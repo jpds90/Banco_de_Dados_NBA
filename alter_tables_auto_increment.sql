@@ -14,7 +14,16 @@ BEGIN
             WHERE column_default LIKE 'nextval%'
         )
     LOOP
-        -- Primeiro remove o DEFAULT, se houver
+        -- Primeiro, remove a identidade, se a coluna for uma identidade
+        BEGIN
+            EXECUTE 'ALTER TABLE ' || row.table_name || ' ALTER COLUMN id DROP IDENTITY';
+        EXCEPTION
+            WHEN OTHERS THEN
+                -- Ignorar erro caso a coluna não seja uma identidade
+                NULL;
+        END;
+
+        -- Remove o DEFAULT, caso haja
         EXECUTE 'ALTER TABLE ' || row.table_name || ' ALTER COLUMN id DROP DEFAULT';
 
         -- Agora, adiciona a configuração GENERATED ALWAYS AS IDENTITY
