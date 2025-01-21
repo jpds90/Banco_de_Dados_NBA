@@ -117,7 +117,10 @@ const scrapeResults = async (link) => {
     const fullLink = `${link}resultados/`;
     console.log('Link completo para scraping:', fullLink);
 
-    const browser = await puppeteer.launch({ headless: true });
+        const browser = await puppeteer.launch({
+        headless: true, // Garante que o navegador rode em modo headless
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
+    });
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
     await page.goto(fullLink, { timeout: 120000 });
