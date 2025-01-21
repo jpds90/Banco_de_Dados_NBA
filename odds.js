@@ -88,21 +88,23 @@ const isDateInRange = (gameDateStr) => {
     return gameDateOnly === searchDateStr;
 };
     // Função para tentar navegar com tentativas de re-execução
-    async function tryNavigate(url, page, maxRetries = 3) {
-        for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            try {
-                await page.goto(url, { timeout: 120000 }); // Certifique-se de passar o objeto correto
-                return; // Se a navegação tiver sucesso, sai da função
-            } catch (error) {
-                if (error.name === 'TimeoutError' && attempt < maxRetries) {
-                    console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
-                } else {
-                    console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
-                    throw error; // Lança o erro se o número máximo de tentativas for atingido
-                }
+async function tryNavigate(url, page, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await page.goto(url, { timeout: 180000 }); // Ajustando o timeout
+            return; // Se a navegação for bem-sucedida, sai da função
+        } catch (error) {
+            if (error.name === 'TimeoutError' && attempt < maxRetries) {
+                console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
+                await sleep(5000); // Esperar 5 segundos antes de tentar novamente
+            } else {
+                console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
+                throw error; // Lança o erro se o número máximo de tentativas for atingido
             }
         }
     }
+}
+
     
 
     try {
