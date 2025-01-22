@@ -2728,21 +2728,27 @@ app.get('/get-bankroll', async (req, res) => {
     }
 });
 
-app.get('/startrender', async (req, res) => {
-    try {
-        console.log("Iniciando execução do executor.js...");
-        exec('node executor.js', (error, stdout, stderr) => {
-            if (error) {
-                console.error("Erro ao executar executor.js:", stderr);
-                return res.status(500).send("Erro ao executar os scripts.");
-            }
-            console.log("Executor.js finalizado com sucesso:", stdout);
-            res.send("Scripts executados com sucesso!");
+app.post('/startrender', (req, res) => {
+    const executorPath = path.resolve(__dirname, 'executor.js');
+
+    console.log(`Executando o script: ${executorPath}`);
+    exec(`node ${executorPath}`, { timeout: 60000 }, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Erro ao executar o script executor: ${error.message}`);
+            return res.status(500).json({
+                message: 'Erro ao executar o script executor ou tempo limite atingido.',
+                details: error.message,
+            });
+        }
+        if (stderr) {
+            console.warn(`Aviso do script executor: ${stderr}`);
+        }
+        console.log(`Resultado do script executor: ${stdout}`);
+        res.status(200).json({
+            message: 'Script executor executado com sucesso.',
+            output: stdout.trim(),
         });
-    } catch (err) {
-        console.error("Erro inesperado:", err);
-        res.status(500).send("Erro inesperado ao iniciar a execução.");
-    }
+    });
 });
 
 
