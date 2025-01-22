@@ -2729,27 +2729,21 @@ app.get('/get-bankroll', async (req, res) => {
 });
 
 app.post('/startrender', (req, res) => {
-    const executorPath = path.resolve(__dirname, 'executor.js');
-
-    console.log(`Executando o script: ${executorPath}`);
-    exec(`node ${executorPath}`, { timeout: 60000 }, (error, stdout, stderr) => {
+    const executorPath = path.join(__dirname, 'executor.js');
+    exec(`node ${executorPath}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Erro ao executar o script executor: ${error.message}`);
-            return res.status(500).json({
-                message: 'Erro ao executar o script executor ou tempo limite atingido.',
-                details: error.message,
-            });
+            return res.status(500).send('Erro ao executar o script executor.');
         }
         if (stderr) {
-            console.warn(`Aviso do script executor: ${stderr}`);
+            console.error(`Erro no script executor: ${stderr}`);
+            return res.status(500).send('Erro ao executar o script executor.');
         }
         console.log(`Resultado do script executor: ${stdout}`);
-        res.status(200).json({
-            message: 'Script executor executado com sucesso.',
-            output: stdout.trim(),
-        });
+        res.send('Script executor executado com sucesso.');
     });
 });
+
 
 
 // Servir arquivos estáticos da pasta 'public'
