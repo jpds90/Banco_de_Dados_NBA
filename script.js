@@ -90,6 +90,10 @@ const saveDataToTeamTable = async (teamName, data) => {
         // Inverte a ordem dos dados para salvar o primeiro extraído no fim e o último no topo
         const reversedData = [...data].reverse();
 
+        // Busca o maior ID atual na tabela
+        const idResult = await client.query(`SELECT COALESCE(MAX(id), 0) AS max_id FROM ${tableName}`);
+        let nextId = parseInt(idResult.rows[0].max_id, 10) + 1;
+
         for (const item of reversedData) {
             // Verifica se já existe um registro com a mesma data e time
             const result = await client.query(
@@ -101,11 +105,12 @@ const saveDataToTeamTable = async (teamName, data) => {
             if (!exists) {
                 await client.query(
                     `INSERT INTO ${tableName} (
-                        datahora, home_team, home_score, away_team, away_score,
+                        id, datahora, home_team, home_score, away_team, away_score,
                         home_team_q1, home_team_q2, home_team_q3, home_team_q4,
                         away_team_q1, away_team_q2, away_team_q3, away_team_q4
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
                     [
+                        nextId++, // Incrementa o ID a cada inserção
                         item.DataHora, item.homeTeam, item.homeScore, item.awayTeam, item.awayScore,
                         item.homeTeamQuarter1Score, item.homeTeamQuarter2Score, item.homeTeamQuarter3Score, item.homeTeamQuarter4Score,
                         item.awayTeamQuarter1Score, item.awayTeamQuarter2Score, item.awayTeamQuarter3Score, item.awayTeamQuarter4Score,
@@ -124,6 +129,7 @@ const saveDataToTeamTable = async (teamName, data) => {
         client.release();
     }
 };
+
 
 
 // Scraping do site
