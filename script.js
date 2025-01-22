@@ -135,7 +135,13 @@ const scrapeResults = async (link) => {
 
         const browser = await puppeteer.launch({
         headless: true, // Garante que o navegador rode em modo headless
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
+        args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-zygote',
+        '--single-process',], // Evita restrições no ambiente do Render
     });
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
