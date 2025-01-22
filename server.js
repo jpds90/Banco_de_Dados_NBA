@@ -373,8 +373,14 @@ if (tableNames.includes(homeTable)) {
         FROM ${homeTable} 
         WHERE home_team = $1
         AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
-        ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-        LIMIT 12
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 12
     `, [time_home, formattedStartDate, formattedEndDate]);
 
     const homeScores = homeScoresResult.rows
@@ -394,8 +400,14 @@ if (tableNames.includes(awayTable)) {
         FROM ${awayTable} 
         WHERE away_team = $1
         AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
-        ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-        LIMIT 12
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 12
     `, [time_away, formattedStartDate, formattedEndDate]);
 
     const awayScores = awayScoresResult.rows
@@ -453,8 +465,14 @@ app.get('/mediapontosgeral', async (req, res) => {
                     SELECT home_score 
                     FROM ${homeTable} 
                     WHERE home_team = $1
-                    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-                    LIMIT 12
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 12
                 `, [time_home]);
 
                 const homeScores = homeScoresResult.rows
@@ -473,8 +491,14 @@ app.get('/mediapontosgeral', async (req, res) => {
                     SELECT away_score 
                     FROM ${awayTable} 
                     WHERE away_team = $1
-                    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-                    LIMIT 12
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 12
                 `, [time_away]);
 
                 const awayScores = awayScoresResult.rows
@@ -535,8 +559,14 @@ app.get('/ultimosjogos1', async (req, res) => {
                         home_team, away_team, home_score, away_score 
                     FROM ${homeTable} 
                     WHERE home_team = $1
-                    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-                    LIMIT 5
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 5
                 `, [time_home]);
 
                 homeGamesResult.rows.forEach(game => {
@@ -559,8 +589,14 @@ app.get('/ultimosjogos1', async (req, res) => {
                         home_team, away_team, home_score, away_score 
                     FROM ${awayTable} 
                     WHERE away_team = $1
-                    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-                    LIMIT 5
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 5
                 `, [time_away]);
 
                 awayGamesResult.rows.forEach(game => {
@@ -746,7 +782,13 @@ app.get('/ultimosjogos2', async (req, res) => {
             SELECT home_team, away_team, home_score, away_score, datahora, id 
             FROM ${timeFormatado} 
             WHERE home_team = $1 OR away_team = $1
-            ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
             LIMIT 5
         `;
         console.log(`Query SQL que será executada: ${querySQL}`);
@@ -932,8 +974,14 @@ const homeIdsResult = await pool.query(`
     SELECT id, datahora
     FROM ${homeTable}
     WHERE home_team = $1
-    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-    LIMIT 10
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 10
 `, [time_home]);
 
 const homeIds = homeIdsResult.rows.map(row => row.id);
@@ -947,8 +995,14 @@ const awayIdsResult = await pool.query(`
     SELECT id, datahora
     FROM ${awayTable}
     WHERE away_team = $1
-    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-    LIMIT 10
+            ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
+            LIMIT 10
 `, [time_away]);
 
 const awayIds = awayIdsResult.rows.map(row => row.id);
@@ -976,7 +1030,13 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
                     FROM ${homeTable}
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
-                    ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
+                                ORDER BY TO_TIMESTAMP(
+            CASE
+                WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)
+                ELSE datahora
+            END, 
+            'YYYY.MM.DD HH24:MI'
+            ) DESC
                 `, [time_home, time_away]);
 
                 let homeHomeWins = 0;
