@@ -1,13 +1,14 @@
 const fs = require('fs');
 const { exec } = require('child_process');
-const axios = require('axios'); // Para enviar requisições HTTP com o token
+const axios = require('axios'); // Para enviar requisições HTTP
 
 const scripts = ['script.js', 'jogadores.js', 'lesoes.js']; // Lista dos scripts a serem executados
 const progressFile = 'progress.json'; // Arquivo para salvar o progresso
 const maxRetries = 4; // Número máximo de tentativas
 
-// Defina o token aqui. Caso o token venha de algum lugar dinâmico (como login), configure-o adequadamente.
-const token = '<seu-token-aqui>'; // Substitua pelo seu token válido
+// Suas credenciais
+const email = 'jpsoficial1@gmail.com'; // Substitua pelo seu email
+const senha = 'jpds90santos'; // Substitua pela sua senha
 
 // Função para salvar o progresso
 const saveProgress = (scriptName, status, retries) => {
@@ -27,8 +28,22 @@ const loadProgress = () => {
     return {};
 };
 
+// Função para obter o token com login e senha
+const getToken = async () => {
+    try {
+        const response = await axios.post('https://analise-jpnba.onrender.com/login', {
+            email,
+            senha
+        });
+        return response.data.token;
+    } catch (error) {
+        console.error('Erro ao obter o token:', error.response ? error.response.data : error.message);
+        throw new Error('Falha na autenticação');
+    }
+};
+
 // Função para executar um script com tentativas e intervalos
-const executeScript = async (scriptName) => {
+const executeScript = async (scriptName, token) => {
     const progress = loadProgress();
     const retries = progress[scriptName]?.retries || 0;
 
@@ -72,7 +87,7 @@ const executeScript = async (scriptName) => {
         if (nextRetries < maxRetries) {
             const delay = nextRetries === 3 ? 60000 : 5000; // 3ª tentativa: 1 minuto; outras: 5 segundos
             console.log(`Tentativa ${nextRetries} falhou para ${scriptName}. Nova tentativa em ${delay / 1000} segundos.`);
-            setTimeout(() => executeScript(scriptName), delay);
+            setTimeout(() => executeScript(scriptName, token), delay);
         } else {
             console.error(`Todas as tentativas falharam para ${scriptName}.`);
         }
@@ -81,13 +96,21 @@ const executeScript = async (scriptName) => {
 
 // Executar os scripts em sequência
 (async () => {
-    const progress = loadProgress();
-    for (const script of scripts) {
-        if (progress[script]?.status === 'completed') {
-            console.log(`Pulando ${script}, já foi concluído.`);
-            continue;
+    try {
+        // Obter o token antes de iniciar a execução
+        const token = await getToken();
+
+        const progress = loadProgress();
+        for (const script of scripts) {
+            if (progress[script]?.status === 'completed') {
+                console.log(`Pulando ${script}, já foi concluído.`);
+                continue;
+            }
+            await executeScript(script, token); // Passa o token para a função de execução
         }
-        await executeScript(script);
+
+        console.log("Execução completa para todos os scripts.");
+    } catch (error) {
+        console.error("Erro durante a execução:", error.message);
     }
-    console.log("Execução completa para todos os scripts.");
 })();
