@@ -851,7 +851,7 @@ console.log(`Time visitante: ${awayPercentage}%`);
 
         // Função para puxar os dados da API
         async function fetchResults() {
-            const response = await fetch('http://localhost:3099/ultimosjogos1');  // Endereço da sua API
+            const response = await fetch('https://analise-jpnba.onrender.com/ultimosjogos1');  // Endereço da sua API
             const data = await response.json();
             displayResults(data);
         }
