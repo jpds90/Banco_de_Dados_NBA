@@ -11,7 +11,23 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-
+// Função para tentar navegar com tentativas de re-execução
+async function tryNavigate(url, page, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await page.goto(url, { timeout: 180000 }); // Ajustando o timeout
+            return; // Se a navegação for bem-sucedida, sai da função
+        } catch (error) {
+            if (error.name === 'TimeoutError' && attempt < maxRetries) {
+                console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
+                await sleep(5000); // Esperar 5 segundos antes de tentar novamente
+            } else {
+                console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
+                throw error; // Lança o erro se o número máximo de tentativas for atingido
+            }
+        }
+    }
+}
 // Função para salvar os dados no banco
 // Função para criar a tabela de jogadores para o time
 const createPlayersTable = async (teamName) => {
@@ -27,7 +43,7 @@ const createPlayersTable = async (teamName) => {
     await client.query(`
         CREATE TABLE "${tableName}" (
                 data_hora VARCHAR(50) NOT NULL,
-                id SERIAL PRIMARY KEY,
+                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 player_name VARCHAR(255) NOT NULL,
                 team VARCHAR(255),
                 points INT,
