@@ -2728,6 +2728,22 @@ app.get('/get-bankroll', async (req, res) => {
     }
 });
 
+app.get('/start', async (req, res) => {
+    try {
+        console.log("Iniciando execução do executor.js...");
+        exec('node executor.js', (error, stdout, stderr) => {
+            if (error) {
+                console.error("Erro ao executar executor.js:", stderr);
+                return res.status(500).send("Erro ao executar os scripts.");
+            }
+            console.log("Executor.js finalizado com sucesso:", stdout);
+            res.send("Scripts executados com sucesso!");
+        });
+    } catch (err) {
+        console.error("Erro inesperado:", err);
+        res.status(500).send("Erro inesperado ao iniciar a execução.");
+    }
+});
 
 
 // Servir arquivos estáticos da pasta 'public'
