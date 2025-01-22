@@ -376,14 +376,14 @@ if (tableNames.includes(homeTable)) {
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 12
     `, [time_home, formattedStartDate, formattedEndDate]);
@@ -408,14 +408,14 @@ if (tableNames.includes(awayTable)) {
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 12
     `, [time_away, formattedStartDate, formattedEndDate]);
@@ -478,14 +478,14 @@ app.get('/mediapontosgeral', async (req, res) => {
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 12
                 `, [time_home]);
@@ -509,14 +509,14 @@ ORDER BY
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 12
                 `, [time_away]);
@@ -582,14 +582,14 @@ app.get('/ultimosjogos1', async (req, res) => {
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 5
                 `, [time_home]);
@@ -617,14 +617,14 @@ ORDER BY
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 5
                 `, [time_away]);
@@ -689,8 +689,18 @@ app.get('/ultimosjogos', async (req, res) => {
             SELECT home_team, away_team, home_score, away_score, id 
             FROM ${timeFormatado} 
             WHERE home_team = $1
-            ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-            LIMIT 3
+            ORDER BY 
+    TO_TIMESTAMP(
+        CASE
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
+        END, 
+        'DD.MM.YYYY HH24:MI'
+    ) DESC            LIMIT 3
         `;
         console.log(`Query SQL para jogos em casa: ${queryCasa}`);
 
@@ -815,14 +825,14 @@ app.get('/ultimosjogos2', async (req, res) => {
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 5
         `;
@@ -1012,14 +1022,14 @@ const homeIdsResult = await pool.query(`
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 10
 `, [time_home]);
@@ -1038,14 +1048,14 @@ const awayIdsResult = await pool.query(`
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
             LIMIT 10
 `, [time_away]);
@@ -1078,14 +1088,14 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
 ORDER BY 
     TO_TIMESTAMP(
         CASE
-            -- Formato com DD.MM. HH:MI, assume ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora) 
-            -- Formato com DD.MM.YYYY HH:MI, usa diretamente
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                CONCAT(SUBSTRING(datahora FROM 7 FOR 4), '.', SUBSTRING(datahora FROM 4 FOR 2), '.', SUBSTRING(datahora FROM 1 FOR 2), ' ', SUBSTRING(datahora FROM 12))
-            ELSE NULL -- Caso contrário, trata como nulo
+            -- Formato DD.MM. HH:MI, assume o ano 2025
+            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
+            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
+            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
+            -- Formato DD.MM.YYYY HH:MI, usa diretamente
+            ELSE datahora
         END, 
-        'YYYY.MM.DD HH24:MI'
+        'DD.MM.YYYY HH24:MI'
     ) DESC
                 `, [time_home, time_away]);
 
