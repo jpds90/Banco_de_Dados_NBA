@@ -22,7 +22,7 @@ const createPlayersTable = async (teamName) => {
         `);
         await client.query(`
         CREATE TABLE IF NOT EXISTS "${tableName}_lesoes" (
-            id SERIAL PRIMARY KEY,
+            id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
             player_name VARCHAR(255) NOT NULL,
             injury_status VARCHAR(255),
             date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
