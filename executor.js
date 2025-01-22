@@ -1,9 +1,13 @@
 const fs = require('fs');
 const { exec } = require('child_process');
+const axios = require('axios'); // Para enviar requisições HTTP com o token
 
 const scripts = ['script.js', 'jogadores.js', 'lesoes.js']; // Lista dos scripts a serem executados
 const progressFile = 'progress.json'; // Arquivo para salvar o progresso
 const maxRetries = 4; // Número máximo de tentativas
+
+// Defina o token aqui. Caso o token venha de algum lugar dinâmico (como login), configure-o adequadamente.
+const token = '<seu-token-aqui>'; // Substitua pelo seu token válido
 
 // Função para salvar o progresso
 const saveProgress = (scriptName, status, retries) => {
@@ -35,6 +39,18 @@ const executeScript = async (scriptName) => {
 
     try {
         console.log(`Executando ${scriptName}, tentativa ${retries + 1}...`);
+
+        // Realizando a requisição com o token para garantir a execução da rota no servidor
+        const response = await axios.post('https://analise-jpnba.onrender.com/startrender', {}, {
+            headers: {
+                'Authorization': `Bearer ${token}`, // Envia o token na requisição
+                'Content-Type': 'application/json',
+            }
+        });
+
+        console.log("Resposta do servidor:", response.data);
+
+        // Agora, execute o script localmente
         await new Promise((resolve, reject) => {
             exec(`node ${scriptName}`, (error, stdout, stderr) => {
                 if (error) {
