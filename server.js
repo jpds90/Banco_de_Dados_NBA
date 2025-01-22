@@ -374,17 +374,18 @@ if (tableNames.includes(homeTable)) {
         WHERE home_team = $1
         AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 12
     `, [time_home, formattedStartDate, formattedEndDate]);
 
@@ -406,17 +407,18 @@ if (tableNames.includes(awayTable)) {
         WHERE away_team = $1
         AND to_timestamp(datahora || '.' || EXTRACT(YEAR FROM CURRENT_DATE)::text, 'DD.MM.')::date BETWEEN to_timestamp($2, 'DD.MM.')::date AND to_timestamp($3, 'DD.MM.')::date
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 12
     `, [time_away, formattedStartDate, formattedEndDate]);
 
@@ -476,17 +478,18 @@ app.get('/mediapontosgeral', async (req, res) => {
                     FROM ${homeTable} 
                     WHERE home_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 12
                 `, [time_home]);
 
@@ -507,17 +510,18 @@ ORDER BY
                     FROM ${awayTable} 
                     WHERE away_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 12
                 `, [time_away]);
 
@@ -580,17 +584,18 @@ app.get('/ultimosjogos1', async (req, res) => {
                     FROM ${homeTable} 
                     WHERE home_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 5
                 `, [time_home]);
 
@@ -615,17 +620,18 @@ ORDER BY
                     FROM ${awayTable} 
                     WHERE away_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 5
                 `, [time_away]);
 
@@ -823,17 +829,18 @@ app.get('/ultimosjogos2', async (req, res) => {
             FROM ${timeFormatado} 
             WHERE home_team = $1 OR away_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 5
         `;
         console.log(`Query SQL que será executada: ${querySQL}`);
@@ -1020,17 +1027,18 @@ const homeIdsResult = await pool.query(`
     FROM ${homeTable}
     WHERE home_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 10
 `, [time_home]);
 
@@ -1046,17 +1054,18 @@ const awayIdsResult = await pool.query(`
     FROM ${awayTable}
     WHERE away_team = $1
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
             LIMIT 10
 `, [time_away]);
 
@@ -1086,17 +1095,18 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
 ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
                 `, [time_home, time_away]);
 
                 let homeHomeWins = 0;
