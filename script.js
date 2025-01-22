@@ -220,24 +220,33 @@ await browser.close();
 // Função principal
 if (require.main === module) {
     (async () => {
-        const links = await fetchLinksFromDatabase();
+        try {
+            console.log("Executando script.js...");
 
-        // Log dos links no console
-        console.log('Links obtidos do banco de dados:', links);
+            const links = await fetchLinksFromDatabase();
 
-        if (links.length === 0) {
-            console.log('Nenhum link encontrado para processamento.');
-            return;
+            // Log dos links no console
+            console.log('Links obtidos do banco de dados:', links);
+
+            if (links.length === 0) {
+                console.log('Nenhum link encontrado para processamento.');
+                process.exit(0); // Nada a fazer, mas encerra com sucesso
+            }
+
+            for (const link of links) {
+                console.log(`Iniciando o scraping para o link: ${link}`);
+                await scrapeResults(link);
+            }
+
+            console.log('Processo de scraping completo!');
+            process.exit(0); // Indicar sucesso
+        } catch (error) {
+            console.error("Erro em script.js:", error);
+            process.exit(1); // Indicar falha
         }
-
-        for (const link of links) {
-            console.log(`Iniciando o scraping para o link: ${link}`);
-            await scrapeResults(link);
-        }
-
-        console.log('Processo de scraping completo!');
     })();
 }
+
 
 
 // script.js
