@@ -8,22 +8,20 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, // Usando a 
   ssl: { rejectUnauthorized: false },
 });
 // Função para tentar navegar com tentativas de re-execução
-async function tryNavigate(url, page, maxRetries = 3) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+const loadPageWithRetries = async (page, url, retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
         try {
-            await page.goto(url, { timeout: 180000 }); // Ajustando o timeout
-            return; // Se a navegação for bem-sucedida, sai da função
+            console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
+            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+            console.log("Página carregada com sucesso.");
+            return;
         } catch (error) {
-            if (error.name === 'TimeoutError' && attempt < maxRetries) {
-                console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
-                await sleep(5000); // Esperar 5 segundos antes de tentar novamente
-            } else {
-                console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
-                throw error; // Lança o erro se o número máximo de tentativas for atingido
-            }
+            console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
+            if (attempt === retries - 1) throw error; // Lançar o erro na última tentativa
         }
     }
-}
+};
+
 // Função para buscar links da tabela 'links'
 const fetchLinksFromDatabase = async () => {
     const client = await pool.connect();
@@ -141,7 +139,7 @@ const scrapeResults = async (link) => {
     });
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
-    await page.goto(fullLink, { timeout: 120000 });
+    await loadPageWithRetries(page, fullLink);
 
     // Função para clicar no botão "Mostrar mais jogos"
     const clickMoreGamesButton = async (page) => {
