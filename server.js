@@ -383,7 +383,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 12
     `, [time_home, formattedStartDate, formattedEndDate]);
@@ -415,7 +415,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 12
     `, [time_away, formattedStartDate, formattedEndDate]);
@@ -485,7 +485,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 12
                 `, [time_home]);
@@ -516,7 +516,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 12
                 `, [time_away]);
@@ -589,7 +589,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 5
                 `, [time_home]);
@@ -624,7 +624,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 5
                 `, [time_away]);
@@ -699,7 +699,7 @@ app.get('/ultimosjogos', async (req, res) => {
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC            LIMIT 3
         `;
         console.log(`Query SQL para jogos em casa: ${queryCasa}`);
@@ -832,7 +832,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 5
         `;
@@ -1029,7 +1029,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 10
 `, [time_home]);
@@ -1055,7 +1055,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
             LIMIT 10
 `, [time_away]);
@@ -1095,7 +1095,7 @@ ORDER BY
             -- Formato DD.MM.YYYY HH:MI, usa diretamente
             ELSE datahora
         END, 
-        'DD.MM.YYYY HH24:MI'
+        'DD.MM.YYYY'
     ) DESC
                 `, [time_home, time_away]);
 
