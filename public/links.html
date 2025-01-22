@@ -263,28 +263,6 @@
                     alert('Erro ao atualizar Lesoes. Verifique os logs.');
                     return;
                 }
-                // Atualizar Odds
-                const oddsResponse = await fetch('/execute-odds', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
-
-                if (!oddsResponse.ok) {
-                    alert('Erro ao atualizar Odds. Verifique os logs.');
-                    return;
-                }
-                // Atualizar Rank
-                const RankResponse = await fetch('/execute-rank', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
-
-                if (!RankResponse.ok) {
-                    alert('Erro ao atualizar Rank. Verifique os logs.');
-                    return;
-                }
                 
 
                 alert('Jogos, Jogadores, Lesões, Odds e Rank atualizados com sucesso!');
