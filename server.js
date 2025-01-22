@@ -2728,7 +2728,7 @@ app.get('/get-bankroll', async (req, res) => {
     }
 });
 
-app.get('/start', async (req, res) => {
+app.get('/startrender', async (req, res) => {
     try {
         console.log("Iniciando execução do executor.js...");
         exec('node executor.js', (error, stdout, stderr) => {
