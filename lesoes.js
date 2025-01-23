@@ -8,7 +8,20 @@ const pool = new Pool({
  connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
-
+// Função para tentar navegar com tentativas de re-execução
+const loadPageWithRetries = async (page, url, retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
+            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+            console.log("Página carregada com sucesso.");
+            return;
+        } catch (error) {
+            console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
+            if (attempt === retries - 1) throw error; // Lançar o erro na última tentativa
+        }
+    }
+};
 // Função para criar a tabela de jogadores para o time
 const createPlayersTable = async (teamName) => {
     const client = await pool.connect();
@@ -110,7 +123,7 @@ const scrapeResults3 = async (link) => {
     });
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
-    await page.goto(fullLink, { timeout: 120000 });
+    await loadPageWithRetries(page, fullLink);
 
     const url = await page.evaluate(() => window.location.href);
 
