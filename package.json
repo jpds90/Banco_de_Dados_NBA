@@ -25,6 +25,6 @@
     "request-promise": "^4.2.6",
     "sleep-promise": "^9.1.0",
     "tree-kill": "^1.2.2"
-  },
+  }
 
 }
