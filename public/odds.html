@@ -886,7 +886,9 @@ console.log(`Time visitante: ${awayPercentage}%`);
             });
         }
         async function fetchResults1(team, resultsContainer) {
-
+    if (!team) {
+        return;
+    }
     try {
         const response = await fetch(`/ultimosjogos2?time=${encodeURIComponent(team)}`);
         if (!response.ok) throw new Error('Erro ao buscar resultados');
