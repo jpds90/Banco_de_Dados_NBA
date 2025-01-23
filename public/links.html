@@ -220,63 +220,79 @@
         });
 
         // Atualizar jogadores e depois jogos em sequência
-        async function executeBothActions() {
-            const selectedLinks = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
-                .map(checkbox => checkbox.getAttribute('data-link'));
+// Atualizar jogadores e depois jogos em sequência
+async function executeBothActions() {
+    const selectedLinks = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
+        .map(checkbox => checkbox.getAttribute('data-link'));
 
-            if (selectedLinks.length === 0) {
-                alert('Por favor, selecione pelo menos uma equipe.');
-                return;
-            }
+    if (selectedLinks.length === 0) {
+        alert('Por favor, selecione pelo menos uma equipe.');
+        return;
+    }
 
-            showLoadingMessage(true); // Mostrar "Carregando"
+    showLoadingMessage(true); // Mostrar "Carregando"
 
-            try {
-                // Atualizar jogos
-                const jogosResponse = await fetch('/execute-jogos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
+    try {
+        // Atualizar jogos
+        const jogosResponse = await fetch('/execute-jogos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ links: selectedLinks }),
+        });
 
-                if (!jogosResponse.ok) {
-                    alert('Erro ao atualizar jogos. Verifique os logs.');
-                    return;
-                }
-                // Atualizar jogadores
-                const jogadoresResponse = await fetch('/execute-Jogadores', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
-
-                if (!jogadoresResponse.ok) {
-                    alert('Erro ao atualizar jogadores. Verifique os logs.');
-                    return;
-                }
-                // Atualizar Lesoes
-                const lesoesResponse = await fetch('/execute-lesoes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
-
-                if (!lesoesResponse.ok) {
-                    alert('Erro ao atualizar Lesoes. Verifique os logs.');
-                    return;
-                }
-                
-
-                alert('Jogos, Jogadores, Lesões, Odds e Rank atualizados com sucesso!');
-                window.location.reload(); // Recarregar a página
-
-            } catch (error) {
-                console.error('Erro ao chamar a API:', error);
-                alert('Erro ao atualizar os dados.');
-            } finally {
-                showLoadingMessage(false); // Ocultar "Carregando"
-            }
+        if (!jogosResponse.ok) {
+            // Lê o corpo da resposta para capturar detalhes do erro, se disponíveis
+            const errorDetails = await jogosResponse.text();
+            console.error('Erro ao atualizar jogos:', errorDetails);
+            alert(`Erro ao atualizar jogos: ${errorDetails || 'Verifique os logs.'}`);
+            return;
         }
+
+        console.log('Jogos atualizados com sucesso.');
+
+        // Atualizar jogadores
+        const jogadoresResponse = await fetch('/execute-jogadores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ links: selectedLinks }),
+        });
+
+        if (!jogadoresResponse.ok) {
+            const errorDetails = await jogadoresResponse.text();
+            console.error('Erro ao atualizar jogadores:', errorDetails);
+            alert(`Erro ao atualizar jogadores: ${errorDetails || 'Verifique os logs.'}`);
+            return;
+        }
+
+        console.log('Jogadores atualizados com sucesso.');
+
+        // Atualizar Lesões
+        const lesoesResponse = await fetch('/execute-lesoes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ links: selectedLinks }),
+        });
+
+        if (!lesoesResponse.ok) {
+            const errorDetails = await lesoesResponse.text();
+            console.error('Erro ao atualizar lesões:', errorDetails);
+            alert(`Erro ao atualizar lesões: ${errorDetails || 'Verifique os logs.'}`);
+            return;
+        }
+
+        console.log('Lesões atualizadas com sucesso.');
+
+        alert('Jogos, Jogadores, Lesões, Odds e Rank atualizados com sucesso!');
+        window.location.reload(); // Recarregar a página
+
+    } catch (error) {
+        console.error('Erro ao chamar a API:', error);
+        alert('Erro ao atualizar os dados.');
+    } finally {
+        showLoadingMessage(false); // Ocultar "Carregando"
+    }
+}
+
 
         // Associar o evento ao botão "Atualizar Jogadores e Jogos"
         const executeAllButton = document.getElementById('executeAll');
