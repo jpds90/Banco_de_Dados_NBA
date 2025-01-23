@@ -31,7 +31,7 @@ const loadProgress = () => {
 // Função para obter o token com login e senha
 const getToken = async () => {
     try {
-        const response = await axios.post('https://analise-jpnba.onrender.com/login', {
+        const response = await axios.post('https://analise-jpnba.onrender.com/user', {
             email,
             senha
         });
