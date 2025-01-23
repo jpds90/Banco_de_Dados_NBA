@@ -312,21 +312,26 @@ async function executeBothActions() {
             showLoadingMessage(true); // Mostrar "Carregando Jogadores"
 
             try {
-                // Atualizar jogadores
-                const jogadoresResponse = await fetch('/execute-Jogadores', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
+        // Atualizar jogadores
+        const jogadoresResponse = await fetch('/execute-jogadores', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ links: selectedLinks }),
+        });
 
-                if (!jogadoresResponse.ok) {
-                    alert('Erro ao atualizar jogadores. Verifique os logs.');
-                    return;
-                }
+        if (!jogadoresResponse.ok) {
+            const errorDetails = await jogadoresResponse.text();
+            console.error('Erro ao atualizar jogadores:', errorDetails);
+            alert(`Erro ao atualizar jogadores: ${errorDetails || 'Verifique os logs.'}`);
+            return;
+        }
 
-                alert('Jogadores atualizados com sucesso!');
-                window.location.reload(); // Recarregar a página
+        console.log('Jogadores atualizados com sucesso.');
 
+
+        alert('Jogadores atualizados com sucesso!');
+        window.location.reload(); // Recarregar a página
+                
             } catch (error) {
                 console.error('Erro ao chamar a API:', error);
                 alert('Erro ao atualizar os dados Jogadores.');
@@ -354,21 +359,25 @@ async function executeBothActions() {
             showLoadingMessage(true); // Mostrar "Carregando Lesoes"
 
             try {
-                // Atualizar Lesoes
-                const lesoesResponse = await fetch('/execute-lesoes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedLinks }),
-                });
+        // Atualizar Lesões
+        const lesoesResponse = await fetch('/execute-lesoes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ links: selectedLinks }),
+        });
 
-                if (!lesoesResponse.ok) {
-                    alert('Erro ao atualizar Lesoes. Verifique os logs.');
-                    return;
-                }
+        if (!lesoesResponse.ok) {
+            const errorDetails = await lesoesResponse.text();
+            console.error('Erro ao atualizar lesões:', errorDetails);
+            alert(`Erro ao atualizar lesões: ${errorDetails || 'Verifique os logs.'}`);
+            return;
+        }
 
-                alert('Lesões atualizados com sucesso!');
-                window.location.reload(); // Recarregar a página
+        console.log('Lesões atualizadas com sucesso.');
 
+        alert('Lesoes atualizados com sucesso!');
+        window.location.reload(); // Recarregar a página
+                
             } catch (error) {
                 console.error('Erro ao chamar a API:', error);
                 alert('Erro ao atualizar os dados Lesoes.');
