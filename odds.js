@@ -76,26 +76,17 @@ async function scrapeResults() {
     
 // Ajustar `isDateInRange` para comparar apenas datas (YYYY-MM-DD)
 const isDateInRange = (gameDateStr) => {
-    // Extrair apenas a data (YYYY-MM-DD) do gameDateStr
-    const gameDateOnly = gameDateStr.split(' ')[0];
-
-    // Checar se a data é válida para processamento
-    if (gameDateOnly === todayStr) {
-        return true; // Processa os jogos de hoje
+    // Extrair apenas a parte da data de gameDateStr (YYYY-MM-DD)
+    const gameDateOnly = gameDateStr.split(' ')[0]; // Remove o horário
+    // Se a data do jogo é futura e está dentro do intervalo esperado, ajusta searchDateStr
+    if (searchDateStr === todayStr && gameDateOnly > todayStr && gameDateOnly <= dayAfterTomorrowStr) {
+        searchDateStr = tomorrowStr;
+    } else if (searchDateStr === tomorrowStr && gameDateOnly > tomorrowStr && gameDateOnly <= dayAfterTomorrowStr) {
+        searchDateStr = dayAfterTomorrowStr;
     }
-    if (gameDateOnly === tomorrowStr && searchDateStr === todayStr) {
-        searchDateStr = tomorrowStr; // Muda para amanhã após processar hoje
-        return true;
-    }
-    if (gameDateOnly === dayAfterTomorrowStr && searchDateStr === tomorrowStr) {
-        searchDateStr = dayAfterTomorrowStr; // Muda para depois de amanhã
-        return true;
-    }
-
-    // Fora do intervalo
-    return false;
+    // Retorna true somente se gameDateOnly for igual ao searchDateStr
+    return gameDateOnly === searchDateStr;
 };
-
     // Função para tentar navegar com tentativas de re-execução
 async function tryNavigate(url, page, maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
