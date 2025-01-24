@@ -83,14 +83,37 @@ async function scrapeResults() {
                     `div.duelParticipant__startTime`,
                     (element) => element.textContent.trim()
                 );
+
+                // Divide a string em duas partes: data (ex.: "13.12.") e hora (ex.: "00:30")
+                const [datePart, time] = dataJogo.split(' ');
+                const [day, month] = datePart.split('.');
+
+                // Obtém o ano atual
+                let year = new Date().getFullYear();
+
+                // Corrige o ano se o mês do jogo for menor que o mês atual
+                const currentMonth = new Date().getMonth() + 1;
+                if (parseInt(month) < currentMonth) {
+                    year += 1;
+                }
+
+                // Converte para o formato compatível com PostgreSQL (YYYY-MM-DD HH:mm)
+                gameDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
+
+                console.log(`Data do jogo ajustada: ${gameDateStr}`);
+
+                // Processar informações do jogo
                 timeHome = await page2.$eval(
                     `div.duelParticipant__home .participant__participantName a`,
                     (element) => element.textContent.trim()
                 );
+                console.log(`Time da casa: ${timeHome}`);
+
                 timeAway = await page2.$eval(
                     `div.duelParticipant__away .participant__participantName`,
                     (element) => element.textContent.trim()
                 );
+                console.log(`Time visitante: ${timeAway}`);
             } catch (error) {
                 console.error('Erro ao processar a página de resumo:', error);
                 continue;
