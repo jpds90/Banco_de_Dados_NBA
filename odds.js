@@ -12,7 +12,10 @@ async function saveToDatabase(data) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
+
+        // Limpar tabela e reiniciar sequência de ID
         await client.query('TRUNCATE TABLE odds RESTART IDENTITY');
+
         console.log('Tabela odds limpa e ID reiniciado.');
 
         const queryText = `
@@ -23,8 +26,9 @@ async function saveToDatabase(data) {
 
         for (const row of data) {
             const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = row;
+
             await client.query(queryText, [
-                dataJogo,
+                dataJogo || null, // Permitir valores nulos
                 timeHome,
                 timeAway,
                 homeOdds,
@@ -74,35 +78,24 @@ async function scrapeResults() {
             await page2.goto(summaryUrl, { timeout: 180000 });
             await sleep(10000);
 
-            let dataJogo = '';
+            let gameDateStr = '';
             let timeHome = '';
             let timeAway = '';
 
             try {
-                dataJogo = await page2.$eval(
+                const dataJogo = await page2.$eval(
                     `div.duelParticipant__startTime`,
                     (element) => element.textContent.trim()
                 );
 
-                // Divide a string em duas partes: data (ex.: "13.12.") e hora (ex.: "00:30")
+                // Extrair e ajustar a data do jogo para o formato PostgreSQL
                 const [datePart, time] = dataJogo.split(' ');
                 const [day, month] = datePart.split('.');
-
-                // Obtém o ano atual
-                let year = new Date().getFullYear();
-
-                // Corrige o ano se o mês do jogo for menor que o mês atual
-                const currentMonth = new Date().getMonth() + 1;
-                if (parseInt(month) < currentMonth) {
-                    year += 1;
-                }
-
-                // Converte para o formato compatível com PostgreSQL (YYYY-MM-DD HH:mm)
+                const year = new Date().getFullYear();
                 gameDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
 
                 console.log(`Data do jogo ajustada: ${gameDateStr}`);
 
-                // Processar informações do jogo
                 timeHome = await page2.$eval(
                     `div.duelParticipant__home .participant__participantName a`,
                     (element) => element.textContent.trim()
@@ -128,57 +121,23 @@ async function scrapeResults() {
             let awayOdds = '';
 
             try {
-                const homeOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(2) > span');
-                const awayOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(3) > span');
-                
-                if (homeOddsElement && awayOddsElement) {
-                    homeOdds = await homeOddsElement.evaluate((element) => element.textContent.trim());
-                    awayOdds = await awayOddsElement.evaluate((element) => element.textContent.trim());
-                } else {
-                    console.log('Elementos de odds não encontrados.');
-                    continue;
-                }
+                homeOdds = await page2.$eval('#detail div:nth-child(7) a:nth-child(2) span', el => el.textContent.trim());
+                awayOdds = await page2.$eval('#detail div:nth-child(7) a:nth-child(3) span', el => el.textContent.trim());
+                console.log(`Odds casa: ${homeOdds}, Odds visitante: ${awayOdds}`);
             } catch (error) {
                 console.error('Erro ao processar a página de odds 1x2:', error);
                 continue;
             }
 
-            const oddsmaisemenosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de`;
-            console.log("Processando URL Pontos:", oddsmaisemenosUrl);
-            await page2.goto(oddsmaisemenosUrl, { timeout: 180000 });
-            await sleep(10000);
-
-            let overDoisMeioOdds = '';
-            let overOdds = '';
-
-            try {
-                const oddsTableWrapper = await page2.$('.oddsTab__tableWrapper');
-                const oddsTables = await oddsTableWrapper.$$('.ui-table.oddsCell__odds');
-                if (oddsTables.length > 0) {
-                    const targetTable = oddsTables[0];
-                    const maisdoismeioRows = await targetTable.$$('.ui-table__body .ui-table__row');
-                    if (maisdoismeioRows.length > 0) {
-                        const maisdoismeioRow = maisdoismeioRows[0];
-                        const oddsCells = await maisdoismeioRow.$$('.oddsCell__odd');
-                        if (oddsCells.length > 0) {
-                            overDoisMeioOdds = await oddsCells[0].evaluate((element) => element.textContent.trim());
-                            overOdds = await oddsCells[0].evaluate(element => element.textContent.trim());
-                        }
-                    }
-                }
-            } catch (error) {
-                console.error('Erro ao processar a página de odds mais de/menos de:', error);
-                continue;
-            }
-
+            // Salvar dados
             futureGamesData.push({
-                dataJogo: dataJogo || 'Indefinido',
-                timeHome: timeHome || 'Indefinido',
-                timeAway: timeAway || 'Indefinido',
-                homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds),
-                awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
-                overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
-                overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
+                dataJogo: gameDateStr,
+                timeHome,
+                timeAway,
+                homeOdds: parseFloat(homeOdds) || 0,
+                awayOdds: parseFloat(awayOdds) || 0,
+                overDoisMeioOdds: 0,
+                overOdds: 0,
             });
         }
 
