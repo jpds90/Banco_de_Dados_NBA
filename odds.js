@@ -4,7 +4,7 @@ const sleep = require('sleep-promise');
 
 // Configuração da conexão com o banco de dados
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: process.env.DATABASE_URL, // Usando a URL completa
     ssl: { rejectUnauthorized: false },
 });
 
@@ -28,7 +28,7 @@ async function saveToDatabase(data) {
             const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = row;
 
             await client.query(queryText, [
-                dataJogo || null, // Permitir valores nulos
+                dataJogo,
                 timeHome,
                 timeAway,
                 homeOdds,
@@ -55,8 +55,27 @@ async function scrapeResults() {
     });
     const page = await browser.newPage();
 
+    const futureGamesData = [];
+
+    async function tryNavigate(url, page, maxRetries = 3) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                await page.goto(url, { timeout: 180000 });
+                return;
+            } catch (error) {
+                if (error.name === 'TimeoutError' && attempt < maxRetries) {
+                    console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
+                    await sleep(5000);
+                } else {
+                    console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
+                    throw error;
+                }
+            }
+        }
+    }
+
     try {
-        await page.goto('https://www.flashscore.pt/basquetebol/eua/nba/lista/', { timeout: 180000 });
+        await tryNavigate('https://www.flashscore.pt/basquetebol/eua/nba/lista/', page);
         await sleep(12000);
 
         const ids = await page.evaluate(() => {
@@ -70,12 +89,11 @@ async function scrapeResults() {
         });
 
         const page2 = await browser.newPage();
-        const futureGamesData = [];
 
         for (let id of ids) {
             const summaryUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/`;
             console.log("Processando URL de resumo:", summaryUrl);
-            await page2.goto(summaryUrl, { timeout: 180000 });
+            await tryNavigate(summaryUrl, page2);
             await sleep(10000);
 
             let gameDateStr = '';
@@ -88,12 +106,16 @@ async function scrapeResults() {
                     (element) => element.textContent.trim()
                 );
 
-                // Extrair e ajustar a data do jogo para o formato PostgreSQL
                 const [datePart, time] = dataJogo.split(' ');
                 const [day, month] = datePart.split('.');
-                const year = new Date().getFullYear();
-                gameDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
+                let year = new Date().getFullYear();
 
+                const currentMonth = new Date().getMonth() + 1;
+                if (parseInt(month) < currentMonth) {
+                    year += 1;
+                }
+
+                gameDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
                 console.log(`Data do jogo ajustada: ${gameDateStr}`);
 
                 timeHome = await page2.$eval(
@@ -114,28 +136,32 @@ async function scrapeResults() {
 
             const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
             console.log("Processando URL de odds 1x2:", oddsUrl);
-            await page2.goto(oddsUrl, { timeout: 180000 });
+            await tryNavigate(oddsUrl, page2);
             await sleep(10000);
 
             let homeOdds = '';
             let awayOdds = '';
 
             try {
-                homeOdds = await page2.$eval('#detail div:nth-child(7) a:nth-child(2) span', el => el.textContent.trim());
-                awayOdds = await page2.$eval('#detail div:nth-child(7) a:nth-child(3) span', el => el.textContent.trim());
-                console.log(`Odds casa: ${homeOdds}, Odds visitante: ${awayOdds}`);
+                const homeOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(2) > span');
+                const awayOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(3) > span');
+
+                if (homeOddsElement && awayOddsElement) {
+                    homeOdds = await homeOddsElement.evaluate((element) => element.textContent.trim());
+                    awayOdds = await awayOddsElement.evaluate((element) => element.textContent.trim());
+                    console.log(`Odds casa: ${homeOdds}, Odds visitante: ${awayOdds}`);
+                }
             } catch (error) {
                 console.error('Erro ao processar a página de odds 1x2:', error);
                 continue;
             }
 
-            // Salvar dados
             futureGamesData.push({
-                dataJogo: gameDateStr,
-                timeHome,
-                timeAway,
-                homeOdds: parseFloat(homeOdds) || 0,
-                awayOdds: parseFloat(awayOdds) || 0,
+                dataJogo: gameDateStr || 0,
+                timeHome: timeHome || 'Indefinido',
+                timeAway: timeAway || 'Indefinido',
+                homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds),
+                awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
                 overDoisMeioOdds: 0,
                 overOdds: 0,
             });
