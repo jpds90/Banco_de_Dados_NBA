@@ -83,7 +83,7 @@ async function scrapeResults() {
       if (!sportName) throw new Error('sportName não encontrado');
       const ids = [];
       sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
-      return ids.slice(0, 1);
+      return ids.slice(0, 2);
     });
 
     const page2 = await browser.newPage();
@@ -114,18 +114,23 @@ async function scrapeResults() {
         }
         dataJogo = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
 
+        // Processar informações do jogo
         timeHome = await page2.$eval(
-          `div.duelParticipant__home .participant__participantName a`,
-          (element) => element.textContent.trim()
+            `div.duelParticipant__home .participant__participantName a`,
+            (element) => element.textContent.trim()
         );
+        console.log(`Time da casa: ${timeHome}`);
+
         timeAway = await page2.$eval(
-          `div.duelParticipant__away .participant__participantName`,
-          (element) => element.textContent.trim()
+            `div.duelParticipant__away .participant__participantName`,
+            (element) => element.textContent.trim()
         );
-      } catch (error) {
+        console.log(`Time visitante: ${timeAway}`);
+    } catch (error) {
         console.error('Erro ao processar a página de resumo:', error);
         continue;
-      }
+    }
+
 
             const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
             console.log("Processando URL de odds 1x2:", oddsUrl);
