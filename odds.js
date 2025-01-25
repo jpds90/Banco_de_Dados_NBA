@@ -7,6 +7,23 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
+// Defina tryNavigate aqui
+async function tryNavigate(url, page, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            await page.goto(url, { timeout: 180000 });
+            return;
+        } catch (error) {
+            if (error.name === 'TimeoutError' && attempt < maxRetries) {
+                console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
+                await sleep(5000);
+            } else {
+                console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
+                throw error;
+            }
+        }
+    }
+}
 
 async function saveToDatabase(data) {
   const client = await pool.connect();
