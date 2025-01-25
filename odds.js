@@ -4,154 +4,164 @@ const sleep = require('sleep-promise');
 
 // Configuração da conexão com o banco de dados
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL, // Usando a URL completa
+ connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
-// Defina tryNavigate aqui
-async function tryNavigate(url, page, maxRetries = 3) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            await page.goto(url, { timeout: 180000 });
-            return;
-        } catch (error) {
-            if (error.name === 'TimeoutError' && attempt < maxRetries) {
-                console.log(`Timeout na tentativa ${attempt} para ${url}. Tentando novamente...`);
-                await sleep(5000);
-            } else {
-                console.error(`Erro ao navegar para ${url} após ${maxRetries} tentativas:`, error);
-                throw error;
-            }
-        }
-    }
-}
 
 async function saveToDatabase(data) {
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
 
-    // Limpar tabela e reiniciar sequência de ID
-    await client.query('TRUNCATE TABLE odds RESTART IDENTITY');
+        // Limpar tabela e reiniciar sequência de ID
+        await client.query('TRUNCATE TABLE odds RESTART IDENTITY');
 
-    console.log('Tabela odds limpa e ID reiniciado.');
+        console.log('Tabela odds limpa e ID reiniciado.');
 
-    const queryText = `
-      INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id
-    `;
+        const queryText = `
+            INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+        `;
 
-    for (const row of data) {
-      const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = row;
+        for (const row of data) {
+            const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = row;
 
-      await client.query(queryText, [
-        dataJogo,
-        timeHome,
-        timeAway,
-        homeOdds,
-        awayOdds,
-        overDoisMeioOdds,
-        overOdds,
-      ]);
+            await client.query(queryText, [
+                dataJogo,
+                timeHome,
+                timeAway,
+                homeOdds,
+                awayOdds,
+                overDoisMeioOdds,
+                overOdds,
+            ]);
+        }
+
+        await client.query('COMMIT');
+        console.log('Dados salvos no banco com sucesso.');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Erro ao salvar no banco de dados:', error);
+    } finally {
+        client.release();
     }
-
-    await client.query('COMMIT');
-    console.log('Dados salvos no banco com sucesso.');
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Erro ao salvar no banco de dados:', error);
-  } finally {
-    client.release();
-  }
 }
 
+
 async function scrapeResults() {
-  const browser = await puppeteer.launch({
-    headless: true, // Garante que o navegador rode em modo headless
-    args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
-  });
-  const page = await browser.newPage();
-
-  try {
-    await tryNavigate('https://www.flashscore.pt/basquetebol/eua/nba/lista/', page);
-    await sleep(12000);
-
-    const ids = await page.evaluate(() => {
-      const container = document.querySelector('.container');
-      if (!container) throw new Error('Container não encontrado');
-      const sportName = container.querySelector('.sportName.basketball');
-      if (!sportName) throw new Error('sportName não encontrado');
-      const ids = [];
-      sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
-      return ids.slice(0, 1);
+        const browser = await puppeteer.launch({
+        headless: true, // Garante que o navegador rode em modo headless
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
     });
-
+    const page = await browser.newPage();
+    
     const page2 = await browser.newPage();
     const futureGamesData = [];
 
-    for (let id of ids) {
-      const summaryUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/`;
-      console.log("Processando URL de resumo:", summaryUrl);
-      await tryNavigate(summaryUrl, page2);
-      await sleep(10000);
+    try {
+        await page.goto('https://www.flashscore.pt/basquetebol/eua/nba/lista/', { timeout: 180000 });
+        await sleep(12000);
 
-      let dataJogo = '';
-      let timeHome = '';
-      let timeAway = '';
+        const ids = await page.evaluate(() => {
+            const container = document.querySelector('.container');
+            if (!container) throw new Error('Container não encontrado');
+            const sportName = container.querySelector('.sportName.basketball');
+            if (!sportName) throw new Error('sportName não encontrado');
+            const ids = [];
+            sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
+            return ids.slice(0, 15);
+        });
 
-      try {
+// Processamento do loop
+for (let id of ids) {
+    const summaryUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/`;
+    console.log("Processando URL de resumo:", summaryUrl);
+    await page2.goto(summaryUrl, { timeout: 180000 });
+    await sleep(10000);
+
+    let dataJogo = '';
+    let gameDateStr = '';
+    let timeHome = '';
+    let timeAway = '';
+
+    try {
         dataJogo = await page2.$eval(
-          `div.duelParticipant__startTime`,
-          (element) => element.textContent.trim()
+            `div.duelParticipant__startTime`,
+            (element) => element.textContent.trim()
         );
-
+        
+        // Divide a string em duas partes: data (ex.: "13.12.") e hora (ex.: "00:30")
         const [datePart, time] = dataJogo.split(' '); // Divide em data e hora
-        const [day, month] = datePart.split('.');
+        const [day, month] = datePart.split('.'); // Extrai dia e mês
+        
+        // Obtém o ano atual
         let year = new Date().getFullYear();
-        const currentMonth = new Date().getMonth() + 1;
+        
+        // Corrige o ano se o mês do jogo for menor que o mês atual
+        const currentMonth = new Date().getMonth() + 1; // `getMonth()` retorna 0 para janeiro
         if (parseInt(month) < currentMonth) {
-          year += 1;
+            year += 1; // Avança para o próximo ano
         }
-        dataJogo = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
+        
+        // Converte para o formato compatível com PostgreSQL (YYYY-MM-DD HH:mm)
+        gameDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
+        
+        console.log(`Data do jogo ajustada: ${gameDateStr}`);
 
+        // Processar informações do jogo
         timeHome = await page2.$eval(
-          `div.duelParticipant__home .participant__participantName a`,
-          (element) => element.textContent.trim()
+            `div.duelParticipant__home .participant__participantName a`,
+            (element) => element.textContent.trim()
         );
+        console.log(`Time da casa: ${timeHome}`);
+
         timeAway = await page2.$eval(
-          `div.duelParticipant__away .participant__participantName`,
-          (element) => element.textContent.trim()
+            `div.duelParticipant__away .participant__participantName`,
+            (element) => element.textContent.trim()
         );
-      } catch (error) {
+        console.log(`Time visitante: ${timeAway}`);
+    } catch (error) {
         console.error('Erro ao processar a página de resumo:', error);
         continue;
-      }
+    }
 
-      const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
-      console.log("Processando URL de odds 1x2:", oddsUrl);
-      await tryNavigate(oddsUrl, page2);
-      await sleep(10000);
-
-      let homeOdds = '';
-      let awayOdds = '';
-
-      try {
-        const homeOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(2) > span');
-        const awayOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(3) > span');
-        if (homeOddsElement && awayOddsElement) {
-          homeOdds = await homeOddsElement.evaluate((element) => element.textContent.trim());
-          awayOdds = await awayOddsElement.evaluate((element) => element.textContent.trim());
-        } else {
-          continue;
-        }
-      } catch (error) {
-        console.error('Erro ao processar a página de odds 1x2:', error);
+    if (!gameDateStr) {
+        console.error(`Data inválida para o jogo com ID ${id}. Ignorando entrada.`);
         continue;
-      }
+    }
+
+            const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
+            console.log("Processando URL de odds 1x2:", oddsUrl);
+            await page2.goto(oddsUrl, { timeout: 180000 });
+            await sleep(10000);
+
+            let homeOdds = '';
+            let awayOdds = '';
+
+            try {
+                // Selecionando os odds diretamente pelos novos seletores
+                const homeOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(2) > span');
+                const awayOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(3) > span');
+                
+                if (homeOddsElement && awayOddsElement) {
+                    homeOdds = await homeOddsElement.evaluate((element) => element.textContent.trim());
+                    awayOdds = await awayOddsElement.evaluate((element) => element.textContent.trim());
+                    
+                    console.log(`Odds casa: ${homeOdds}, Odds visitante: ${awayOdds}`);
+                } else {
+                    console.log('Elementos de odds não encontrados.');
+                    continue;
+                }
+            } catch (error) {
+                console.error('Erro ao processar a página de odds 1x2:', error);
+                continue;
+            }
+            
 
             const oddsmaisemenosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de`;
             console.log("Processando URL Pontos:", oddsmaisemenosUrl);
-            await tryNavigate(oddsmaisemenosUrl, page2);
+            await page2.goto(oddsmaisemenosUrl, { timeout: 180000 });
             await sleep(10000);
         
             let overDoisMeioOdds = '';
@@ -202,25 +212,27 @@ async function scrapeResults() {
                 console.error('Erro ao processar a página de odds mais de/menos de:', error);
                 continue;
             }
-      futureGamesData.push({
-        dataJogo: dataJogo || 0,
-        timeHome: timeHome || 'Indefinido',
-        timeAway: timeAway || 'Indefinido',
-        homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds),
-        awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
-        overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
-        overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
-      });
-    }
+            futureGamesData.push({
+                dataJogo: gameDateStr || 0, // Substitua por NULL se o valor estiver vazio
+                timeHome: timeHome || 'Indefinido',
+                timeAway: timeAway || 'Indefinido',
+                homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds), // Certifique-se de que é numérico
+                awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
+                overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
+                overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
+            });
+            
+        }
 
-    if (futureGamesData.length > 0) {
-      await saveToDatabase(futureGamesData);
+        if (futureGamesData.length > 0) {
+            await saveToDatabase(futureGamesData);
+        }
+    } catch (error) {
+        console.error('Erro durante o scraping:', error);
+        
+    } finally {
+        await browser.close();
     }
-  } catch (error) {
-    console.error('Erro durante o scraping:', error);
-  } finally {
-    await browser.close();
-  }
 }
 
 scrapeResults();
