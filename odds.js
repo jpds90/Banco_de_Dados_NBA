@@ -139,7 +139,7 @@ async function scrapeResults() {
                 console.error(`Data inválida para o jogo com ID ${id}. Ignorando entrada.`);
                 continue;
             }
-        const oddsUrl = https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds;
+        const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
             console.log("Processando URL de odds 1x2:", oddsUrl);
             await tryNavigate(oddsUrl, page2);
             await sleep(10000);
@@ -167,7 +167,7 @@ async function scrapeResults() {
             }
             
 
-            const oddsmaisemenosUrl = https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de;
+            const oddsmaisemenosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de`;
             console.log("Processando URL Pontos:", oddsmaisemenosUrl);
             await tryNavigate(oddsmaisemenosUrl, page2);
             await sleep(10000);
@@ -222,14 +222,15 @@ async function scrapeResults() {
             }
             // Adicionar lógica para odds aqui
             futureGamesData.push({
-                dataJogo: gameDateStr || 0,
-                timeHome: timeHome || 'Indefinido',
-                timeAway: timeAway || 'Indefinido',
-                homeOdds: 0, // Substitua pela lógica de odds
-                awayOdds: 0, // Substitua pela lógica de odds
-                overDoisMeioOdds: 0, // Substitua pela lógica de odds
-                overOdds: 0, // Substitua pela lógica de odds
-            });
+    dataJogo: gameDateStr,
+    timeHome: timeHome,
+    timeAway: timeAway,
+    homeOdds: homeOdds || 0,
+    awayOdds: awayOdds || 0,
+    overDoisMeioOdds: overDoisMeioOdds || 0,
+    overOdds: overOdds || 0,
+});
+
         }
 
         if (futureGamesData.length > 0) {
