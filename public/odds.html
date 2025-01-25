@@ -280,7 +280,8 @@
                     <td><input type="number" step="0.01" id="odds-1" placeholder="Ex: 2.6" /></td>
                     <td><input type="number" step="0.01" id="odds-2" placeholder="Ex: 1.53" /></td>
                     <td><input type="number" step="0.01" id="odds-over-under" placeholder="Ex: 1.04" /></td>
-                    <td><input type="number" step="1" id="over-under-value" placeholder="Ex: 202" /></td>
+                    <td><input type="number" step="1" id="over-under-value" placeholder="Ex: 202" />
+                    </td><td><button id="save-row">Salvar</button></td>
                 </tr>
             </tbody>
         </table>
@@ -1013,6 +1014,50 @@ console.log(`Time visitante: ${awayPercentage}%`);
         });
 });
 
+document.querySelector('#save-row').addEventListener('click', async () => {
+    // Coleta os valores dos inputs
+    const dataJogo = document.querySelector('#game-date').value;
+    const timeHome = document.querySelector('#team-home').value;
+    const timeAway = document.querySelector('#team-away').value;
+    const homeOdds = parseFloat(document.querySelector('#odds-1').value);
+    const awayOdds = parseFloat(document.querySelector('#odds-2').value);
+    const overDoisMeioOdds = parseFloat(document.querySelector('#odds-over-under').value);
+    const overOdds = parseFloat(document.querySelector('#over-under-value').value);
+
+    // Cria o objeto com os dados
+    const data = {
+        dataJogo,
+        timeHome,
+        timeAway,
+        homeOdds,
+        awayOdds,
+        overDoisMeioOdds,
+        overOdds,
+    };
+
+    try {
+        // Envia os dados para o backend
+        const response = await fetch('/save-odds', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('Dados salvos com sucesso:', result);
+            alert('Dados salvos no banco de dados!');
+        } else {
+            console.error('Erro ao salvar os dados:', response.statusText);
+            alert('Erro ao salvar os dados. Tente novamente.');
+        }
+    } catch (error) {
+        console.error('Erro na solicitação:', error);
+        alert('Erro ao comunicar com o servidor.');
+    }
+});
 
 
     </script>
