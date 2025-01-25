@@ -1016,7 +1016,7 @@ console.log(`Time visitante: ${awayPercentage}%`);
 
 document.querySelector('#save-row').addEventListener('click', async () => {
     // Coleta os valores dos inputs
-    const dataJogo = document.querySelector('#game-date').value;
+    const inputDate = document.querySelector('#game-date').value; // Formato: YYYY-MM-DD
     const timeHome = document.querySelector('#team-home').value;
     const timeAway = document.querySelector('#team-away').value;
     const homeOdds = parseFloat(document.querySelector('#odds-1').value);
@@ -1024,9 +1024,13 @@ document.querySelector('#save-row').addEventListener('click', async () => {
     const overDoisMeioOdds = parseFloat(document.querySelector('#odds-over-under').value);
     const overOdds = parseFloat(document.querySelector('#over-under-value').value);
 
+    // Converte a data para o formato especificado
+    const dateObject = new Date(`${inputDate}T20:00:00Z`); // Adiciona horário fixo (20:00 UTC)
+    const formattedDate = dateObject.toString(); // Transforma no formato necessário
+
     // Cria o objeto com os dados
     const data = {
-        dataJogo,
+        dataJogo: formattedDate, // Data formatada
         timeHome,
         timeAway,
         homeOdds,
@@ -1058,6 +1062,7 @@ document.querySelector('#save-row').addEventListener('click', async () => {
         alert('Erro ao comunicar com o servidor.');
     }
 });
+
 
 
     </script>
