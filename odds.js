@@ -202,15 +202,15 @@ async function scrapeResults() {
                 console.error('Erro ao processar a página de odds mais de/menos de:', error);
                 continue;
             }
-            futureGamesData.push({
-                dataJogo: gameDateStr || 0, // Substitua por NULL se o valor estiver vazio
-                timeHome: timeHome || 'Indefinido',
-                timeAway: timeAway || 'Indefinido',
-                homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds), // Certifique-se de que é numérico
-                awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
-                overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
-                overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
-            });
+      futureGamesData.push({
+        dataJogo: dataJogo || 0,
+        timeHome: timeHome || 'Indefinido',
+        timeAway: timeAway || 'Indefinido',
+        homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds),
+        awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
+        overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
+        overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
+      });
     }
 
     if (futureGamesData.length > 0) {
