@@ -200,7 +200,89 @@
                     <th>Mais/Menos</th>
                 </tr>
             </thead>
-            <tbody id="oddsTable"></tbody>
+            <tbody id="oddsTable">
+                <!-- Linha Interativa -->
+                <tr>
+                    <td></td>
+                    <td><input type="date" id="game-date" /></td>
+                    <td>
+                        <select id="team-home">
+                            <option value="">Selecione o time</option>
+                            <option value="Atlanta Hawks">Atlanta Hawks</option>
+                            <option value="Boston Celtics">Boston Celtics</option>
+                            <option value="Brooklyn Nets">Brooklyn Nets</option>
+                            <option value="Charlotte Hornets">Charlotte Hornets</option>
+                            <option value="Chicago Bulls">Chicago Bulls</option>
+                            <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                            <option value="Dallas Mavericks">Dallas Mavericks</option>
+                            <option value="Denver Nuggets">Denver Nuggets</option>
+                            <option value="Detroit Pistons">Detroit Pistons</option>
+                            <option value="Golden State Warriors">Golden State Warriors</option>
+                            <option value="Houston Rockets">Houston Rockets</option>
+                            <option value="Indiana Pacers">Indiana Pacers</option>
+                            <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                            <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                            <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                            <option value="Miami Heat">Miami Heat</option>
+                            <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                            <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                            <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                            <option value="New York Knicks">New York Knicks</option>
+                            <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                            <option value="Orlando Magic">Orlando Magic</option>
+                            <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                            <option value="Phoenix Suns">Phoenix Suns</option>
+                            <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                            <option value="Sacramento Kings">Sacramento Kings</option>
+                            <option value="San Antonio Spurs">San Antonio Spurs</option>
+                            <option value="Toronto Raptors">Toronto Raptors</option>
+                            <option value="Utah Jazz">Utah Jazz</option>
+                            <option value="Washington Wizards">Washington Wizards</option>
+                            <!-- Adicione mais times conforme necessário -->
+                        </select>
+                    </td>
+                    <td>
+                        <select id="team-away">
+                            <option value="">Selecione o time</option>
+                            <option value="Atlanta Hawks">Atlanta Hawks</option>
+                            <option value="Boston Celtics">Boston Celtics</option>
+                            <option value="Brooklyn Nets">Brooklyn Nets</option>
+                            <option value="Charlotte Hornets">Charlotte Hornets</option>
+                            <option value="Chicago Bulls">Chicago Bulls</option>
+                            <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                            <option value="Dallas Mavericks">Dallas Mavericks</option>
+                            <option value="Denver Nuggets">Denver Nuggets</option>
+                            <option value="Detroit Pistons">Detroit Pistons</option>
+                            <option value="Golden State Warriors">Golden State Warriors</option>
+                            <option value="Houston Rockets">Houston Rockets</option>
+                            <option value="Indiana Pacers">Indiana Pacers</option>
+                            <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                            <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                            <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                            <option value="Miami Heat">Miami Heat</option>
+                            <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                            <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                            <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                            <option value="New York Knicks">New York Knicks</option>
+                            <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                            <option value="Orlando Magic">Orlando Magic</option>
+                            <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                            <option value="Phoenix Suns">Phoenix Suns</option>
+                            <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                            <option value="Sacramento Kings">Sacramento Kings</option>
+                            <option value="San Antonio Spurs">San Antonio Spurs</option>
+                            <option value="Toronto Raptors">Toronto Raptors</option>
+                            <option value="Utah Jazz">Utah Jazz</option>
+                            <option value="Washington Wizards">Washington Wizards</option>
+                            <!-- Adicione mais times conforme necessário -->
+                        </select>
+                    </td>
+                    <td><input type="number" step="0.01" id="odds-1" placeholder="Ex: 2.6" /></td>
+                    <td><input type="number" step="0.01" id="odds-2" placeholder="Ex: 1.53" /></td>
+                    <td><input type="number" step="0.01" id="odds-over-under" placeholder="Ex: 1.04" /></td>
+                    <td><input type="number" step="1" id="over-under-value" placeholder="Ex: 202" /></td>
+                </tr>
+            </tbody>
         </table>
 
         <!-- Tabelas Lado a Lado (2 em 2) -->
