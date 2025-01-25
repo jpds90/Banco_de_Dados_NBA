@@ -83,7 +83,7 @@ async function scrapeResults() {
       if (!sportName) throw new Error('sportName não encontrado');
       const ids = [];
       sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
-      return ids.slice(0, 15);
+      return ids.slice(0, 1);
     });
 
     const page2 = await browser.newPage();
