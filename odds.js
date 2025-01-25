@@ -83,7 +83,7 @@ async function scrapeResults() {
       if (!sportName) throw new Error('sportName não encontrado');
       const ids = [];
       sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
-      return ids.slice(0, 2);
+      return ids.slice(0, 15);
     });
 
     const page2 = await browser.newPage();
@@ -114,51 +114,40 @@ async function scrapeResults() {
         }
         dataJogo = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
 
-        // Processar informações do jogo
         timeHome = await page2.$eval(
-            `div.duelParticipant__home .participant__participantName a`,
-            (element) => element.textContent.trim()
+          `div.duelParticipant__home .participant__participantName a`,
+          (element) => element.textContent.trim()
         );
-        console.log(`Time da casa: ${timeHome}`);
-
         timeAway = await page2.$eval(
-            `div.duelParticipant__away .participant__participantName`,
-            (element) => element.textContent.trim()
+          `div.duelParticipant__away .participant__participantName`,
+          (element) => element.textContent.trim()
         );
-        console.log(`Time visitante: ${timeAway}`);
-    } catch (error) {
+      } catch (error) {
         console.error('Erro ao processar a página de resumo:', error);
         continue;
-    }
+      }
 
+      const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
+      console.log("Processando URL de odds 1x2:", oddsUrl);
+      await tryNavigate(oddsUrl, page2);
+      await sleep(10000);
 
-            const oddsUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds`;
-            console.log("Processando URL de odds 1x2:", oddsUrl);
-            await tryNavigate(oddsUrl, page2);
-            await sleep(10000);
+      let homeOdds = '';
+      let awayOdds = '';
 
-            let homeOdds = '';
-            let awayOdds = '';
-
-            try {
-                // Selecionando os odds diretamente pelos novos seletores
-                const homeOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(2) > span');
-                const awayOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(3) > span');
-                
-                if (homeOddsElement && awayOddsElement) {
-                    homeOdds = await homeOddsElement.evaluate((element) => element.textContent.trim());
-                    awayOdds = await awayOddsElement.evaluate((element) => element.textContent.trim());
-                    
-                    console.log(`Odds casa: ${homeOdds}, Odds visitante: ${awayOdds}`);
-                } else {
-                    console.log('Elementos de odds não encontrados.');
-                    continue;
-                }
-            } catch (error) {
-                console.error('Erro ao processar a página de odds 1x2:', error);
-                continue;
-            }
-            
+      try {
+        const homeOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(2) > span');
+        const awayOddsElement = await page2.$('#detail > div:nth-child(7) > div > div.oddsTab__tableWrapper > div > div.ui-table__body > div > a:nth-child(3) > span');
+        if (homeOddsElement && awayOddsElement) {
+          homeOdds = await homeOddsElement.evaluate((element) => element.textContent.trim());
+          awayOdds = await awayOddsElement.evaluate((element) => element.textContent.trim());
+        } else {
+          continue;
+        }
+      } catch (error) {
+        console.error('Erro ao processar a página de odds 1x2:', error);
+        continue;
+      }
 
             const oddsmaisemenosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de`;
             console.log("Processando URL Pontos:", oddsmaisemenosUrl);
