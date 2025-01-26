@@ -1021,7 +1021,7 @@ console.log(`Time visitante: ${awayPercentage}%`);
 });
 document.querySelector('#save-row').addEventListener('click', async () => {
     // Coleta os valores dos inputs
-    const inputDate = document.querySelector('#game-date').value; // Formato: YYYY-MM-DD
+    const inputDate = document.querySelector('#game-date').value;
     const timeHome = document.querySelector('#team-home').value;
     const timeAway = document.querySelector('#team-away').value;
     const homeOdds = parseFloat(document.querySelector('#odds-1').value);
@@ -1029,31 +1029,35 @@ document.querySelector('#save-row').addEventListener('click', async () => {
     const overDoisMeioOdds = parseFloat(document.querySelector('#odds-over-under').value);
     const overOdds = parseFloat(document.querySelector('#over-under-value').value);
 
-    // Converte a data para o formato especificado
-    const dateObject = new Date(`${inputDate}T20:00:00Z`); // Adiciona horário fixo (20:00 UTC)
-    const formattedDate = dateObject.toString(); // Transforma no formato necessário
-
-    // Cria o objeto com os dados
-    const data = {
-        dataJogo: formattedDate, // Data formatada
+    // Exibe os dados no console para verificar
+    console.log('Dados coletados:', {
+        inputDate,
         timeHome,
         timeAway,
         homeOdds,
         awayOdds,
         overDoisMeioOdds,
-        overOdds,
+        overOdds
+    });
+
+    const data = {
+        dataJogo: inputDate,
+        timeHome,
+        timeAway,
+        homeOdds,
+        awayOdds,
+        overDoisMeioOdds,
+        overOdds
     };
 
     try {
-        // Envia os dados para o backend
-const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-});
-
+        const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        });
 
         if (response.ok) {
             const result = await response.json();
@@ -1068,6 +1072,7 @@ const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
         alert('Erro ao comunicar com o servidor.');
     }
 });
+
 
 
 
