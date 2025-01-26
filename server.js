@@ -2802,4 +2802,12 @@ app.post('/save-odds', async (req, res) => {
     }
 });
 
+// Servir arquivos estáticos da pasta 'public'
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Iniciar o servidor
+app.listen(port, () => {
+    console.log(`Servidor rodando em http://localhost:${port}/`);
+});
+
 
