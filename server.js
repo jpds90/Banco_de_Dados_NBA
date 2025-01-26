@@ -2744,32 +2744,53 @@ app.post('/startrender', (req, res) => {
     });
 });
 
-// Rota para salvar os dados no banco
+// Endpoint para salvar os dados na tabela `odds`
 app.post('/save-odds', async (req, res) => {
-    const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = req.body;
+  const {
+    dataJogo,
+    timeHome,
+    timeAway,
+    homeOdds,
+    awayOdds,
+    overDoisMeioOdds,
+    overOdds,
+  } = req.body;
 
+  if (!dataJogo || !timeHome || !timeAway || homeOdds == null || awayOdds == null || overDoisMeioOdds == null || overOdds == null) {
+    return res.status(400).json({ error: 'Todos os campos são obrigatórios.' });
+  }
+
+  const client = await pool.connect();
+
+  try {
     const queryText = `
-        INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id
+      INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING id
     `;
 
-    try {
-        const result = await pool.query(queryText, [
-            dataJogo,
-            timeHome,
-            timeAway,
-            homeOdds,
-            awayOdds,
-            overDoisMeioOdds,
-            overOdds,
-        ]);
+    const values = [
+      dataJogo,
+      timeHome,
+      timeAway,
+      homeOdds,
+      awayOdds,
+      overDoisMeioOdds,
+      overOdds,
+    ];
 
-        res.status(200).json({ message: 'Dados salvos com sucesso', id: result.rows[0].id });
-    } catch (error) {
-        console.error('Erro ao salvar no banco:', error);
-        res.status(500).json({ message: 'Erro ao salvar os dados' });
-    }
+    const result = await client.query(queryText, values);
+
+    res.status(201).json({
+      message: 'Dados salvos com sucesso.',
+      id: result.rows[0].id,
+    });
+  } catch (error) {
+    console.error('Erro ao salvar no banco de dados:', error);
+    res.status(500).json({ error: 'Erro interno ao salvar os dados.' });
+  } finally {
+    client.release();
+  }
 });
 
 // Servir arquivos estáticos da pasta 'public'
