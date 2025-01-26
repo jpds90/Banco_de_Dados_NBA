@@ -2746,8 +2746,8 @@ app.post('/startrender', (req, res) => {
 
 
 // Rota para salvar os dados no banco de dados
+// Rota para salvar os dados no banco de dados
 app.post('/save-odds', async (req, res) => {
-    // Logs para verificar os dados recebidos na requisição
     console.log('Recebendo dados:', req.body);
 
     const {
@@ -2777,6 +2777,17 @@ app.post('/save-odds', async (req, res) => {
             RETURNING id;
         `;
 
+        // Log da query antes de executar
+        console.log('Executando query com os seguintes dados:', [
+            dataJogo,
+            timeHome,
+            timeAway,
+            homeOdds,
+            awayOdds,
+            overDoisMeioOdds,
+            overOdds,
+        ]);
+
         // Executa a query de inserção no banco de dados
         const result = await client.query(queryText, [
             dataJogo,
@@ -2798,9 +2809,8 @@ app.post('/save-odds', async (req, res) => {
         res.status(200).json({ success: true, id: result.rows[0].id });
     } catch (error) {
         // Log do erro caso ocorra
-        console.error('Erro ao salvar os dados:', error);
-        
-        // Retorna erro para o frontend
+        console.error('Erro ao salvar os dados:', error.message);
+        console.error(error.stack); // Log da pilha de erro para mais detalhes
         res.status(500).json({ error: 'Erro interno do servidor.' });
     }
 });
