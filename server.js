@@ -2745,9 +2745,13 @@ app.post('/startrender', (req, res) => {
 
 
 // Rota para salvar os dados no banco de dados
-// Rota para salvar os dados no banco de dados
 app.post('/save-odds', async (req, res) => {
   const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = req.body;
+
+  // Verifique se os dados estão completos
+  if (!dataJogo || !timeHome || !timeAway || isNaN(homeOdds) || isNaN(awayOdds) || isNaN(overDoisMeioOdds) || isNaN(overOdds)) {
+    return res.status(400).json({ success: false, message: 'Dados incompletos' });
+  }
 
   // Query para inserir os dados na tabela 'odds'
   const queryText = `
@@ -2764,6 +2768,7 @@ app.post('/save-odds', async (req, res) => {
     const insertedId = result.rows[0].id; // Pega o ID inserido
     console.log('Dados salvos com sucesso, ID:', insertedId);
     
+    // Retorne a resposta com sucesso
     res.status(200).json({ success: true, id: insertedId });
   } catch (error) {
     console.error('Erro ao salvar no banco de dados:', error);
