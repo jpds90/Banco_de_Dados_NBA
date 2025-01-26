@@ -2745,6 +2745,61 @@ app.post('/startrender', (req, res) => {
 });
 
 
+// Rota para salvar os dados no banco de dados
+app.post('/save-odds', async (req, res) => {
+    const {
+        dataJogo,
+        timeHome,
+        timeAway,
+        homeOdds,
+        awayOdds,
+        overDoisMeioOdds,
+        overOdds,
+    } = req.body;
 
+    // Verificação básica dos dados recebidos
+    if (
+        !dataJogo ||
+        !timeHome ||
+        !timeAway ||
+        isNaN(homeOdds) ||
+        isNaN(awayOdds) ||
+        isNaN(overDoisMeioOdds) ||
+        isNaN(overOdds)
+    ) {
+        return res.status(400).json({ error: 'Dados inválidos fornecidos.' });
+    }
+
+    try {
+        // Conexão com o banco de dados
+        const client = await pool.connect();
+        try {
+            // Inserção dos dados na tabela `odds`
+            const queryText = `
+                INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                RETURNING id
+            `;
+
+            const result = await client.query(queryText, [
+                dataJogo,
+                timeHome,
+                timeAway,
+                homeOdds,
+                awayOdds,
+                overDoisMeioOdds,
+                overOdds,
+            ]);
+
+            const newRecordId = result.rows[0].id;
+            res.status(200).json({ message: 'Dados salvos com sucesso.', id: newRecordId });
+        } finally {
+            client.release();
+        }
+    } catch (error) {
+        console.error('Erro ao salvar dados no banco de dados:', error);
+        res.status(500).json({ error: 'Erro ao salvar dados no banco de dados.' });
+    }
+});
 
 
