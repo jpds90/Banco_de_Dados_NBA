@@ -8,10 +8,10 @@ const { scrapeResults1 } = require('./jogadores');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
-const cors = require('cors');;
+const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
 
-
+app.use(cors());
 const app = express();
 // Configuração da porta para Render (usa a variável PORT ou padrão 3000)
 const port = process.env.PORT || 3000;
