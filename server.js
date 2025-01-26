@@ -2746,35 +2746,32 @@ app.post('/startrender', (req, res) => {
 
 // Rota para salvar os dados no banco de dados
 app.post('/save-odds', async (req, res) => {
-  const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = req.body;
+    // Confirma se a requisição possui todos os dados necessários
+    const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = req.body;
 
-  // Verifique se os dados estão completos
-  if (!dataJogo || !timeHome || !timeAway || isNaN(homeOdds) || isNaN(awayOdds) || isNaN(overDoisMeioOdds) || isNaN(overOdds)) {
-    return res.status(400).json({ success: false, message: 'Dados incompletos' });
-  }
+    if (!dataJogo || !timeHome || !timeAway || isNaN(homeOdds) || isNaN(awayOdds) || isNaN(overDoisMeioOdds) || isNaN(overOdds)) {
+        return res.status(400).json({ success: false, message: 'Dados incompletos' });
+    }
 
-  // Query para inserir os dados na tabela 'odds'
-  const queryText = `
-    INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
-    RETURNING id;
-  `;
+    // Sua lógica de inserção no banco de dados
+    const queryText = `
+        INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id;
+    `;
+    try {
+        const result = await pool.query(queryText, [
+            dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds
+        ]);
 
-  try {
-    const result = await pool.query(queryText, [
-      dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds
-    ]);
-    
-    const insertedId = result.rows[0].id; // Pega o ID inserido
-    console.log('Dados salvos com sucesso, ID:', insertedId);
-    
-    // Retorne a resposta com sucesso
-    res.status(200).json({ success: true, id: insertedId });
-  } catch (error) {
-    console.error('Erro ao salvar no banco de dados:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
+        const insertedId = result.rows[0].id;
+        res.status(200).json({ success: true, id: insertedId });
+    } catch (error) {
+        console.error('Erro ao salvar no banco de dados:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
+
 
 
 
