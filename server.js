@@ -2747,6 +2747,9 @@ app.post('/startrender', (req, res) => {
 
 // Rota para salvar os dados no banco de dados
 app.post('/save-odds', async (req, res) => {
+    // Logs para verificar os dados recebidos na requisição
+    console.log('Recebendo dados:', req.body);
+
     const {
         dataJogo,
         timeHome,
@@ -2757,50 +2760,52 @@ app.post('/save-odds', async (req, res) => {
         overOdds,
     } = req.body;
 
-    // Verificação básica dos dados recebidos
-    if (
-        !dataJogo ||
-        !timeHome ||
-        !timeAway ||
-        isNaN(homeOdds) ||
-        isNaN(awayOdds) ||
-        isNaN(overDoisMeioOdds) ||
-        isNaN(overOdds)
-    ) {
-        return res.status(400).json({ error: 'Dados inválidos fornecidos.' });
+    // Verifica se todos os dados necessários foram enviados
+    if (!dataJogo || !timeHome || !timeAway || !homeOdds || !awayOdds || !overDoisMeioOdds || !overOdds) {
+        console.log('Erro: Dados inválidos', req.body);
+        return res.status(400).json({ error: 'Dados inválidos.' });
     }
 
     try {
         // Conexão com o banco de dados
         const client = await pool.connect();
-        try {
-            // Inserção dos dados na tabela `odds`
-            const queryText = `
-                INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
-                RETURNING id
-            `;
+        console.log('Conexão com o banco de dados estabelecida.');
 
-            const result = await client.query(queryText, [
-                dataJogo,
-                timeHome,
-                timeAway,
-                homeOdds,
-                awayOdds,
-                overDoisMeioOdds,
-                overOdds,
-            ]);
+        const queryText = `
+            INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id;
+        `;
 
-            const newRecordId = result.rows[0].id;
-            res.status(200).json({ message: 'Dados salvos com sucesso.', id: newRecordId });
-        } finally {
-            client.release();
-        }
+        // Executa a query de inserção no banco de dados
+        const result = await client.query(queryText, [
+            dataJogo,
+            timeHome,
+            timeAway,
+            homeOdds,
+            awayOdds,
+            overDoisMeioOdds,
+            overOdds,
+        ]);
+        
+        // Libera a conexão
+        client.release();
+
+        // Log do resultado da inserção
+        console.log('Dados inseridos com sucesso. ID:', result.rows[0].id);
+
+        // Retorna a resposta de sucesso
+        res.status(200).json({ success: true, id: result.rows[0].id });
     } catch (error) {
-        console.error('Erro ao salvar dados no banco de dados:', error);
-        res.status(500).json({ error: 'Erro ao salvar dados no banco de dados.' });
+        // Log do erro caso ocorra
+        console.error('Erro ao salvar os dados:', error);
+        
+        // Retorna erro para o frontend
+        res.status(500).json({ error: 'Erro interno do servidor.' });
     }
 });
+
+
 
 // Servir arquivos estáticos da pasta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
