@@ -14,8 +14,15 @@ const pool = new Pool({
 const getLastDateFromDatabase = async (teamName) => {
     const client = await pool.connect();
     try {
-        const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+        // Substituir caracteres especiais e garantir o sufixo "_jogadores"
+        const tableName = `${teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}_jogadores`;
+        console.log(`Buscando última data na tabela: "${tableName}"`);
+        
+        // Consulta ao banco de dados
         const result = await client.query(`SELECT data_hora FROM "${tableName}" ORDER BY data_hora DESC LIMIT 1`);
+        console.log(`Resultado da consulta:`, result.rows);
+        
+        // Retornar a data ou null se não houver resultados
         return result.rows.length > 0 ? result.rows[0].data_hora : null;
     } catch (error) {
         console.error('Erro ao buscar a última data no banco de dados:', error);
@@ -24,6 +31,7 @@ const getLastDateFromDatabase = async (teamName) => {
         client.release();
     }
 };
+
 // Função para tentar navegar com tentativas de re-execução
 const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
