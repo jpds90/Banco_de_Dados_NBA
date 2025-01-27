@@ -11,21 +11,14 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 // Função para obter a última data do banco de dados
-const getLastDateFromDatabase = async (teamName) => {
+const fetchLastDateFromDatabase = async (tableName) => {
     const client = await pool.connect();
     try {
-        // Substituir caracteres especiais e garantir o sufixo "_jogadores"
-        const tableName = `${teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase()}_jogadores`;
-        console.log(`Buscando última data na tabela: "${tableName}"`);
-        
-        // Consulta ao banco de dados
-        const result = await client.query(`SELECT data_hora FROM "${tableName}" ORDER BY data_hora DESC LIMIT 1`);
-        console.log(`Resultado da consulta:`, result.rows);
-        
-        // Retornar a data ou null se não houver resultados
-        return result.rows.length > 0 ? result.rows[0].data_hora : null;
+        const query = `SELECT MAX(data_hora) as last_date FROM ${tableName}`;
+        const result = await client.query(query);
+        return result.rows[0].last_date || null; // Retorna a última data ou null
     } catch (error) {
-        console.error('Erro ao buscar a última data no banco de dados:', error);
+        console.error(`Erro ao buscar a última data na tabela "${tableName}":`, error);
         return null;
     } finally {
         client.release();
@@ -308,33 +301,28 @@ const scrapeResults1 = async (link) => {
 
        // Extrair as estatísticas do jogador
        const statisticDataArray = [];
-       // Extração da data da lógica existente
-       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-       if (statisticElement) {
-           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
-           console.log(`${statisticData} encontrada!`);
-           statisticDataArray.push(statisticData);
+        const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+        if (statisticElement) {
+            const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
+            console.log(`${statisticData} encontrada!`);
 
-    // Obter a última data do banco de dados
-    const lastDate = await getLastDateFromDatabase(teamName);
-    console.log(`Última data no banco: ${lastDate}`);
+            // Buscar a última data do banco
+            const tableName = normalizedTeamName; // Substitua pelo nome correto da tabela
+            const lastDate = await fetchLastDateFromDatabase(tableName);
 
-    // Comparar as datas
-    if (lastDate && statisticData === lastDate) {
-        console.log('Data já registrada. Encerrando o processamento.');
-        await page.close();
-        await browser.close();
-        return;
-    }
-
-    console.log('Data nova encontrada. Continuando o processamento...');
-    // Aqui você pode adicionar o código para processar a nova data
-} else {
-    console.log('Dados não encontrados.');
-    await page.close();
-}
-
-    console.log('Data nova encontrada. Continuando o processamento...');
+            // Comparar as datas
+            if (lastDate && statisticData === lastDate) {
+                console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
+                await playerPage.close(); // Fecha a aba
+                continue; // Pula para o próximo jogador
+            } else {
+                console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
+            }
+        } else {
+            console.log('Dados não encontrados. Pulando para o próximo jogador.');
+            await playerPage.close();
+            continue;
+        }
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button', { timeout: 5000 });
