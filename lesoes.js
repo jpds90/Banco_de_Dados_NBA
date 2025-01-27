@@ -128,16 +128,14 @@ const scrapeResults3 = async (link) => {
       const playerName = element.querySelector('a').textContent.trim();
       let injuryStatus = null;
 
-      // Se o jogador tiver uma lesão, extrai o nome da lesão do <title> dentro do <svg>
+      // Só extrai o jogador se ele tiver uma lesão associada
       if (injuryElement) {
         const injuryTitle = injuryElement.querySelector('title');
         if (injuryTitle) {
           injuryStatus = injuryTitle.textContent.trim(); // Lesão
+          playerData.push({ name: playerName, injury: injuryStatus });
         }
       }
-
-      // Adiciona o jogador com o nome da lesão (se houver)
-      playerData.push({ name: playerName, injury: injuryStatus });
     });
 
     return playerData;
