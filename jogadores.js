@@ -328,30 +328,29 @@ const scrapeResults1 = async (link) => {
 
             // Extrair a data da estatística (statisticData) da página
             const statisticDataArray = [];
-       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-       if (statisticElement) {
-           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
-           console.log(`${statisticData} encontrada!`);
-           statisticDataArray.push(statisticData);
-       } else {
-           console.log('Dados não encontrados.');
-       }
+        const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+        
+        if (statisticElement) {
+            const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
+            console.log(`${statisticData} encontrada!`);
 
-                // Comparação das datas antes de qualquer outro processamento
-                if (lastDate && statisticData === lastDate) {
-                    console.log(`Data ${statisticData} já processada. Ignorando jogador...`);
-                    await page.close(); // Fecha a aba do jogador
-                    return; // Pula o processamento deste jogador
-                } else {
-                    console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
-                }
+            // Comparar as datas
+            if (lastDate && statisticData === lastDate) {
+                console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
+                await playerPage.close(); // Fecha a aba do jogador
+                continue; // Pula para o próximo jogador
             } else {
-                console.log('Dados de estatísticas não encontrados.');
+                console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
             }
-        } catch (error) {
-            console.error(`Erro ao buscar a última data ou processar o jogador para a tabela ${teamID10}:`, error);
+        } else {
+            console.log('Dados não encontrados. Pulando para o próximo jogador.');
+            await playerPage.close(); // Fecha a aba se os dados não foram encontrados
+            continue; // Pula para o próximo jogador
         }
-    } else {
+    } catch (error) {
+        console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
+    
+   } else {
         console.log("ID do time não foi definido corretamente.");
     }
 
