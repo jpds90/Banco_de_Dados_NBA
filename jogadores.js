@@ -320,214 +320,169 @@ const scrapeResults1 = async (link) => {
      return ids.slice(0, 12);
    });
 
-   console.log(ids);
-// Função para transformar o formato de data de "DD.MM.YYYY HH:MM" para "YYYY-MM-DD HH:MM"
-function formatDateToStandardFormat(dateString) {
-    const parts = dateString.split(' '); // Separa a data e a hora
-    const dateParts = parts[0].split('.'); // Separa a data por ponto (DD.MM.YYYY)
-    return `${dateParts[2]}-${dateParts[1]}-${dateParts[0]} ${parts[1]}`; // Retorna no formato "YYYY-MM-DD HH:MM"
-}
+console.log(ids); // Verifique se os IDs estão sendo extraídos corretamente
 
-// Loop para processar os IDs
 // Loop para processar os IDs
 for (let i = 0; i < ids.length; i++) {
     try {
-       const id = ids[i]; // Cada ID extraído
-       const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
-       console.log(`Processando o link do jogador com ID: ${id}`);
+        const id = ids[i]; // Cada ID extraído
+        const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
+        console.log(`Processando o link do jogador com ID: ${id}`);
 
         // Abrir uma nova aba para cada jogador
         const playerPage = await browser.newPage();
         await playerPage.goto(playerLink, { timeout: 120000 });
         await sleep(5000);  // Atraso para garantir que a página carregue
 
-        // Extrair as estatísticas do jogador
-        const statisticDataArray = [];
+        // Extrair a data do jogo do jogador
         const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-        
+        let statisticData = null;
+
         if (statisticElement) {
-            const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
+            statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
             console.log(`${statisticData} encontrada!`);
-
-            // Verificar se a data foi extraída corretamente
-            if (!statisticData) {
-                console.log('Erro ao extrair a data do jogador. Pulando jogador.');
-                await playerPage.close();  // Fecha a aba do jogador
-                continue;  // Pula para o próximo jogador
-            }
-
-            // Formatar a data extraída para o formato reconhecível
-            const formattedStatisticDate = formatDateToStandardFormat(statisticData);
-            const statisticDate = new Date(formattedStatisticDate); // Convertendo a string para um objeto Date
-
-            // Verificar se a data extraída é válida
-            if (isNaN(statisticDate.getTime())) {
-                console.log('Data extraída inválida. Pulando jogador.');
-                await playerPage.close();  // Fecha a aba do jogador
-                continue;  // Pula para o próximo jogador
-            }
-
-            // Formatar a data do banco de dados (lastDate) para o formato reconhecível
-            const formattedLastDate = formatDateToStandardFormat(lastDate);
-            const lastDateFormatted = new Date(formattedLastDate); // Convertendo a lastDate para objeto Date para comparação
-
-            // Verificar se lastDate é válida
-            if (isNaN(lastDateFormatted.getTime())) {
-                console.log('Data do banco de dados inválida. Verifique o valor de lastDate.');
-                await playerPage.close();  // Fecha a aba do jogador
-                continue;  // Pula para o próximo jogador
-            }
-
-            // Comparar as datas
-            if (statisticDate.getTime() === lastDateFormatted.getTime()) {
-                console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
-                await playerPage.close(); // Fecha a aba do jogador
-                continue; // Pula para o próximo jogador
-            } else {
-                console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
-                statisticDataArray.push(statisticData); // Caso a data não seja igual, você prossegue com o processamento
-            }
         } else {
-            console.log('Dados não encontrados para o jogador.');
+            console.log('Dados não encontrados.');
         }
+
+        // Comparação das datas antes de qualquer outro processamento
+        if (lastDate && statisticData === lastDate) {
+            console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
+            await playerPage.close(); // Fecha a aba do jogador
+            continue; // Pula para o próximo jogador
+        } else {
+            console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
+        }
+
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button', { timeout: 5000 });
 
+        // Processamento do botão 1
+        const element1 = await playerPage.$('#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button');
+        const boundingBox1 = await element1.boundingBox();
+        const textContent1 = await playerPage.evaluate(el => el.textContent.toLowerCase(), element1);
 
-       // Processamento do botão 1
-       const element1 = await playerPage.$('#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button');
-       const boundingBox1 = await element1.boundingBox();
-       const textContent1 = await playerPage.evaluate(el => el.textContent.toLowerCase(), element1);
+        // Processamento do botão 2
+        const element2 = await playerPage.$('#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button');
+        const boundingBox2 = await element2.boundingBox();
+        const textContent2 = await playerPage.evaluate(el => el.textContent.toLowerCase(), element2);
 
-       // Processamento do botão 2
-       const element2 = await playerPage.$('#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button');
-       const boundingBox2 = await element2.boundingBox();
-       const textContent2 = await playerPage.evaluate(el => el.textContent.toLowerCase(), element2);
+        // Lógica para clicar nos botões
+        if (teamId.toLowerCase() === textContent1) {
+            if (boundingBox1) {
+                await playerPage.mouse.click(boundingBox1.x + boundingBox1.width / 2, boundingBox1.y + boundingBox1.height / 2);
+                console.log(`Cliquei no botão correspondente ao teamId: ${teamId}`);
 
-       // Lógica para clicar nos botões
-       if (teamId.toLowerCase() === textContent1) {
-           if (boundingBox1) {
-               await playerPage.mouse.click(boundingBox1.x + boundingBox1.width / 2, boundingBox1.y + boundingBox1.height / 2);
-               console.log(`Cliquei no botão correspondente ao teamId: ${teamId}`);
+                // Gerar o link para o botão 1
+                const link1 = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/1`;
+                console.log(`Link gerado para o botão 1: ${link1}`);
+                await playerPage.goto(link1, { waitUntil: 'load', timeout: 60000 });
+            }
+        } else if (teamId.toLowerCase() === textContent2) {
+            if (boundingBox2) {
+                await playerPage.mouse.click(boundingBox2.x + boundingBox2.width / 2, boundingBox2.y + boundingBox2.height / 2);
+                console.log(`Cliquei no botão correspondente ao teamId: ${teamId}`);
 
-               // Gerar o link para o botão 1
-               const link1 = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/1`;
-               console.log(`Link gerado para o botão 1: ${link1}`);
-               await playerPage.goto(link1, { waitUntil: 'load', timeout: 60000 });
-           }
-       } else if (teamId.toLowerCase() === textContent2) {
-           if (boundingBox2) {
-               await playerPage.mouse.click(boundingBox2.x + boundingBox2.width / 2, boundingBox2.y + boundingBox2.height / 2);
-               console.log(`Cliquei no botão correspondente ao teamId: ${teamId}`);
-
-               // Gerar o link para o botão 2
-               const link2 = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/2`;
-               console.log(`Link gerado para o botão 2: ${link2}`);
-               await playerPage.goto(link2, { waitUntil: 'load', timeout: 60000 });
-           }
-       } else {
-           console.log(`Nenhum botão corresponde ao teamId: ${teamId}`);
-       }
-
-       // Esperar os dados da tabela de estatísticas
-       await playerPage.waitForSelector('#detail > div.section.psc__section > div > div.ui-table.playerStatsTable > div.ui-table__body > div');
-       const rows = await playerPage.$$(`#detail > div.section.psc__section > div > div.ui-table.playerStatsTable > div.ui-table__body > div`);
-       await sleep(10000); // Atraso para garantir o carregamento dos dados
-
-
-       // Função para converter o formato "MM:SS" para total de segundos
-function convertMinutesToSeconds(timeString) {
-    if (!timeString) return 0; // Valor padrão caso esteja vazio ou indefinido
-    const [minutes, seconds] = timeString.split(':').map(Number); // Quebra o texto em minutos e segundos
-    if (isNaN(minutes) || isNaN(seconds)) {
-        console.error(`Erro ao converter o tempo "${timeString}" para segundos.`);
-        return 0; // Retorna 0 caso não seja possível converter para número
-    }
-    return (minutes * 60) + seconds; // Converte para total de segundos
-}
-
-       // Função para processar as estatísticas dos jogadores
-
-       for (const row of rows) {
-        try {
-            const team = await row.$eval(
-                `div.playerStatsTable__cell.playerStatsTable__teamCell`,
-                element => element.textContent.trim()
-            );
-            const playerName = await row.$eval(`a > div`, element => element.textContent.trim());
-            const points = parseInt(await row.$eval(`div.playerStatsTable__cell.playerStatsTable__cell--sortingColumn`, element => element.textContent.trim())) || 0;
-            const totalRebounds = parseInt(await row.$eval(`div:nth-child(4)`, element => element.textContent.trim())) || 0;
-            const assists = parseInt(await row.$eval(`div:nth-child(5)`, element => element.textContent.trim())) || 0;
-    
-            const minutesPlayedRaw = await row.$eval(`div:nth-child(6)`, element => element.textContent.trim());
-            const minutesPlayed = convertMinutesToSeconds(minutesPlayedRaw);
-    
-            const fieldGoalsMade = parseInt(await row.$eval(`div:nth-child(7)`, element => element.textContent.trim())) || 0;
-            const fieldGoalsAttempted = parseInt(await row.$eval(`div:nth-child(8)`, element => element.textContent.trim())) || 0;
-            const twoPointMade = parseInt(await row.$eval(`div:nth-child(9)`, element => element.textContent.trim())) || 0;
-            const twoPointAttempted = parseInt(await row.$eval(`div:nth-child(10)`, element => element.textContent.trim())) || 0;
-            const threePointMade = parseInt(await row.$eval(`div:nth-child(11)`, element => element.textContent.trim())) || 0;
-            const threePointAttempted = parseInt(await row.$eval(`div:nth-child(12)`, element => element.textContent.trim())) || 0;
-            const freeThrowsMade = parseInt(await row.$eval(`div:nth-child(13)`, element => element.textContent.trim())) || 0;
-            const freeThrowsAttempted = parseInt(await row.$eval(`div:nth-child(14)`, element => element.textContent.trim())) || 0;
-            const plusMinus = parseInt(await row.$eval(`div:nth-child(15)`, element => element.textContent.trim())) || 0;
-            const offensiveRebounds = parseInt(await row.$eval(`div:nth-child(16)`, element => element.textContent.trim())) || 0;
-            const defensiveRebounds = parseInt(await row.$eval(`div:nth-child(17)`, element => element.textContent.trim())) || 0;
-            const personalFouls = parseInt(await row.$eval(`div:nth-child(18)`, element => element.textContent.trim())) || 0;
-            const steals = parseInt(await row.$eval(`div:nth-child(19)`, element => element.textContent.trim())) || 0;
-            const turnovers = parseInt(await row.$eval(`div:nth-child(20)`, element => element.textContent.trim())) || 0;
-            const shotsBlocked = parseInt(await row.$eval(`div:nth-child(21)`, element => element.textContent.trim())) || 0;
-            const blocksAgainst = parseInt(await row.$eval(`div:nth-child(22)`, element => element.textContent.trim())) || 0;
-            const technicalFouls = parseInt(await row.$eval(`div:nth-child(23)`, element => element.textContent.trim())) || 0;
-    
-            // Verifica se há data e define valor 0 se não houver
-            const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-            const statisticData = statisticElement
-                ? await playerPage.evaluate(element => element.textContent.trim(), statisticElement)
-                : "0"; // Valor 0 caso não encontre a data
-    
-            const playerStats = {
-                datahora: statisticData,
-                team,
-                playerName,
-                points,
-                totalRebounds,
-                assists,
-                minutesPlayed,
-                fieldGoalsMade,
-                fieldGoalsAttempted,
-                twoPointMade,
-                twoPointAttempted,
-                threePointMade,
-                threePointAttempted,
-                freeThrowsMade,
-                freeThrowsAttempted,
-                plusMinus,
-                offensiveRebounds,
-                defensiveRebounds,
-                personalFouls,
-                steals,
-                turnovers,
-                shotsBlocked,
-                blocksAgainst,
-                technicalFouls,
-            };
-    
-            data.push(playerStats);
-            console.log(`Dados salvos para o jogador: ${playerName}`);
-        } catch (error) {
-            console.error("Erro ao processar jogador:", error);
+                // Gerar o link para o botão 2
+                const link2 = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/2`;
+                console.log(`Link gerado para o botão 2: ${link2}`);
+                await playerPage.goto(link2, { waitUntil: 'load', timeout: 60000 });
+            }
+        } else {
+            console.log(`Nenhum botão corresponde ao teamId: ${teamId}`);
         }
+
+        // Esperar os dados da tabela de estatísticas
+        await playerPage.waitForSelector('#detail > div.section.psc__section > div > div.ui-table.playerStatsTable > div.ui-table__body > div');
+        const rows = await playerPage.$$(`#detail > div.section.psc__section > div > div.ui-table.playerStatsTable > div.ui-table__body > div`);
+        await sleep(10000); // Atraso para garantir o carregamento dos dados
+
+        // Função para converter o formato "MM:SS" para total de segundos
+        function convertMinutesToSeconds(timeString) {
+            if (!timeString) return 0; // Valor padrão caso esteja vazio ou indefinido
+            const [minutes, seconds] = timeString.split(':').map(Number); // Quebra o texto em minutos e segundos
+            if (isNaN(minutes) || isNaN(seconds)) {
+                console.error(`Erro ao converter o tempo "${timeString}" para segundos.`);
+                return 0; // Retorna 0 caso não seja possível converter para número
+            }
+            return (minutes * 60) + seconds; // Converte para total de segundos
+        }
+
+        // Função para processar as estatísticas dos jogadores
+        for (const row of rows) {
+            try {
+                const team = await row.$eval(
+                    `div.playerStatsTable__cell.playerStatsTable__teamCell`,
+                    element => element.textContent.trim()
+                );
+                const playerName = await row.$eval(`a > div`, element => element.textContent.trim());
+                const points = parseInt(await row.$eval(`div.playerStatsTable__cell.playerStatsTable__cell--sortingColumn`, element => element.textContent.trim())) || 0;
+                const totalRebounds = parseInt(await row.$eval(`div:nth-child(4)`, element => element.textContent.trim())) || 0;
+                const assists = parseInt(await row.$eval(`div:nth-child(5)`, element => element.textContent.trim())) || 0;
+
+                const minutesPlayedRaw = await row.$eval(`div:nth-child(6)`, element => element.textContent.trim());
+                const minutesPlayed = convertMinutesToSeconds(minutesPlayedRaw);
+
+                const fieldGoalsMade = parseInt(await row.$eval(`div:nth-child(7)`, element => element.textContent.trim())) || 0;
+                const fieldGoalsAttempted = parseInt(await row.$eval(`div:nth-child(8)`, element => element.textContent.trim())) || 0;
+                const twoPointMade = parseInt(await row.$eval(`div:nth-child(9)`, element => element.textContent.trim())) || 0;
+                const twoPointAttempted = parseInt(await row.$eval(`div:nth-child(10)`, element => element.textContent.trim())) || 0;
+                const threePointMade = parseInt(await row.$eval(`div:nth-child(11)`, element => element.textContent.trim())) || 0;
+                const threePointAttempted = parseInt(await row.$eval(`div:nth-child(12)`, element => element.textContent.trim())) || 0;
+                const freeThrowsMade = parseInt(await row.$eval(`div:nth-child(13)`, element => element.textContent.trim())) || 0;
+                const freeThrowsAttempted = parseInt(await row.$eval(`div:nth-child(14)`, element => element.textContent.trim())) || 0;
+                const plusMinus = parseInt(await row.$eval(`div:nth-child(15)`, element => element.textContent.trim())) || 0;
+                const offensiveRebounds = parseInt(await row.$eval(`div:nth-child(16)`, element => element.textContent.trim())) || 0;
+                const defensiveRebounds = parseInt(await row.$eval(`div:nth-child(17)`, element => element.textContent.trim())) || 0;
+                const personalFouls = parseInt(await row.$eval(`div:nth-child(18)`, element => element.textContent.trim())) || 0;
+                const steals = parseInt(await row.$eval(`div:nth-child(19)`, element => element.textContent.trim())) || 0;
+                const turnovers = parseInt(await row.$eval(`div:nth-child(20)`, element => element.textContent.trim())) || 0;
+                const shotsBlocked = parseInt(await row.$eval(`div:nth-child(21)`, element => element.textContent.trim())) || 0;
+                const blocksAgainst = parseInt(await row.$eval(`div:nth-child(22)`, element => element.textContent.trim())) || 0;
+                const technicalFouls = parseInt(await row.$eval(`div:nth-child(23)`, element => element.textContent.trim())) || 0;
+
+                const playerStats = {
+                    datahora: statisticData,
+                    team,
+                    playerName,
+                    points,
+                    totalRebounds,
+                    assists,
+                    minutesPlayed,
+                    fieldGoalsMade,
+                    fieldGoalsAttempted,
+                    twoPointMade,
+                    twoPointAttempted,
+                    threePointMade,
+                    threePointAttempted,
+                    freeThrowsMade,
+                    freeThrowsAttempted,
+                    plusMinus,
+                    offensiveRebounds,
+                    defensiveRebounds,
+                    personalFouls,
+                    steals,
+                    turnovers,
+                    shotsBlocked,
+                    blocksAgainst,
+                    technicalFouls,
+                };
+
+                data.push(playerStats);
+                console.log(`Dados salvos para o jogador: ${playerName}`);
+            } catch (error) {
+                console.error("Erro ao processar jogador:", error);
+            }
+        }
+
+        // Fechar a página de cada jogador
+        await playerPage.close();
+    } catch (error) {
+        console.error(`Erro ao processar o jogador com ID ${id}:`, error);
+        console.log('Pulando para o próximo jogador...');
+        continue; // Pula para o próximo jogador
     }
-    
-// Fechar a página de cada jogador
-await playerPage.close();
-} catch (error) {
-    console.error(`Erro ao processar o jogador com ID ${id}:`, error);
-    console.log('Pulando para o próximo jogador...');
-    continue; // Pula para o próximo jogador
-}
 }
 // Extrai o nome do time do link
 const rawTeamName = link.split('/').slice(-3, -2)[0]; // Obtém o nome bruto do time
