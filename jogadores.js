@@ -326,7 +326,7 @@ const scrapeResults1 = async (link) => {
 for (let i = 0; i < ids.length; i++) {
     try {
         const id = ids[i]; // Cada ID extraído
-        const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
+        const playerLink = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/player-statistics/`;
         console.log(`Processando o link do jogador com ID: ${id}`);
 
         // Abrir uma nova aba para cada jogador
@@ -342,20 +342,21 @@ for (let i = 0; i < ids.length; i++) {
             const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
             console.log(`${statisticData} encontrada!`);
 
-            // Comparar as datas antes de processar
-            if (lastDate && statisticData === lastDate) {
+            // Comparar a data extraída com a lastDate
+            const statisticDate = new Date(statisticData); // Convertendo a string para um objeto Date (ajustar conforme o formato da data)
+            const lastDateFormatted = new Date(lastDate); // Convertendo a lastDate para objeto Date para comparação
+
+            // Comparar as datas
+            if (statisticDate.getTime() === lastDateFormatted.getTime()) {
                 console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
                 await playerPage.close(); // Fecha a aba do jogador
                 continue; // Pula para o próximo jogador
             } else {
                 console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
-                
-                // Agora você pode continuar o processamento do jogador (por exemplo, salvar estatísticas, etc.)
+                statisticDataArray.push(statisticData); // Caso a data não seja igual, você prossegue com o processamento
             }
         } else {
-            console.log('Dados não encontrados. Pulando para o próximo jogador.');
-            await playerPage.close(); // Fecha a aba se os dados não foram encontrados
-            continue; // Pula para o próximo jogador
+            console.log('Dados não encontrados.');
         }
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
