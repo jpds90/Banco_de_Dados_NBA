@@ -187,11 +187,11 @@ const scrapeResults1 = async (link) => {
 
    const startIndex = url.indexOf("/equipa/") + "/equipa/".length;
    const endIndex = url.indexOf("/", startIndex);
-   const teamId1 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
+   const teamId10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
 
-   console.log(`ID do time processado: ${teamId1}`);
+   console.log(`ID do time processado: ${teamId10}`);
 
-   const tableName = await createPlayersTable1(teamId1);
+   const tableName = await createPlayersTable1(teamId10);
 
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
