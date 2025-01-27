@@ -329,6 +329,7 @@ function formatDateToStandardFormat(dateString) {
 }
 
 // Loop para processar os IDs
+// Loop para processar os IDs
 for (let i = 0; i < ids.length; i++) {
     try {
         const id = ids[i]; // Cada ID extraído
@@ -348,13 +349,34 @@ for (let i = 0; i < ids.length; i++) {
             const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
             console.log(`${statisticData} encontrada!`);
 
+            // Verificar se a data foi extraída corretamente
+            if (!statisticData) {
+                console.log('Erro ao extrair a data do jogador. Pulando jogador.');
+                await playerPage.close();  // Fecha a aba do jogador
+                continue;  // Pula para o próximo jogador
+            }
+
             // Formatar a data extraída para o formato reconhecível
             const formattedStatisticDate = formatDateToStandardFormat(statisticData);
             const statisticDate = new Date(formattedStatisticDate); // Convertendo a string para um objeto Date
 
+            // Verificar se a data extraída é válida
+            if (isNaN(statisticDate.getTime())) {
+                console.log('Data extraída inválida. Pulando jogador.');
+                await playerPage.close();  // Fecha a aba do jogador
+                continue;  // Pula para o próximo jogador
+            }
+
             // Formatar a data do banco de dados (lastDate) para o formato reconhecível
             const formattedLastDate = formatDateToStandardFormat(lastDate);
             const lastDateFormatted = new Date(formattedLastDate); // Convertendo a lastDate para objeto Date para comparação
+
+            // Verificar se lastDate é válida
+            if (isNaN(lastDateFormatted.getTime())) {
+                console.log('Data do banco de dados inválida. Verifique o valor de lastDate.');
+                await playerPage.close();  // Fecha a aba do jogador
+                continue;  // Pula para o próximo jogador
+            }
 
             // Comparar as datas
             if (statisticDate.getTime() === lastDateFormatted.getTime()) {
@@ -366,7 +388,7 @@ for (let i = 0; i < ids.length; i++) {
                 statisticDataArray.push(statisticData); // Caso a data não seja igual, você prossegue com o processamento
             }
         } else {
-            console.log('Dados não encontrados.');
+            console.log('Dados não encontrados para o jogador.');
         }
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
