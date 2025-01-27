@@ -198,14 +198,30 @@ const endIndex = url.indexOf("/", startIndex);
 console.log('startIndex:', startIndex);
 console.log('endIndex:', endIndex);
 
+// Definir o nome da tabela com base no ID extraído da URL
+let teamID10 = null;
+
 if (startIndex !== -1 && endIndex !== -1) {
-  const teamID10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
-  console.log(`ID do time processado: ${teamID10}`);
+    teamID10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_').toLowerCase()}_jogadores`;
+    console.log(`ID do time processado: ${teamID10}`);
 } else {
-  console.log('Erro ao extrair o ID da equipe.');
+    console.log('Erro ao extrair o ID da equipe.');
 }
-        // Buscar a última data registrada no banco de dados para essa tabela
+
+// A seguir, você usa teamID10 como nome da tabela no banco de dados
+// Por exemplo, ao consultar a última data da tabela:
+if (teamID10) {
+    try {
+        // Acesso ao banco usando o nome da tabela
         const lastDate = await getLastDateFromDatabase(teamID10);
+        console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+        // Agora você pode continuar com o scraping ou outras operações
+    } catch (error) {
+        console.error(`Erro ao atualizar jogadores para o time ${teamID10}:`, error);
+    }
+} else {
+    console.log("ID do time não foi definido corretamente.");
+}
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
     const end_index = url.indexOf("/", start_index);
