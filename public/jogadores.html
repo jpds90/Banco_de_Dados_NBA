@@ -193,6 +193,12 @@
         <h2>Jogadores Impacto</h2>
         <div id="ImpactogeralData" class="card-container"></div>
     </div>
+    <!-- Div para exibir jogadores lesionados -->
+    <div id="lesionados" class="tab-content">
+        <h2>Jogadores Lesionados</h2>
+        <div id="lesionadosData" class="card-container"></div>
+    </div>
+
     <script>
 
 
@@ -781,7 +787,60 @@ async function fetchJogadoresData() {
 }
 
 
+    const loadInjuredPlayers = async () => {
+        try {
+            const response = await fetch('/jogadoreslesionados'); // Fazendo requisição para o backend
+            const data = await response.json();
 
+            const container = document.getElementById('lesionadosData');
+            container.innerHTML = ''; // Limpa a área antes de preencher com novos dados
+
+            data.forEach(game => {
+                const homeTeam = game.team_home;
+                const awayTeam = game.team_away;
+                const homePlayers = game.homePlayers;
+                const awayPlayers = game.awayPlayers;
+
+                // Criando cards para jogadores lesionados
+                if (homePlayers.length > 0) {
+                    const homeCard = document.createElement('div');
+                    homeCard.classList.add('card');
+                    homeCard.innerHTML = `
+                        <h3>${homeTeam} - Lesionados</h3>
+                        <p>Jogadores lesionados:</p>
+                        <ul>
+                            ${homePlayers.map(player => 
+                                `<li>${player.player_name} - <span class="injured">${player.injury_status}</span></li>`
+                            ).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(homeCard);
+                }
+
+                if (awayPlayers.length > 0) {
+                    const awayCard = document.createElement('div');
+                    awayCard.classList.add('card');
+                    awayCard.innerHTML = `
+                        <h3>${awayTeam} - Lesionados</h3>
+                        <p>Jogadores lesionados:</p>
+                        <ul>
+                            ${awayPlayers.map(player => 
+                                `<li>${player.player_name} - <span class="injured">${player.injury_status}</span></li>`
+                            ).join('')}
+                        </ul>
+                    `;
+                    container.appendChild(awayCard);
+                }
+            });
+        } catch (error) {
+            console.error('Erro ao carregar jogadores lesionados:', error);
+        }
+    };
+
+    // Chama a função para carregar jogadores lesionados ao carregar a página
+    window.onload = () => {
+        loadInjuredPlayers(); 
+    };
 
 
 
