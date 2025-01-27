@@ -300,14 +300,16 @@ const scrapeResults1 = async (link) => {
 
        // Extrair as estatísticas do jogador
        const statisticDataArray = [];
-       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-       if (statisticElement) {
-           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
-           console.log(`${statisticData} encontrada!`);
-           statisticDataArray.push(statisticData);
-       } else {
-           console.log('Dados não encontrados.');
-       }
+    // Extração da data da lógica existente
+    const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+    if (!statisticElement) {
+        console.log('Dados não encontrados.');
+        await page.close();
+        return;
+    }
+
+    const statisticData = await page.evaluate(element => element.textContent.trim(), statisticElement);
+    console.log(`Data extraída: ${statisticData}`);
     // Obter a última data do banco de dados
     const lastDate = await getLastDateFromDatabase(teamName);
     console.log(`Última data no banco: ${lastDate}`);
