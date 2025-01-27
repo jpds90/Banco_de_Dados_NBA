@@ -11,7 +11,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
 
-app.use(cors());
+app.use(cors({ origin: 'https://analise-jpnba.onrender.com/' }));
+
 const app = express();
 // Configuração da porta para Render (usa a variável PORT ou padrão 3000)
 const port = process.env.PORT || 3000;
