@@ -301,9 +301,11 @@ const scrapeResults1 = async (link) => {
        // Extrair as estatísticas do jogador
        const statisticDataArray = [];
     // Extração da data da lógica existente
-    const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-    if (!statisticElement) {
-        console.log('Dados não encontrados.');
+       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+       if (statisticElement) {
+           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
+           console.log(${statisticData} encontrada!);
+           statisticDataArray.push(statisticData);
         await page.close();
         return;
     }
