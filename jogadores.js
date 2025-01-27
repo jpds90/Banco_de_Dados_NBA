@@ -10,7 +10,20 @@ const pool = new Pool({
  connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
-
+// Função para obter a última data do banco de dados
+const getLastDateFromDatabase = async (teamName) => {
+    const client = await pool.connect();
+    try {
+        const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+        const result = await client.query(`SELECT data_hora FROM "${tableName}" ORDER BY data_hora DESC LIMIT 1`);
+        return result.rows.length > 0 ? result.rows[0].data_hora : null;
+    } catch (error) {
+        console.error('Erro ao buscar a última data no banco de dados:', error);
+        return null;
+    } finally {
+        client.release();
+    }
+};
 // Função para tentar navegar com tentativas de re-execução
 const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
@@ -295,7 +308,19 @@ const scrapeResults1 = async (link) => {
        } else {
            console.log('Dados não encontrados.');
        }
+    // Obter a última data do banco de dados
+    const lastDate = await getLastDateFromDatabase(teamName);
+    console.log(`Última data no banco: ${lastDate}`);
 
+    // Comparar as datas
+    if (lastDate && statisticData === lastDate) {
+        console.log('Data já registrada. Encerrando o processamento.');
+        await page.close();
+        await browser.close();
+        return;
+    }
+
+    console.log('Data nova encontrada. Continuando o processamento...');
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button', { timeout: 5000 });
