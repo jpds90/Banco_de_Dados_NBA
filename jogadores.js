@@ -11,18 +11,24 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 // Função para obter a última data do banco de dados
-// Função para buscar a última data do banco de dados
-const fetchLastDateFromDatabase = async (tableName) => {
-  const client = await pool.connect();
-  try {
-    const result = await client.query(`SELECT data_hora FROM "${tableName}" ORDER BY data_hora DESC LIMIT 1`);
-    return result.rows.length > 0 ? result.rows[0].data_hora : null;
-  } catch (error) {
-    console.error(`Erro ao buscar a última data da tabela "${tableName}":`, error);
-    return null;
-  } finally {
-    client.release();
-  }
+const getLastDateFromDatabase = async (teamTable) => {
+    const client = await pool.connect();
+    try {
+        console.log(`Buscando a última data na tabela ${teamTable}...`);
+        const result = await client.query(`SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1`);
+        if (result.rows.length > 0) {
+            console.log(`Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora}`);
+            return result.rows[0].data_hora;
+        } else {
+            console.log(`Nenhuma data encontrada na tabela ${teamTable}`);
+            return null;
+        }
+    } catch (error) {
+        console.error(`Erro ao buscar a última data na tabela ${teamTable}:`, error);
+        return null;
+    } finally {
+        client.release();
+    }
 };
 
 // Função para tentar navegar com tentativas de re-execução
@@ -198,7 +204,8 @@ if (startIndex !== -1 && endIndex !== -1) {
 } else {
   console.log('Erro ao extrair o ID da equipe.');
 }
-
+        // Buscar a última data registrada no banco de dados para essa tabela
+        const lastDate = await getLastDateFromDatabase(teamID10);
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
     const end_index = url.indexOf("/", start_index);
@@ -297,10 +304,6 @@ if (startIndex !== -1 && endIndex !== -1) {
      return ids.slice(0, 12);
    });
 
-  // Buscar a última data no banco
-  const lastDateInDB = await fetchLastDateFromDatabase(tableName);
-  console.log(`Última data no banco de dados: ${lastDateInDB}`);
-
    console.log(ids);
    // Loop para processar os IDs
    for (let i = 0; i < ids.length; i++) {
@@ -323,7 +326,7 @@ if (startIndex !== -1 && endIndex !== -1) {
 
 
             // Comparar as datas
-            if (lastDateInDB && statisticData === lastDateInDB) {
+            if (lastDate && statisticData === lastDate) {
                 console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
                 await playerPage.close(); // Fecha a aba
                 continue; // Pula para o próximo jogador
