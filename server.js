@@ -2546,6 +2546,8 @@ app.post('/login', async (req, res) => {
 
         // Gerar o token JWT
         const token = jwt.sign({ userId: user.id, email: user.email }, 'seu-segredo-aqui', { expiresIn: '1h' });
+        // Logar o token gerado para verificação
+        console.log('Token gerado:', token);  // Aqui o token será impresso no console
 
         // Retornar o token e informações adicionais para o cliente
         res.json({ token, username: user.username, balance });
