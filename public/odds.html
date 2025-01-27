@@ -1053,13 +1053,15 @@ document.querySelector('#save-row').addEventListener('click', async () => {
 
         console.log('Dados preparados para envio:', data);
 
-        const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
+const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer SEU_TOKEN_AQUI', // Inclua o token aqui
+    },
+    body: JSON.stringify(data),
+});
+
 
         console.log('Requisição enviada para o backend.');
 
