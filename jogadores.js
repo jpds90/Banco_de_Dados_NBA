@@ -209,19 +209,6 @@ const scrapeResults1 = async (link) => {
         console.log('Erro ao extrair o ID da equipe.');
     }
 
-    // A seguir, você usa teamID10 como nome da tabela no banco de dados
-    if (teamID10) {
-        try {
-            // Acesso ao banco usando o nome da tabela
-            const lastDate = await getLastDateFromDatabase(teamID10);
-            console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
-            // Aqui você pode continuar o scraping ou outras operações
-        } catch (error) {
-            console.error(`Erro ao atualizar jogadores para o time ${teamID10}:`, error);
-        }
-    } else {
-        console.log("ID do time não foi definido corretamente.");
-    }
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
     const end_index = url.indexOf("/", start_index);
@@ -333,16 +320,37 @@ const scrapeResults1 = async (link) => {
        await playerPage.goto(playerLink, { timeout: 120000 });
        await sleep(5000);  // Atraso para garantir que a página carregue
 
-       // Extrair as estatísticas do jogador
-       const statisticDataArray = [];
-       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-       if (statisticElement) {
-           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
-           console.log(`${statisticData} encontrada!`);
-           statisticDataArray.push(statisticData);
-       } else {
-           console.log('Dados não encontrados.');
-       }
+    // Se o teamID10 for válido, vamos buscar a última data no banco de dados
+    if (teamID10) {
+        try {
+            const lastDate = await getLastDateFromDatabase(teamID10);
+            console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+
+            // Extrair a data da estatística (statisticData) da página
+            const statisticDataArray = [];
+            const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+            if (statisticElement) {
+                const statisticData = await page.evaluate(element => element.textContent.trim(), statisticElement);
+                console.log(`${statisticData} encontrada!`);
+                statisticDataArray.push(statisticData);
+
+                // Comparação das datas antes de qualquer outro processamento
+                if (lastDate && statisticData === lastDate) {
+                    console.log(`Data ${statisticData} já processada. Ignorando jogador...`);
+                    await page.close(); // Fecha a aba do jogador
+                    return; // Pula o processamento deste jogador
+                } else {
+                    console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
+                }
+            } else {
+                console.log('Dados de estatísticas não encontrados.');
+            }
+        } catch (error) {
+            console.error(`Erro ao buscar a última data ou processar o jogador para a tabela ${teamID10}:`, error);
+        }
+    } else {
+        console.log("ID do time não foi definido corretamente.");
+    }
 
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
