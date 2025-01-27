@@ -2749,12 +2749,19 @@ app.post('/startrender', (req, res) => {
 
 // Rota para salvar os dados no banco de dados
 app.post('/save-odds', async (req, res) => {
+    console.log('Requisição recebida em /save-odds');
+    console.log('Corpo da requisição:', req.body);
+
     // Confirma se a requisição possui todos os dados necessários
     const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = req.body;
 
     if (!dataJogo || !timeHome || !timeAway || isNaN(homeOdds) || isNaN(awayOdds) || isNaN(overDoisMeioOdds) || isNaN(overOdds)) {
+        console.log('Erro: Dados incompletos na requisição');
         return res.status(400).json({ success: false, message: 'Dados incompletos' });
     }
+
+    console.log('Dados recebidos estão completos. Preparando para salvar no banco de dados.');
+    console.log('Dados a serem inseridos:', { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds });
 
     // Sua lógica de inserção no banco de dados
     const queryText = `
@@ -2762,18 +2769,23 @@ app.post('/save-odds', async (req, res) => {
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id;
     `;
+
     try {
+        console.log('Executando a query no banco de dados...');
         const result = await pool.query(queryText, [
             dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds
         ]);
 
         const insertedId = result.rows[0].id;
+        console.log('Dados salvos com sucesso. ID inserido:', insertedId);
+
         res.status(200).json({ success: true, id: insertedId });
     } catch (error) {
         console.error('Erro ao salvar no banco de dados:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
+
 
 
 
