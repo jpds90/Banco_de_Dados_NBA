@@ -332,9 +332,9 @@ function formatDateToStandardFormat(dateString) {
 // Loop para processar os IDs
 for (let i = 0; i < ids.length; i++) {
     try {
-        const id = ids[i]; // Cada ID extraído
-        const playerLink = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/player-statistics/`;
-        console.log(`Processando o link do jogador com ID: ${id}`);
+       const id = ids[i]; // Cada ID extraído
+       const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
+       console.log(`Processando o link do jogador com ID: ${id}`);
 
         // Abrir uma nova aba para cada jogador
         const playerPage = await browser.newPage();
