@@ -194,12 +194,6 @@
         <h2>Jogadores Impacto</h2>
         <div id="ImpactogeralData" class="card-container"></div>
     </div>
-    <!-- Div para exibir jogadores lesionados -->
-    <div id="lesionados" class="tab-content">
-        <h2>Jogadores Lesionados</h2>
-        <div id="lesionadosData" class="card-container"></div>
-    </div>
-
     <script>
 
 
@@ -231,9 +225,7 @@
         fetchJogadoresData();  // Verificar quando a função é chamada
     } else if (tabName === 'jogadoresprarb') {
         fetchImpactoData();  // Verificar quando a função é chamada
-    } else if (tabName === 'lesionados') {
-        loadInjuredPlayers();  // Verificar quando a função é chamada
-    }
+    } 
 }
 
 
