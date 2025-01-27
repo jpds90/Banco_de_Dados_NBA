@@ -193,13 +193,11 @@ console.log('startIndex:', startIndex);
 console.log('endIndex:', endIndex);
 
 if (startIndex !== -1 && endIndex !== -1) {
-  const teamId10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
-  console.log(`ID do time processado: ${teamId10}`);
+  const tableName = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
+  console.log(`ID do time processado: ${tableName}`);
 } else {
   console.log('Erro ao extrair o ID da equipe.');
 }
-const tableName = await createPlayersTable1(teamId10);
-console.log('Nome da tabela:', tableName);
 
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
