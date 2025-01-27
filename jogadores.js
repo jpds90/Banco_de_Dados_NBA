@@ -11,18 +11,18 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 // Função para obter a última data do banco de dados
+// Função para buscar a última data do banco de dados
 const fetchLastDateFromDatabase = async (tableName) => {
-    const client = await pool.connect();
-    try {
-        const query = `SELECT MAX(data_hora) as last_date FROM ${tableName}`;
-        const result = await client.query(query);
-        return result.rows[0].last_date || null; // Retorna a última data ou null
-    } catch (error) {
-        console.error(`Erro ao buscar a última data na tabela "${tableName}":`, error);
-        return null;
-    } finally {
-        client.release();
-    }
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`SELECT data_hora FROM "${tableName}" ORDER BY data_hora DESC LIMIT 1`);
+    return result.rows.length > 0 ? result.rows[0].data_hora : null;
+  } catch (error) {
+    console.error(`Erro ao buscar a última data da tabela "${tableName}":`, error);
+    return null;
+  } finally {
+    client.release();
+  }
 };
 
 // Função para tentar navegar com tentativas de re-execução
@@ -185,6 +185,13 @@ const scrapeResults1 = async (link) => {
 
     const url = await page.evaluate(() => window.location.href);
 
+   const startIndex = url.indexOf("/equipa/") + "/equipa/".length;
+   const endIndex = url.indexOf("/", startIndex);
+   const teamId1 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
+
+   console.log(`ID do time processado: ${teamId1}`);
+
+   const tableName = await createPlayersTable(teamId1);
 
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
@@ -285,6 +292,9 @@ const scrapeResults1 = async (link) => {
      return ids.slice(0, 12);
    });
 
+  // Buscar a última data no banco
+  const lastDateInDB = await fetchLastDateFromDatabase(tableName);
+  console.log(`Última data no banco de dados: ${lastDateInDB}`);
 
    console.log(ids);
    // Loop para processar os IDs
@@ -306,12 +316,9 @@ const scrapeResults1 = async (link) => {
             const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
             console.log(`${statisticData} encontrada!`);
 
-            // Buscar a última data do banco
-            const tableName = normalizedTeamName; // Substitua pelo nome correto da tabela
-            const lastDate = await fetchLastDateFromDatabase(tableName);
 
             // Comparar as datas
-            if (lastDate && statisticData === lastDate) {
+            if (lastDateInDB && statisticData === lastDateInDB) {
                 console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
                 await playerPage.close(); // Fecha a aba
                 continue; // Pula para o próximo jogador
