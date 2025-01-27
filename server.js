@@ -11,7 +11,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
 
-app.use(cors({ origin: 'https://analise-jpnba.onrender.com/' }));
 
 const app = express();
 // Configuração da porta para Render (usa a variável PORT ou padrão 3000)
@@ -34,6 +33,8 @@ function generateToken(userId, email) {
 app.use(express.json()); // Aqui processamos JSON no corpo da requisição
 app.use(express.urlencoded({ extended: true })); // Opcional, para processar dados URL-encoded
 
+
+app.use(cors({ origin: 'https://analise-jpnba.onrender.com/' }));
 
 // Define o mecanismo de renderização para HTML
 app.set('view engine', 'html');
