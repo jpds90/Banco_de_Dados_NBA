@@ -34,7 +34,7 @@ app.use(express.json()); // Aqui processamos JSON no corpo da requisição
 app.use(express.urlencoded({ extended: true })); // Opcional, para processar dados URL-encoded
 
 
-app.use(cors({ origin: 'https://analise-jpnba.onrender.com/' }));
+app.use(cors({ origin: 'https://analise-jpnba.onrender.com' }));
 
 // Define o mecanismo de renderização para HTML
 app.set('view engine', 'html');
