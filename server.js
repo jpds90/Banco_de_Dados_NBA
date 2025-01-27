@@ -2287,8 +2287,14 @@ app.get('/jogadoreslesionados', async (req, res) => {
             const homeResult = await pool.query(homeQuery);
             const awayResult = await pool.query(awayQuery);
 
-            const homePlayers = homeResult.rows.map(row => row.player_name);
-            const awayPlayers = awayResult.rows.map(row => row.player_name);
+            const homePlayers = homeResult.rows.map(row => ({
+                player_name: row.player_name,
+                injury_status: row.injury_status
+            }));
+            const awayPlayers = awayResult.rows.map(row => ({
+                player_name: row.player_name,
+                injury_status: row.injury_status
+            }));
 
             // Adiciona os resultados ao array
             results.push({
