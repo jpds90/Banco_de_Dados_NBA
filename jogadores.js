@@ -300,18 +300,12 @@ const scrapeResults1 = async (link) => {
 
        // Extrair as estatísticas do jogador
        const statisticDataArray = [];
-    // Extração da data da lógica existente
-       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-       if (statisticElement) {
-           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
-           console.log(${statisticData} encontrada!);
-           statisticDataArray.push(statisticData);
-        await page.close();
-        return;
-    }
-
+// Extração da data da lógica existente
+const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+if (statisticElement) {
     const statisticData = await page.evaluate(element => element.textContent.trim(), statisticElement);
-    console.log(`Data extraída: ${statisticData}`);
+    console.log(`${statisticData} encontrada!`);
+
     // Obter a última data do banco de dados
     const lastDate = await getLastDateFromDatabase(teamName);
     console.log(`Última data no banco: ${lastDate}`);
@@ -323,6 +317,13 @@ const scrapeResults1 = async (link) => {
         await browser.close();
         return;
     }
+
+    console.log('Data nova encontrada. Continuando o processamento...');
+    // Aqui você pode adicionar o código para processar a nova data
+} else {
+    console.log('Dados não encontrados.');
+    await page.close();
+}
 
     console.log('Data nova encontrada. Continuando o processamento...');
         // Espera os seletores problemáticos com lógica de repetição
