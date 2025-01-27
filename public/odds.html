@@ -1020,37 +1020,39 @@ console.log(`Time visitante: ${awayPercentage}%`);
 
 });
 document.querySelector('#save-row').addEventListener('click', async () => {
-    // Coleta os valores dos inputs
-    const inputDate = document.querySelector('#game-date').value;
-    const timeHome = document.querySelector('#team-home').value;
-    const timeAway = document.querySelector('#team-away').value;
-    const homeOdds = parseFloat(document.querySelector('#odds-1').value);
-    const awayOdds = parseFloat(document.querySelector('#odds-2').value);
-    const overDoisMeioOdds = parseFloat(document.querySelector('#odds-over-under').value);
-    const overOdds = parseFloat(document.querySelector('#over-under-value').value);
-
-    // Exibe os dados no console para verificar
-    console.log('Dados coletados:', {
-        inputDate,
-        timeHome,
-        timeAway,
-        homeOdds,
-        awayOdds,
-        overDoisMeioOdds,
-        overOdds
-    });
-
-    const data = {
-        dataJogo: inputDate,
-        timeHome,
-        timeAway,
-        homeOdds,
-        awayOdds,
-        overDoisMeioOdds,
-        overOdds
-    };
+    console.log('Botão de salvar clicado.');
 
     try {
+        // Coleta os valores dos inputs
+        const inputDate = document.querySelector('#game-date').value;
+        const timeHome = document.querySelector('#team-home').value;
+        const timeAway = document.querySelector('#team-away').value;
+        const homeOdds = parseFloat(document.querySelector('#odds-1').value);
+        const awayOdds = parseFloat(document.querySelector('#odds-2').value);
+        const overDoisMeioOdds = parseFloat(document.querySelector('#odds-over-under').value);
+        const overOdds = parseFloat(document.querySelector('#over-under-value').value);
+
+        console.log('Valores coletados dos inputs:');
+        console.log('Data do jogo:', inputDate);
+        console.log('Time da casa:', timeHome);
+        console.log('Time visitante:', timeAway);
+        console.log('Odds da casa:', homeOdds);
+        console.log('Odds do visitante:', awayOdds);
+        console.log('Odds de over 2.5:', overDoisMeioOdds);
+        console.log('Odds de over:', overOdds);
+
+        const data = {
+            dataJogo: inputDate,
+            timeHome,
+            timeAway,
+            homeOdds,
+            awayOdds,
+            overDoisMeioOdds,
+            overOdds
+        };
+
+        console.log('Dados preparados para envio:', data);
+
         const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
             method: 'POST',
             headers: {
@@ -1059,19 +1061,24 @@ document.querySelector('#save-row').addEventListener('click', async () => {
             body: JSON.stringify(data),
         });
 
+        console.log('Requisição enviada para o backend.');
+
         if (response.ok) {
+            console.log('Resposta do servidor recebida com sucesso.');
             const result = await response.json();
-            console.log('Dados salvos com sucesso:', result);
+            console.log('Dados salvos no banco de dados:', result);
             alert('Dados salvos no banco de dados!');
         } else {
-            console.error('Erro ao salvar os dados:', response.statusText);
+            console.error('Erro ao salvar os dados no backend. Status:', response.status);
+            console.error('Mensagem de erro:', response.statusText);
             alert('Erro ao salvar os dados. Tente novamente.');
         }
     } catch (error) {
-        console.error('Erro na solicitação:', error);
+        console.error('Erro ao executar a requisição:', error);
         alert('Erro ao comunicar com o servidor.');
     }
 });
+
 
 
 
