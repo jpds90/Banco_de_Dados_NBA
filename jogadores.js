@@ -199,8 +199,8 @@ console.log('startIndex:', startIndex);
 console.log('endIndex:', endIndex);
 
 if (startIndex !== -1 && endIndex !== -1) {
-  const tableName = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
-  console.log(`ID do time processado: ${tableName}`);
+  const teamID10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
+  console.log(`ID do time processado: ${teamID10}`);
 } else {
   console.log('Erro ao extrair o ID da equipe.');
 }
