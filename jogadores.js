@@ -198,6 +198,8 @@ if (startIndex !== -1 && endIndex !== -1) {
 } else {
   console.log('Erro ao extrair o ID da equipe.');
 }
+const tableName = await createPlayersTable1(teamId10);
+console.log('Nome da tabela:', tableName);
 
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
