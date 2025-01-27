@@ -321,7 +321,13 @@ const scrapeResults1 = async (link) => {
    });
 
    console.log(ids);
-   // Loop para processar os IDs
+// Função para transformar o formato de data de "DD.MM.YYYY HH:MM" para "YYYY-MM-DD HH:MM"
+function formatDateToStandardFormat(dateString) {
+    const parts = dateString.split(' '); // Separa a data e a hora
+    const dateParts = parts[0].split('.'); // Separa a data por ponto (DD.MM.YYYY)
+    return `${dateParts[2]}-${dateParts[1]}-${dateParts[0]} ${parts[1]}`; // Retorna no formato "YYYY-MM-DD HH:MM"
+}
+
 // Loop para processar os IDs
 for (let i = 0; i < ids.length; i++) {
     try {
@@ -342,9 +348,13 @@ for (let i = 0; i < ids.length; i++) {
             const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
             console.log(`${statisticData} encontrada!`);
 
-            // Comparar a data extraída com a lastDate
-            const statisticDate = new Date(statisticData); // Convertendo a string para um objeto Date (ajustar conforme o formato da data)
-            const lastDateFormatted = new Date(lastDate); // Convertendo a lastDate para objeto Date para comparação
+            // Formatar a data extraída para o formato reconhecível
+            const formattedStatisticDate = formatDateToStandardFormat(statisticData);
+            const statisticDate = new Date(formattedStatisticDate); // Convertendo a string para um objeto Date
+
+            // Formatar a data do banco de dados (lastDate) para o formato reconhecível
+            const formattedLastDate = formatDateToStandardFormat(lastDate);
+            const lastDateFormatted = new Date(formattedLastDate); // Convertendo a lastDate para objeto Date para comparação
 
             // Comparar as datas
             if (statisticDate.getTime() === lastDateFormatted.getTime()) {
