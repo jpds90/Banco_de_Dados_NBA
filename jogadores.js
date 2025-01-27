@@ -185,13 +185,19 @@ const scrapeResults1 = async (link) => {
 
     const url = await page.evaluate(() => window.location.href);
 
-   const startIndex = url.indexOf("/equipa/") + "/equipa/".length;
-   const endIndex = url.indexOf("/", startIndex);
-   const teamId10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
+   console.log('URL capturada:', url);
 
-   console.log(`ID do time processado: ${teamId10}`);
+const startIndex = url.indexOf("/equipa/") + "/equipa/".length;
+const endIndex = url.indexOf("/", startIndex);
+console.log('startIndex:', startIndex);
+console.log('endIndex:', endIndex);
 
-   const tableName = await createPlayersTable1(teamId10);
+if (startIndex !== -1 && endIndex !== -1) {
+  const teamId10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_')}_jogadores`;
+  console.log(`ID do time processado: ${teamId10}`);
+} else {
+  console.log('Erro ao extrair o ID da equipe.');
+}
 
     // Extrai o ID da equipe da URL
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
