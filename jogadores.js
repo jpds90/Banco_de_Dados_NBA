@@ -328,29 +328,40 @@ const scrapeResults1 = async (link) => {
 
             // Extrair a data da estatística (statisticData) da página
             const statisticDataArray = [];
-        const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-        
-        if (statisticElement) {
-            const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
-            console.log(`${statisticData} encontrada!`);
+    const statisticSelector = '#detail > div.duelParticipant > div.duelParticipant__startTime';
+    await page.waitForSelector(statisticSelector, { timeout: 5000 });
+    const statisticElement = await page.$(statisticSelector);
 
-            // Comparar as datas
-            if (lastDate && statisticData === lastDate) {
-                console.log(`Data ${statisticData} já processada. Ignorando jogador ${id}.`);
-                await playerPage.close(); // Fecha a aba do jogador
-                continue; // Pula para o próximo jogador
-            } else {
-                console.log(`Data ${statisticData} é nova. Continuando o processamento.`);
-            }
+    if (statisticElement) {
+        const dataExtraida = await page.evaluate(
+            element => element.textContent.trim(),
+            statisticElement
+        );
+
+        console.log(`Data extraída da página: ${dataExtraida}`);
+
+        // Suponha que `ultimaDataTabela` seja a última data da tabela no formato 'YYYY-MM-DD HH:mm'
+        const ultimaDataTabela = '2025-01-26 00:30'; // Exemplo
+
+        // Converta as datas para objetos Date
+        const dateFromPage = new Date(dataExtraida.replace(' ', 'T')); // Substitui espaço por 'T' para compatibilidade ISO
+        const dateFromTable = new Date(ultimaDataTabela.replace(' ', 'T'));
+
+        // Verifique se a data da página é mais recente que a da tabela
+        if (dateFromPage > dateFromTable) {
+            console.log('A data extraída é mais recente. Continuando o processamento...');
+            // Continue com o processamento...
         } else {
-            console.log('Dados não encontrados. Pulando para o próximo jogador.');
-            await playerPage.close(); // Fecha a aba se os dados não foram encontrados
-            continue; // Pula para o próximo jogador
+            console.log('A data extraída não é mais recente. Pulando o processamento.');
+            // Lógica para pular o processamento...
         }
-    } catch (error) {
-        console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
-    
-   } else {
+    } else {
+        console.log('Elemento de estatísticas não encontrado.');
+    }
+} catch (error) {
+    console.error('Erro ao buscar o elemento de estatísticas:', error);
+}
+    } else {
         console.log("ID do time não foi definido corretamente.");
     }
 
