@@ -328,11 +328,14 @@ const scrapeResults1 = async (link) => {
 
             // Extrair a data da estatística (statisticData) da página
             const statisticDataArray = [];
-            const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-            if (statisticElement) {
-                const statisticData = await page.evaluate(element => element.textContent.trim(), statisticElement);
-                console.log(`${statisticData} encontrada!`);
-                statisticDataArray.push(statisticData);
+       const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+       if (statisticElement) {
+           const statisticData = await playerPage.evaluate(element => element.textContent.trim(), statisticElement);
+           console.log(`${statisticData} encontrada!`);
+           statisticDataArray.push(statisticData);
+       } else {
+           console.log('Dados não encontrados.');
+       }
 
                 // Comparação das datas antes de qualquer outro processamento
                 if (lastDate && statisticData === lastDate) {
