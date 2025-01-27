@@ -528,7 +528,7 @@ await playerPage.close();
     console.log('Pulando para o próximo jogador...');
     continue; // Pula para o próximo jogador
 }
-
+}
 // Extrai o nome do time do link
 const rawTeamName = link.split('/').slice(-3, -2)[0]; // Obtém o nome bruto do time
 const teamName = rawTeamName.replace('-', ' '); // Formata para exibição (ex.: "los angeles-lakers" -> "los angeles lakers")
