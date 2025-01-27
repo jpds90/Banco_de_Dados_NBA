@@ -2592,6 +2592,20 @@ function authenticateToken(req, res, next) {
 
 
 app.use(authenticateToken); // Aplica o middleware a todas as rotas protegidas
+app.use((req, res, next) => {
+    const token = req.headers['authorization'];
+    if (!token) {
+        return res.status(403).json({ message: "Token não fornecido!" });
+    }
+    // Validação do token
+    try {
+        const decoded = jwt.verify(token, 'sua_chave_secreta'); // Ajuste conforme necessário
+        req.user = decoded;
+        next();
+    } catch (err) {
+        return res.status(401).json({ message: "Token inválido!" });
+    }
+});
 
 
 app.post('/save-planning', authenticateToken, async (req, res) => {
