@@ -303,49 +303,47 @@ const scrapeResults1 = async (link) => {
         await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
 
 
-   const ids = await page.evaluate(() => {
-     const container = document.querySelector('.container');
-     if (!container) {
-       throw new Error('container não encontrado');
-     }
-     const containercontent = container.querySelector('.container__content.content');
-     if (!containercontent) {
-       throw new Error('Container Content não encontrado');
-     }
-     const containerMain = containercontent.querySelector('.container__main');
-     if (!containerMain) {
-       throw new Error('containerMain não encontrado');
-     }
-     const containerMainInner = containerMain.querySelector('.container__mainInner');
-     if (!containerMainInner) {
-       throw new Error('ContainerMainInner não encontrado');
-     }
-     const containerLiveTable = containerMainInner.querySelector('.container__livetable');
-     if (!containerLiveTable) {
-       throw new Error('ContainerLiveTable não encontrado');
-     }
-     const containerFsbody = containerLiveTable.querySelector('.container__fsbody');
-     if (!containerFsbody) {
-       throw new Error('ContainerFsbody não encontrado');
-     }
-     const teamPage = containerFsbody.querySelector('.teamPage');
-     if (!teamPage) {
-       throw new Error('teamPage não encontrado');
-     }
-     const leaguesLive = teamPage.querySelector('.ui-section.event.ui-section--noIndent');
-     if (!leaguesLive) {
-       throw new Error('leguesLive não encontrado');
-     }
-     const sportName = leaguesLive.querySelector('.sportName.basketball');
-     if (!sportName) {
-       throw new Error('SportName não encontrado');
-     }
-     const ids = [];
-     sportName.querySelectorAll('[id]').forEach(element => {
-       ids.push(element.id);
-     });
-     return ids.slice(0, 12);
-   });
+const ids = await page.evaluate(async () => {
+    const waitForElement = (selector, timeout = 10000) => {
+        return new Promise((resolve, reject) => {
+            const startTime = Date.now();
+            const interval = setInterval(() => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    clearInterval(interval);
+                    resolve(element);
+                }
+                if (Date.now() - startTime > timeout) {
+                    clearInterval(interval);
+                    reject(new Error(`Tempo limite excedido: Elemento "${selector}" não encontrado.`));
+                }
+            }, 500); // Verifica a cada 500ms
+        });
+    };
+
+    try {
+        const container = await waitForElement('.container');
+        const containerContent = await waitForElement('.container__content.content');
+        const containerMain = await waitForElement('.container__main');
+        const containerMainInner = await waitForElement('.container__mainInner');
+        const containerLiveTable = await waitForElement('.container__livetable');
+        const containerFsbody = await waitForElement('.container__fsbody');
+        const teamPage = await waitForElement('.teamPage');
+        const leaguesLive = await waitForElement('.ui-section.event.ui-section--noIndent');
+        const sportName = await waitForElement('.sportName.basketball');
+
+        const ids = [];
+        sportName.querySelectorAll('[id]').forEach(element => {
+            ids.push(element.id);
+        });
+
+        return ids.slice(0, 12);
+    } catch (error) {
+        console.error(error.message);
+        return [];
+    }
+});
+
 
 try {
     console.log(ids);
