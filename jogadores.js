@@ -100,45 +100,17 @@ const saveDataToPlayersTable = async (teamName, data) => {
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
         console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
-        
+
         for (const item of data) {
-            // Usando `ON CONFLICT` para evitar duplicação ou atualizar
+            // Insere os dados diretamente, sem exclusões
             await client.query(
-                `
-                INSERT INTO ${tableName} (
+                `INSERT INTO "${tableName}" (
                     data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
                     field_goals_made, field_goals_attempted, two_point_made, two_point_attempted,
                     three_point_made, three_point_attempted, free_throws_made, free_throws_attempted,
                     plus_minus, offensive_rebounds, defensive_rebounds, personal_fouls,
                     steals, turnovers, shots_blocked, blocks_against, technical_fouls
-                ) VALUES (
-                    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24
-                )
-                ON CONFLICT (data_hora, player_name) DO UPDATE
-                SET
-                    team = EXCLUDED.team,
-                    points = EXCLUDED.points,
-                    total_rebounds = EXCLUDED.total_rebounds,
-                    assists = EXCLUDED.assists,
-                    minutes_played = EXCLUDED.minutes_played,
-                    field_goals_made = EXCLUDED.field_goals_made,
-                    field_goals_attempted = EXCLUDED.field_goals_attempted,
-                    two_point_made = EXCLUDED.two_point_made,
-                    two_point_attempted = EXCLUDED.two_point_attempted,
-                    three_point_made = EXCLUDED.three_point_made,
-                    three_point_attempted = EXCLUDED.three_point_attempted,
-                    free_throws_made = EXCLUDED.free_throws_made,
-                    free_throws_attempted = EXCLUDED.free_throws_attempted,
-                    plus_minus = EXCLUDED.plus_minus,
-                    offensive_rebounds = EXCLUDED.offensive_rebounds,
-                    defensive_rebounds = EXCLUDED.defensive_rebounds,
-                    personal_fouls = EXCLUDED.personal_fouls,
-                    steals = EXCLUDED.steals,
-                    turnovers = EXCLUDED.turnovers,
-                    shots_blocked = EXCLUDED.shots_blocked,
-                    blocks_against = EXCLUDED.blocks_against,
-                    technical_fouls = EXCLUDED.technical_fouls
-                `,
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
                 [
                     item.datahora, item.team, item.playerName, item.points, item.totalRebounds, item.assists,
                     item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
@@ -149,14 +121,15 @@ const saveDataToPlayersTable = async (teamName, data) => {
                     item.blocksAgainst, item.technicalFouls,
                 ]
             );
-            console.log(`Dados salvos/atualizados para o jogador: ${item.playerName}`);
+            console.log(`Dados salvos para o jogador: ${item.playerName}`);
         }
     } catch (error) {
-        console.error(`Erro ao salvar dados na tabela "${tableName}":`, error);
+        console.error(`Erro ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
     }
 };
+
 
 
 // Função para esperar o seletor com tentativas e lógica para pular em caso de falha
