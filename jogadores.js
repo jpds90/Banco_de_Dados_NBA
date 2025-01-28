@@ -10,26 +10,31 @@ const pool = new Pool({
  connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
-// Função para obter a última data do banco de dados
-const getLastDateFromDatabase = async (teamTable) => {
+// Função para verificar se uma data específica existe no banco de dados
+const checkDateInDatabase = async (teamTable, specificDate) => {
     const client = await pool.connect();
     try {
-        console.log(`Buscando a última data na tabela ${teamTable}...`);
-        const result = await client.query(`SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1`);
-        if (result.rows.length > 0) {
-            console.log(`Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora}`);
-            return result.rows[0].data_hora;
+        console.log(`Verificando se a data "${specificDate}" existe na tabela ${teamTable}...`);
+        const result = await client.query(
+            `SELECT COUNT(*) AS count FROM "${teamTable}" WHERE data_hora = $1`,
+            [specificDate]
+        );
+
+        if (result.rows[0].count > 0) {
+            console.log(`A data "${specificDate}" existe na tabela ${teamTable}.`);
+            return true;
         } else {
-            console.log(`Nenhuma data encontrada na tabela ${teamTable}`);
-            return null;
+            console.log(`A data "${specificDate}" não foi encontrada na tabela ${teamTable}.`);
+            return false;
         }
     } catch (error) {
-        console.error(`Erro ao buscar a última data na tabela ${teamTable}:`, error);
-        return null;
+        console.error(`Erro ao verificar a data "${specificDate}" na tabela ${teamTable}:`, error);
+        return false;
     } finally {
         client.release();
     }
 };
+
 
 // Função para tentar navegar com tentativas de re-execução
 const loadPageWithRetries = async (page, url, retries = 3) => {
@@ -310,7 +315,7 @@ const scrapeResults1 = async (link) => {
      return ids.slice(0, 12);
    });
 
-   try {
+try {
     console.log(ids);
 
     // Loop para processar os IDs
@@ -336,10 +341,15 @@ const scrapeResults1 = async (link) => {
                     const statisticData = await playerPage.evaluate(el => el.textContent.trim(), statisticElement);
                     console.log(`Data ${statisticData} encontrada!`);
 
-                    if (lastDate && statisticData === lastDate) {
+                    // Verificar se a data extraída já existe na tabela
+                    const dateExists = await checkDateInDatabase(teamID10, statisticData);
+
+                    if (dateExists) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                            await playerPage.close();
-                            return;
+                        await playerPage.close();
+                        continue; // Vai para o próximo ID no loop
+                    } else {
+                        console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
                     }
                 }
             }
