@@ -245,24 +245,6 @@ const scrapeResults1 = async (link) => {
         await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
 
 
-
-   // Extract the rows from the classification table
-   const teamRows = await page.evaluate(() => {
-     const rows = Array.from(document.querySelectorAll('.sportName.basketball tbody tr'));
-     return rows.map(row => {
-       const columns = row.querySelectorAll('td');
-       return {
-         team: columns[0].innerText,
-         wins: columns[1].innerText,
-         losses: columns[2].innerText,
-       };
-     });
-   });
-
-
-   console.log(teamRows);
-
-
    const ids = await page.evaluate(() => {
      const container = document.querySelector('.container');
      if (!container) {
@@ -335,7 +317,7 @@ const scrapeResults1 = async (link) => {
 
                     if (lastDate && statisticData === lastDate) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                        await playerPage.close();
+                        await browser.close();
                         continue; // Pule para o próximo jogador
                     }
                 }
