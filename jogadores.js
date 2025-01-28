@@ -121,6 +121,14 @@ const createPlayersTable = async (teamName) => {
 
 
 
+// Função para corrigir a sequência do ID
+const fixSequence = async (client, tableName) => {
+    const sequenceQuery = `
+        SELECT setval(pg_get_serial_sequence($1, 'id'), (SELECT MAX(id) FROM $1))
+    `;
+    await client.query(sequenceQuery, [tableName]);
+};
+
 // Função para salvar os dados dos jogadores
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
@@ -128,11 +136,14 @@ const saveDataToPlayersTable = async (teamName, data) => {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
         console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
 
+        // Corrigir a sequência antes de salvar os dados
+        await fixSequence(client, tableName);
+
         for (const item of data) {
-            // Verificar se o ID já existe
+            // Verificar se o jogador já está registrado
             const { rows: existingRows } = await client.query(
                 `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
-                [item.playerName, item.datahora]  // Verifica pelo nome do jogador e data para evitar duplicação
+                [item.playerName, item.datahora]
             );
 
             if (existingRows.length > 0) {
@@ -140,7 +151,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
                 continue;  // Pula para o próximo jogador
             }
 
-            // Inserir os dados do jogador, sem passar o id (ele é gerado automaticamente)
+            // Inserir os dados do jogador, sem passar o id (ele será gerado automaticamente)
             await client.query(
                 `INSERT INTO "${tableName}" (
                     data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
@@ -170,6 +181,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
         client.release();
     }
 };
+
 
 
 
@@ -362,7 +374,7 @@ try {
                     if (dateExists) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
                         await playerPage.close();
-                        continue; // Vai para o próximo ID no loop
+                        return; // Vai para o próximo ID no loop
                     } else {
                         console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
                     }
