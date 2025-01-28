@@ -98,37 +98,59 @@ const createPlayersTable = async (teamName) => {
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
+        // Gerar um nome de tabela seguro
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
         console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
 
         for (const item of data) {
-            // Insere os dados diretamente, sem exclusões
+            // Verificar se o ID já existe
+            const { rows: existingRows } = await client.query(
+                `SELECT id FROM "${tableName}" WHERE id = $1`,
+                [item.id]
+            );
+
+            let idToUse = item.id;
+
+            // Se o ID já existir, encontrar o próximo ID disponível
+            if (existingRows.length > 0) {
+                const { rows: maxIdRows } = await client.query(
+                    `SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM "${tableName}"`
+                );
+                idToUse = maxIdRows[0].next_id;
+            }
+
+            // Inserir os dados do jogador
             await client.query(
                 `INSERT INTO "${tableName}" (
-                    data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
+                    id, data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
                     field_goals_made, field_goals_attempted, two_point_made, two_point_attempted,
                     three_point_made, three_point_attempted, free_throws_made, free_throws_attempted,
                     plus_minus, offensive_rebounds, defensive_rebounds, personal_fouls,
                     steals, turnovers, shots_blocked, blocks_against, technical_fouls
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
+                ON CONFLICT (id)
+                DO NOTHING;`,
                 [
-                    item.datahora, item.team, item.playerName, item.points, item.totalRebounds, item.assists,
-                    item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
-                    item.twoPointMade, item.twoPointAttempted, item.threePointMade,
-                    item.threePointAttempted, item.freeThrowsMade, item.freeThrowsAttempted,
-                    item.plusMinus, item.offensiveRebounds, item.defensiveRebounds,
-                    item.personalFouls, item.steals, item.turnovers, item.shotsBlocked,
+                    idToUse, item.datahora, item.team, item.playerName, item.points, item.totalRebounds,
+                    item.assists, item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
+                    item.twoPointMade, item.twoPointAttempted, item.threePointMade, item.threePointAttempted,
+                    item.freeThrowsMade, item.freeThrowsAttempted, item.plusMinus, item.offensiveRebounds,
+                    item.defensiveRebounds, item.personalFouls, item.steals, item.turnovers, item.shotsBlocked,
                     item.blocksAgainst, item.technicalFouls,
                 ]
             );
+
             console.log(`Dados salvos para o jogador: ${item.playerName}`);
         }
+
+        console.log(`Dados salvos para o time ${teamName}`);
     } catch (error) {
         console.error(`Erro ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
     }
 };
+
 
 
 
