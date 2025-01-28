@@ -121,15 +121,26 @@ const createPlayersTable = async (teamName) => {
 
 
 
+// Função para salvar os dados dos jogadores
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
-        // Gerar um nome de tabela seguro
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
         console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
 
         for (const item of data) {
-            // Inserir os dados do jogador, sem especificar o ID
+            // Verificar se o ID já existe
+            const { rows: existingRows } = await client.query(
+                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
+                [item.playerName, item.datahora]  // Verifica pelo nome do jogador e data para evitar duplicação
+            );
+
+            if (existingRows.length > 0) {
+                console.log(`Jogador ${item.playerName} já registrado com esta data. Pulando...`);
+                continue;  // Pula para o próximo jogador
+            }
+
+            // Inserir os dados do jogador, sem passar o id (ele é gerado automaticamente)
             await client.query(
                 `INSERT INTO "${tableName}" (
                     data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
@@ -137,14 +148,14 @@ const saveDataToPlayersTable = async (teamName, data) => {
                     three_point_made, three_point_attempted, free_throws_made, free_throws_attempted,
                     plus_minus, offensive_rebounds, defensive_rebounds, personal_fouls,
                     steals, turnovers, shots_blocked, blocks_against, technical_fouls
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25)
-                ON CONFLICT (id) DO NOTHING;`,  // A cláusula ON CONFLICT vai garantir que não haja duplicação
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
                 [
-                    item.datahora, item.team, item.playerName, item.points, item.totalRebounds,
-                    item.assists, item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
-                    item.twoPointMade, item.twoPointAttempted, item.threePointMade, item.threePointAttempted,
-                    item.freeThrowsMade, item.freeThrowsAttempted, item.plusMinus, item.offensiveRebounds,
-                    item.defensiveRebounds, item.personalFouls, item.steals, item.turnovers, item.shotsBlocked,
+                    item.datahora, item.team, item.playerName, item.points, item.totalRebounds, item.assists,
+                    item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
+                    item.twoPointMade, item.twoPointAttempted, item.threePointMade,
+                    item.threePointAttempted, item.freeThrowsMade, item.freeThrowsAttempted,
+                    item.plusMinus, item.offensiveRebounds, item.defensiveRebounds,
+                    item.personalFouls, item.steals, item.turnovers, item.shotsBlocked,
                     item.blocksAgainst, item.technicalFouls,
                 ]
             );
@@ -159,6 +170,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
         client.release();
     }
 };
+
 
 
 
