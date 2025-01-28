@@ -10,45 +10,47 @@ const pool = new Pool({
  connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
+
 // Função para obter a última data do banco de dados
 const getLastDateFromDatabase = async (teamTable) => {
     const client = await pool.connect();
     try {
-        console.log(Buscando a última data na tabela ${teamTable}...);
-        const result = await client.query(SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1);
+        console.log(`Buscando a última data na tabela ${teamTable}...`);
+        const result = await client.query(`SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1`);
         if (result.rows.length > 0) {
-            console.log(Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora});
+            console.log(`Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora}`);
             return result.rows[0].data_hora;
         } else {
-            console.log(Nenhuma data encontrada na tabela ${teamTable});
+            console.log(`Nenhuma data encontrada na tabela ${teamTable}`);
             return null;
         }
     } catch (error) {
-        console.error(Erro ao buscar a última data na tabela ${teamTable}:, error);
+        console.error(`Erro ao buscar a última data na tabela ${teamTable}:`, error);
         return null;
     } finally {
         client.release();
     }
 };
-// Função para verificar se uma data específica existe no banco de dados
+
+// Função para verificar se a data já existe na tabela
 const checkDateInDatabase = async (teamTable, specificDate) => {
     const client = await pool.connect();
     try {
-        console.log(`Verificando se a data "${specificDate}" existe na tabela ${teamTable}...`);
+        console.log(`Verificando se a data ${specificDate} já existe na tabela ${teamTable}...`);
         const result = await client.query(
-            `SELECT COUNT(*) AS count FROM "${teamTable}" WHERE data_hora = $1`,
-            [specificDate]
+            `SELECT COUNT(*) FROM "${teamTable}" WHERE data_hora = $1`, [specificDate]
         );
 
-        if (result.rows[0].count > 0) {
-            console.log(`A data "${specificDate}" existe na tabela ${teamTable}.`);
-            return true;
+        const count = result.rows[0].count;
+        if (count > 0) {
+            console.log(`A data ${specificDate} já existe na tabela ${teamTable}.`);
+            return true; // Retorna true se a data já existir
         } else {
-            console.log(`A data "${specificDate}" não foi encontrada na tabela ${teamTable}.`);
-            return false;
+            console.log(`A data ${specificDate} não foi encontrada na tabela ${teamTable}.`);
+            return false; // Retorna false se a data não existir
         }
     } catch (error) {
-        console.error(`Erro ao verificar a data "${specificDate}" na tabela ${teamTable}:`, error);
+        console.error(`Erro ao verificar a data na tabela ${teamTable}:`, error);
         return false;
     } finally {
         client.release();
