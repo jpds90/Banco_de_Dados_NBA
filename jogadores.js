@@ -121,14 +121,19 @@ const createPlayersTable = async (teamName) => {
 
 
 
-// Função para corrigir a sequência do ID
 const fixSequence = async (client, tableName) => {
-    const sequenceQuery = `
-        SELECT setval(pg_get_serial_sequence($1, 'id'), (SELECT MAX(id) FROM $1))
-    `;
-    await client.query(sequenceQuery, [tableName]);
+    try {
+        console.log(`Corrigindo a sequência da tabela "${tableName}"...`);
+        const sequenceQuery = `
+            SELECT setval(pg_get_serial_sequence('${tableName}', 'id'), (SELECT COALESCE(MAX(id), 1) FROM "${tableName}"))
+        `;
+        await client.query(sequenceQuery);
+        console.log(`Sequência da tabela "${tableName}" corrigida com sucesso.`);
+    } catch (error) {
+        console.error(`Erro ao corrigir a sequência da tabela "${tableName}":`, error);
+        throw error; // Re-lança o erro para ser tratado externamente
+    }
 };
-
 // Função para salvar os dados dos jogadores
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
@@ -151,7 +156,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
                 continue;  // Pula para o próximo jogador
             }
 
-            // Inserir os dados do jogador, sem passar o id (ele será gerado automaticamente)
+            // Inserir os dados do jogador
             await client.query(
                 `INSERT INTO "${tableName}" (
                     data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
