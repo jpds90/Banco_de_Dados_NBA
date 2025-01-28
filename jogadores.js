@@ -328,43 +328,20 @@ const scrapeResults1 = async (link) => {
 
             // Extrair a data da estatística (statisticData) da página
             const statisticDataArray = [];
-    const statisticSelector = '#detail > div.duelParticipant > div.duelParticipant__startTime';
-    await page.waitForSelector(statisticSelector, { timeout: 5000 });
-    const statisticElement = await page.$(statisticSelector);
+        // Extrair a data da página do jogador
+        const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+        if (statisticElement) {
+            const statisticData = await page.evaluate(element => element.textContent.trim(), statisticElement);
+            console.log(`${statisticData} encontrada!`);
 
-    if (statisticElement) {
-        const dataExtraida = await page.evaluate(
-            element => element.textContent.trim(),
-            statisticElement
-        );
-
-        console.log(`Data extraída da página: ${dataExtraida}`);
-
-        // Suponha que `ultimaDataTabela` seja a última data da tabela no formato 'YYYY-MM-DD HH:mm'
-        const ultimaDataTabela = '2025-01-26 00:30'; // Exemplo
-
-        // Converta as datas para objetos Date
-        const dateFromPage = new Date(dataExtraida.replace(' ', 'T')); // Substitui espaço por 'T' para compatibilidade ISO
-        const dateFromTable = new Date(ultimaDataTabela.replace(' ', 'T'));
-
-        // Verifique se a data da página é mais recente que a da tabela
-        if (dateFromPage > dateFromTable) {
-            console.log('A data extraída é mais recente. Continuando o processamento...');
-            // Continue com o processamento...
-        } else {
-            console.log('A data extraída não é mais recente. Pulando o processamento.');
-            // Lógica para pular o processamento...
-        }
-    } else {
-        console.log('Elemento de estatísticas não encontrado.');
-    }
-} catch (error) {
-    console.error('Erro ao buscar o elemento de estatísticas:', error);
-}
-    } else {
-        console.log("ID do time não foi definido corretamente.");
-    }
-
+            // Comparar as datas: se a data extraída da página for igual à última data no banco
+            if (lastDate && statisticData === lastDate) {
+                console.log(`A data ${statisticData} já foi registrada. Encerrando o processamento deste jogador.`);
+                await page.close();
+                return; // Encerra o processamento para este jogador
+            }
+            // Caso contrário, prossiga com o processamento
+            console.log('Processando os dados do jogador...');
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button', { timeout: 5000 });
