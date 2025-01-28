@@ -317,8 +317,8 @@ const scrapeResults1 = async (link) => {
 
                     if (lastDate && statisticData === lastDate) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                        await browser.close();
-                        continue; // Pule para o próximo jogador
+                            await playerPage.close();
+                            return;
                     }
                 }
             }
