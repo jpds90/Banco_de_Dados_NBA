@@ -46,7 +46,6 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
     }
 };
 // Função para salvar os dados no banco
-// Função para criar a tabela de jogadores para o time
 const createPlayersTable = async (teamName) => {
     const client = await pool.connect();
     try {
@@ -54,9 +53,9 @@ const createPlayersTable = async (teamName) => {
 
         console.log(`Verificando a criação da tabela "jogadores" para o time: "${teamName}"...`);
 
-    `);
-    await client.query(`
-        CREATE TABLE "${tableName}" (
+        // Remove o DROP TABLE e mantém a verificação apenas para criar caso não exista
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS "${tableName}" (
                 data_hora VARCHAR(50) NOT NULL,
                 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 player_name VARCHAR(255) NOT NULL,
@@ -82,15 +81,16 @@ const createPlayersTable = async (teamName) => {
                 shots_blocked INT,
                 blocks_against INT,
                 technical_fouls INT
-                )
-            `);
-            console.log(`Tabela "jogadores" criada para o time: "${teamName}".`);
+            )
+        `);
+        console.log(`Tabela "jogadores" criada ou já existente para o time: "${teamName}".`);
     } catch (error) {
         console.error(`Erro ao criar tabela para o time "${teamName}":`, error);
     } finally {
         client.release();
     }
 };
+
 
 
 
