@@ -377,7 +377,11 @@ try {
                     if (dateExists) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
                         await playerPage.close();
-                        return; // Vai para o próximo ID no loop
+                    
+                        // Fechar o navegador e encerrar o scraping com sucesso
+                        await browser.close();
+                        console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
+                        return; // Encerra toda a função scrapeResults1
                     } else {
                         console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
                     }
