@@ -307,41 +307,39 @@ const scrapeResults1 = async (link) => {
      return ids.slice(0, 12);
    });
 
-   console.log(ids);
-   // Loop para processar os IDs
-   for (let i = 0; i < ids.length; i++) {
-    try {
-       const id = ids[i]; // Cada ID extraído
-       const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
-       console.log(`Processando o link do jogador com ID: ${id}`);
+   try {
+    console.log(ids);
 
-       // Abrir uma nova aba para cada jogador
-       const playerPage = await browser.newPage();
-       await playerPage.goto(playerLink, { timeout: 120000 });
-       await sleep(5000);  // Atraso para garantir que a página carregue
-
-    // Se o teamID10 for válido, vamos buscar a última data no banco de dados
-    if (teamID10) {
+    // Loop para processar os IDs
+    for (let i = 0; i < ids.length; i++) {
         try {
-            const lastDate = await getLastDateFromDatabase(teamID10);
-            console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+            const id = ids[i]; // Cada ID extraído
+            const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
+            console.log(`Processando o link do jogador com ID: ${id}`);
 
-            // Extrair a data da estatística (statisticData) da página
-            const statisticDataArray = [];
-        // Extrair a data da página do jogador
-        const statisticElement = await page.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-        if (statisticElement) {
-            const statisticData = await page.evaluate(element => element.textContent.trim(), statisticElement);
-            console.log(`${statisticData} encontrada!`);
+            // Abrir uma nova aba para cada jogador
+            const playerPage = await browser.newPage();
+            await playerPage.goto(playerLink, { timeout: 120000 });
+            await sleep(5000); // Atraso para garantir que a página carregue
 
-            // Comparar as datas: se a data extraída da página for igual à última data no banco
-            if (lastDate && statisticData === lastDate) {
-                console.log(`A data ${statisticData} já foi registrada. Encerrando o processamento deste jogador.`);
-                await page.close();
-                return; // Encerra o processamento para este jogador
+            // Processar estatísticas apenas se o teamID10 for válido
+            if (teamID10) {
+                const lastDate = await getLastDateFromDatabase(teamID10);
+                console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+
+                // Extrair a data da página
+                const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+                if (statisticElement) {
+                    const statisticData = await playerPage.evaluate(el => el.textContent.trim(), statisticElement);
+                    console.log(`Data ${statisticData} encontrada!`);
+
+                    if (lastDate && statisticData === lastDate) {
+                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
+                        await playerPage.close();
+                        continue; // Pule para o próximo jogador
+                    }
+                }
             }
-            // Caso contrário, prossiga com o processamento
-            console.log('Processando os dados do jogador...');
         // Espera os seletores problemáticos com lógica de repetição
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
         await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button', { timeout: 5000 });
@@ -473,13 +471,16 @@ function convertMinutesToSeconds(timeString) {
         }
     }
     
-// Fechar a página de cada jogador
-await playerPage.close();
+            // Fechar a página de cada jogador
+            await playerPage.close();
+        } catch (error) {
+            console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
+            console.log('Pulando para o próximo jogador...');
+            continue; // Pula para o próximo jogador no loop
+        }
+    }
 } catch (error) {
-    console.error(`Erro ao processar o jogador com ID ${id}:`, error);
-    console.log('Pulando para o próximo jogador...');
-    continue; // Pula para o próximo jogador
-}
+    console.error("Erro geral no processamento:", error);
 }
 // Extrai o nome do time do link
 const rawTeamName = link.split('/').slice(-3, -2)[0]; // Obtém o nome bruto do time
