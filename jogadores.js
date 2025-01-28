@@ -10,6 +10,26 @@ const pool = new Pool({
  connectionString: process.env.DATABASE_URL, // Usando a URL completa
   ssl: { rejectUnauthorized: false },
 });
+// Função para obter a última data do banco de dados
+const getLastDateFromDatabase = async (teamTable) => {
+    const client = await pool.connect();
+    try {
+        console.log(Buscando a última data na tabela ${teamTable}...);
+        const result = await client.query(SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1);
+        if (result.rows.length > 0) {
+            console.log(Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora});
+            return result.rows[0].data_hora;
+        } else {
+            console.log(Nenhuma data encontrada na tabela ${teamTable});
+            return null;
+        }
+    } catch (error) {
+        console.error(Erro ao buscar a última data na tabela ${teamTable}:, error);
+        return null;
+    } finally {
+        client.release();
+    }
+};
 // Função para verificar se uma data específica existe no banco de dados
 const checkDateInDatabase = async (teamTable, specificDate) => {
     const client = await pool.connect();
