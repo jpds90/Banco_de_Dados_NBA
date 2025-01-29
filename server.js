@@ -830,13 +830,7 @@ app.get('/ultimosjogos2', async (req, res) => {
             SELECT home_team, away_team, home_score, away_score, datahora, id 
             FROM ${timeFormatado} 
             WHERE home_team = $1 OR away_team = $1
-last week
-
-Update server.js
 ORDER BY 
-last week
-
-Update server.js
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 1
@@ -849,9 +843,6 @@ Update server.js
         WHEN datahora LIKE '__.__.____ __:__' THEN 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
-2 weeks ago
-
-Primeira versão do projeto
             LIMIT 5
         `;
         console.log(`Query SQL que será executada: ${querySQL}`);
