@@ -968,6 +968,17 @@ app.get('/ultimosjogos4', async (req, res) => {
                             home_team, away_team, home_score, away_score, datahora
                          FROM ${homeTable} 
                          WHERE home_team = $1
+                         ORDER BY 
+                             CASE
+                                 WHEN datahora LIKE '__.__. __:__' THEN 1
+                                 ELSE 2
+                             END,
+                             CASE
+                                 WHEN datahora LIKE '__.__. __:__' THEN 
+                                     TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                                 WHEN datahora LIKE '__.__.____ __:__' THEN 
+                                     TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                             END DESC
                          OFFSET $2 LIMIT 1`, // Usando OFFSET para pegar os jogos a partir do ponto desejado
                         [time_home, homeOffset]
                     );
@@ -978,40 +989,14 @@ app.get('/ultimosjogos4', async (req, res) => {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
 
-                    // Ordenar os jogos conforme a lógica fornecida
-                    const orderByDataHora = `CASE
-                        WHEN datahora LIKE '__.__. __:__' THEN 1
-                        ELSE 2
-                    END,
-                    CASE
-                        WHEN datahora LIKE '__.__. __:__' THEN 
-                            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                        WHEN datahora LIKE '__.__.____ __:__' THEN 
-                            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                    END DESC`;
-
-                    // Aqui, adicionamos a ordenação na consulta SQL
-                    const homeGamesResultSorted = await pool.query(
-                        `SELECT 
-                            home_team, away_team, home_score, away_score, datahora
-                         FROM ${homeTable} 
-                         WHERE home_team = $1
-                         ORDER BY ${orderByDataHora}
-                         OFFSET $2 LIMIT 1`,
-                        [time_home, homeOffset]
-                    );
-                    
-                    if (homeGamesResultSorted.rows.length === 0) break; // Não há mais jogos para processar
-
-                    const sortedGame = homeGamesResultSorted.rows[0];
-                    const sortedHomeScore = parseInt(sortedGame.home_score, 10);
-                    const sortedAwayScore = parseInt(sortedGame.away_score, 10);
-
-                    if (sortedHomeScore > sortedAwayScore) {
-                        homeWins.push(sortedHomeScore - sortedAwayScore); // Diferença de pontos na vitória
-                    } else if (sortedHomeScore < sortedAwayScore) {
-                        homeLosses.push(sortedAwayScore - sortedHomeScore); // Diferença de pontos na derrota
+                    if (homeScore > awayScore) {
+                        homeWins.push(homeScore - awayScore); // Diferença de pontos na vitória
+                    } else if (homeScore < awayScore) {
+                        homeLosses.push(awayScore - homeScore); // Diferença de pontos na derrota
                     }
+
+                    // Verificar se atingiu o limite de 5 vitórias ou 5 derrotas
+                    if (homeWins.length === 5 && homeLosses.length === 5) break;
 
                     homeOffset++; // Incrementa o OFFSET para pegar o próximo jogo
                 }
@@ -1026,6 +1011,17 @@ app.get('/ultimosjogos4', async (req, res) => {
                             home_team, away_team, home_score, away_score, datahora
                          FROM ${awayTable} 
                          WHERE away_team = $1
+                         ORDER BY 
+                             CASE
+                                 WHEN datahora LIKE '__.__. __:__' THEN 1
+                                 ELSE 2
+                             END,
+                             CASE
+                                 WHEN datahora LIKE '__.__. __:__' THEN 
+                                     TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                                 WHEN datahora LIKE '__.__.____ __:__' THEN 
+                                     TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                             END DESC
                          OFFSET $2 LIMIT 1`, // Usando OFFSET para pegar os jogos a partir do ponto desejado
                         [time_away, awayOffset]
                     );
@@ -1036,40 +1032,14 @@ app.get('/ultimosjogos4', async (req, res) => {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
 
-                    // Ordenar os jogos conforme a lógica fornecida
-                    const orderByDataHora = `CASE
-                        WHEN datahora LIKE '__.__. __:__' THEN 1
-                        ELSE 2
-                    END,
-                    CASE
-                        WHEN datahora LIKE '__.__. __:__' THEN 
-                            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                        WHEN datahora LIKE '__.__.____ __:__' THEN 
-                            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                    END DESC`;
-
-                    // Aqui, adicionamos a ordenação na consulta SQL
-                    const awayGamesResultSorted = await pool.query(
-                        `SELECT 
-                            home_team, away_team, home_score, away_score, datahora
-                         FROM ${awayTable} 
-                         WHERE away_team = $1
-                         ORDER BY ${orderByDataHora}
-                         OFFSET $2 LIMIT 1`,
-                        [time_away, awayOffset]
-                    );
-                    
-                    if (awayGamesResultSorted.rows.length === 0) break; // Não há mais jogos para processar
-
-                    const sortedAwayGame = awayGamesResultSorted.rows[0];
-                    const sortedHomeScore = parseInt(sortedAwayGame.home_score, 10);
-                    const sortedAwayScore = parseInt(sortedAwayGame.away_score, 10);
-
-                    if (sortedAwayScore > sortedHomeScore) {
-                        awayWins.push(sortedAwayScore - sortedHomeScore); // Diferença de pontos na vitória
-                    } else if (sortedAwayScore < sortedHomeScore) {
-                        awayLosses.push(sortedHomeScore - sortedAwayScore); // Diferença de pontos na derrota
+                    if (awayScore > homeScore) {
+                        awayWins.push(awayScore - homeScore); // Diferença de pontos na vitória
+                    } else if (awayScore < homeScore) {
+                        awayLosses.push(homeScore - awayScore); // Diferença de pontos na derrota
                     }
+
+                    // Verificar se atingiu o limite de 5 vitórias ou 5 derrotas
+                    if (awayWins.length === 5 && awayLosses.length === 5) break;
 
                     awayOffset++; // Incrementa o OFFSET para pegar o próximo jogo
                 }
@@ -1106,6 +1076,7 @@ app.get('/ultimosjogos4', async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 });
+
 
 
 
