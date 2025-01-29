@@ -957,83 +957,50 @@ app.get('/ultimosjogos4', async (req, res) => {
             const awayVictories = [];
             const awayDefeats = [];
 
-            // Buscar as 5 maiores vitórias e derrotas do time da casa
-            if (tableNames.includes(homeTable)) {
-                // Buscar as 5 maiores vitórias
-                const homeVictoriesResult = await pool.query(`
-                    SELECT 
-                        home_team, away_team, home_score, away_score,
-                        (home_score - away_score) AS point_difference
-                    FROM ${homeTable}
-                    WHERE home_team = $1 AND home_score > away_score
-                    ORDER BY point_difference DESC
-                    LIMIT 5;
-                `, [time_home]);
+// Últimas 5 vitórias em casa do time da casa e média de pontos
+const homeVictoriesResult = await pool.query(`
+    SELECT 
+        home_team, away_team, home_score, away_score,
+        (home_score - away_score) AS point_difference
+    FROM ${homeTable}
+    WHERE home_team = $1 AND home_score > away_score
+    ORDER BY point_difference DESC
+    LIMIT 5;
+`, [time_home]);
 
-                homeVictoriesResult.rows.forEach(game => {
-                    homeVictories.push({
-                        adversario: game.away_team,
-                        pontos: game.point_difference,
-                    });
-                });
+// Últimas 5 derrotas em casa do time da casa e média de pontos
+const homeDefeatsResult = await pool.query(`
+    SELECT 
+        home_team, away_team, home_score, away_score,
+        (home_score - away_score) AS point_difference
+    FROM ${homeTable}
+    WHERE home_team = $1 AND home_score < away_score
+    ORDER BY point_difference ASC
+    LIMIT 5;
+`, [time_home]);
 
-                // Buscar as 5 maiores derrotas
-                const homeDefeatsResult = await pool.query(`
-                    SELECT 
-                        home_team, away_team, home_score, away_score,
-                        (home_score - away_score) AS point_difference
-                    FROM ${homeTable}
-                    WHERE home_team = $1 AND home_score < away_score
-                    ORDER BY point_difference ASC
-                    LIMIT 5;
-                `, [time_home]);
+// Últimas 5 vitórias fora de casa do time visitante e média de pontos
+const awayVictoriesResult = await pool.query(`
+    SELECT 
+        home_team, away_team, home_score, away_score,
+        (away_score - home_score) AS point_difference
+    FROM ${awayTable}
+    WHERE away_team = $1 AND away_score > home_score
+    ORDER BY point_difference DESC
+    LIMIT 5;
+`, [time_away]);
 
-                homeDefeatsResult.rows.forEach(game => {
-                    homeDefeats.push({
-                        adversario: game.away_team,
-                        pontos: game.point_difference,
-                    });
-                });
-            }
+// Últimas 5 derrotas fora de casa do time visitante e média de pontos
+const awayDefeatsResult = await pool.query(`
+    SELECT 
+        home_team, away_team, home_score, away_score,
+        (away_score - home_score) AS point_difference
+    FROM ${awayTable}
+    WHERE away_team = $1 AND away_score < home_score
+    ORDER BY point_difference ASC
+    LIMIT 5;
+`, [time_away]);
 
-            // Buscar as 5 maiores vitórias e derrotas do time visitante
-            if (tableNames.includes(awayTable)) {
-                // Buscar as 5 maiores vitórias
-                const awayVictoriesResult = await pool.query(`
-                    SELECT 
-                        home_team, away_team, home_score, away_score,
-                        (away_score - home_score) AS point_difference
-                    FROM ${awayTable}
-                    WHERE away_team = $1 AND away_score > home_score
-                    ORDER BY point_difference DESC
-                    LIMIT 5;
-                `, [time_away]);
-
-                awayVictoriesResult.rows.forEach(game => {
-                    awayVictories.push({
-                        adversario: game.home_team,
-                        pontos: game.point_difference,
-                    });
-                });
-
-                // Buscar as 5 maiores derrotas
-                const awayDefeatsResult = await pool.query(`
-                    SELECT 
-                        home_team, away_team, home_score, away_score,
-                        (away_score - home_score) AS point_difference
-                    FROM ${awayTable}
-                    WHERE away_team = $1 AND away_score < home_score
-                    ORDER BY point_difference ASC
-                    LIMIT 5;
-                `, [time_away]);
-
-                awayDefeatsResult.rows.forEach(game => {
-                    awayDefeats.push({
-                        adversario: game.home_team,
-                        pontos: game.point_difference,
-                    });
-                });
-            }
 
             // Cálculo das médias
             const homeVictoriesAverage = homeVictories.reduce((acc, game) => acc + game.pontos, 0) / homeVictories.length || 0;
