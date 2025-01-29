@@ -1098,8 +1098,8 @@ app.get('/gamestats', async (req, res) => {
 
             let totalDiff = 0;
             let gameCount = confrontations.length;
-            let homeWins = 0;  // Inicializa contagem de vitórias do time jogando em casa
-            let awayWins = 0;  // Inicializa contagem de vitórias do time jogando fora
+            let homeWins = 0;
+            let awayWins = 0;
 
             confrontations.forEach(row => {
                 const diff = Math.abs(row.home_score - row.away_score);
@@ -1108,29 +1108,36 @@ app.get('/gamestats', async (req, res) => {
                 if (row.home_score > row.away_score) {
                     // Vitória do time da casa
                     if (row.home_team === time_home) {
-                        homeWins++;  // Time_home venceu jogando em casa
+                        homeWins++;
                     } else {
-                        awayWins++;  // Time_away venceu jogando fora
+                        awayWins++;
                     }
                 } else if (row.away_score > row.home_score) {
                     // Vitória do time visitante
                     if (row.away_team === time_home) {
-                        homeWins++;  // Time_home venceu jogando fora
+                        homeWins++;
                     } else {
-                        awayWins++;  // Time_away venceu jogando em casa
+                        awayWins++;
                     }
                 }
             });
 
-            // Média da diferença de pontos nos confrontos diretos
-            const avgDiff = gameCount > 0 ? (totalDiff / gameCount).toFixed(2) : 0;
+            // Calcular a média da diferença de pontos
+            let avgDiff = gameCount > 0 ? (totalDiff / gameCount).toFixed(2) : 0;
+
+            // Ajustar o sinal da diferença com base no número de vitórias
+            if (homeWins > awayWins) {
+                avgDiff = `-${avgDiff}`; // Se o time da casa venceu mais, diferença negativa
+            } else if (awayWins > homeWins) {
+                avgDiff = `+${avgDiff}`; // Se o time visitante venceu mais, diferença positiva
+            }
 
             results.push({
                 time_home,
                 time_away,
-                avg_difference: avgDiff,
-                home_wins: homeWins,  // Corrigido: Agora está inicializado corretamente
-                away_wins: awayWins   // Corrigido: Agora está inicializado corretamente
+                avg_difference: avgDiff, // Diferença ajustada com o sinal correto
+                home_wins: homeWins,
+                away_wins: awayWins
             });
         }
 
