@@ -908,7 +908,146 @@ ORDER BY
             };
         });
         
-        
+        app.get('/ultimosjogos4', async (req, res) => {
+    try {
+        // Consultar times na tabela "odds"
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
+
+            // Verificar tabelas existentes
+            const tablesResult = await pool.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = $1 OR table_name = $2
+            `, [homeTable, awayTable]);
+
+            const tableNames = tablesResult.rows.map(row => row.table_name);
+
+            const homeVictories = [];
+            const homeDefeats = [];
+            const awayVictories = [];
+            const awayDefeats = [];
+
+            // Buscar as 5 maiores vitórias e derrotas do time da casa
+            if (tableNames.includes(homeTable)) {
+                // Buscar as 5 maiores vitórias
+                const homeVictoriesResult = await pool.query(`
+                    SELECT 
+                        home_team, away_team, home_score, away_score,
+                        (home_score - away_score) AS point_difference
+                    FROM ${homeTable}
+                    WHERE home_team = $1 AND home_score > away_score
+                    ORDER BY point_difference DESC
+                    LIMIT 5;
+                `, [time_home]);
+
+                homeVictoriesResult.rows.forEach(game => {
+                    homeVictories.push({
+                        adversario: game.away_team,
+                        pontos: game.point_difference,
+                    });
+                });
+
+                // Buscar as 5 maiores derrotas
+                const homeDefeatsResult = await pool.query(`
+                    SELECT 
+                        home_team, away_team, home_score, away_score,
+                        (home_score - away_score) AS point_difference
+                    FROM ${homeTable}
+                    WHERE home_team = $1 AND home_score < away_score
+                    ORDER BY point_difference ASC
+                    LIMIT 5;
+                `, [time_home]);
+
+                homeDefeatsResult.rows.forEach(game => {
+                    homeDefeats.push({
+                        adversario: game.away_team,
+                        pontos: game.point_difference,
+                    });
+                });
+            }
+
+            // Buscar as 5 maiores vitórias e derrotas do time visitante
+            if (tableNames.includes(awayTable)) {
+                // Buscar as 5 maiores vitórias
+                const awayVictoriesResult = await pool.query(`
+                    SELECT 
+                        home_team, away_team, home_score, away_score,
+                        (away_score - home_score) AS point_difference
+                    FROM ${awayTable}
+                    WHERE away_team = $1 AND away_score > home_score
+                    ORDER BY point_difference DESC
+                    LIMIT 5;
+                `, [time_away]);
+
+                awayVictoriesResult.rows.forEach(game => {
+                    awayVictories.push({
+                        adversario: game.home_team,
+                        pontos: game.point_difference,
+                    });
+                });
+
+                // Buscar as 5 maiores derrotas
+                const awayDefeatsResult = await pool.query(`
+                    SELECT 
+                        home_team, away_team, home_score, away_score,
+                        (away_score - home_score) AS point_difference
+                    FROM ${awayTable}
+                    WHERE away_team = $1 AND away_score < home_score
+                    ORDER BY point_difference ASC
+                    LIMIT 5;
+                `, [time_away]);
+
+                awayDefeatsResult.rows.forEach(game => {
+                    awayDefeats.push({
+                        adversario: game.home_team,
+                        pontos: game.point_difference,
+                    });
+                });
+            }
+
+            // Cálculo das médias
+            const homeVictoriesAverage = homeVictories.reduce((acc, game) => acc + game.pontos, 0) / homeVictories.length || 0;
+            const homeDefeatsAverage = homeDefeats.reduce((acc, game) => acc + game.pontos, 0) / homeDefeats.length || 0;
+            const awayVictoriesAverage = awayVictories.reduce((acc, game) => acc + game.pontos, 0) / awayVictories.length || 0;
+            const awayDefeatsAverage = awayDefeats.reduce((acc, game) => acc + game.pontos, 0) / awayDefeats.length || 0;
+
+            results.push({
+                time_home,
+                home_victories: {
+                    games: homeVictories,
+                    average_points: homeVictoriesAverage,
+                },
+                home_defeats: {
+                    games: homeDefeats,
+                    average_points: homeDefeatsAverage,
+                },
+                time_away,
+                away_victories: {
+                    games: awayVictories,
+                    average_points: awayVictoriesAverage,
+                },
+                away_defeats: {
+                    games: awayDefeats,
+                    average_points: awayDefeatsAverage,
+                },
+            });
+        }
+
+        // Enviar resultados em JSON
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
         
 
         console.log('Jogos processados finalizados:', jogos);
