@@ -969,15 +969,16 @@ app.get('/ultimosjogos4', async (req, res) => {
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
+        WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 1  -- Formato DD.MM. HH:MI
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2         -- Formato DD.MM.YYYY
+        ELSE 3
     END,
-    -- Ordena pela data dentro de cada grupo de formatos
+    -- Ordena corretamente dentro de cada grupo de formatos
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_DATE(CONCAT('2025.', LEFT(datahora, 5)), 'YYYY.DD.MM') -- Pega apenas a parte da data
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
-            TO_DATE(datahora, 'DD.MM.YYYY')
+        WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')  -- Considera a hora
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
+            TO_DATE(datahora, 'DD.MM.YYYY')  -- Apenas a data, ignorando a hora
     END DESC`,
     [time_home]);
 
@@ -1015,15 +1016,16 @@ ORDER BY
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
+        WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 1  -- Formato DD.MM. HH:MI
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2         -- Formato DD.MM.YYYY
+        ELSE 3
     END,
-    -- Ordena pela data dentro de cada grupo de formatos
+    -- Ordena corretamente dentro de cada grupo de formatos
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_DATE(CONCAT('2025.', LEFT(datahora, 5)), 'YYYY.DD.MM') -- Pega apenas a parte da data
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
-            TO_DATE(datahora, 'DD.MM.YYYY')
+        WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')  -- Considera a hora
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
+            TO_DATE(datahora, 'DD.MM.YYYY')  -- Apenas a data, ignorando a hora
     END DESC`, [time_away]);
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
