@@ -990,9 +990,9 @@ app.get('/ultimosjogos4', async (req, res) => {
                     const awayScore = parseInt(game.away_score, 10);
 
                     if (homeScore > awayScore) {
-                        homeWins.push(homeScore - awayScore); // Diferença de pontos na vitória
+                        if (homeWins.length < 5) homeWins.push(homeScore - awayScore); // Diferença de pontos na vitória
                     } else if (homeScore < awayScore) {
-                        homeLosses.push(awayScore - homeScore); // Diferença de pontos na derrota
+                        if (homeLosses.length < 5) homeLosses.push(awayScore - homeScore); // Diferença de pontos na derrota
                     }
 
                     // Verificar se atingiu o limite de 5 vitórias ou 5 derrotas
@@ -1033,9 +1033,9 @@ app.get('/ultimosjogos4', async (req, res) => {
                     const awayScore = parseInt(game.away_score, 10);
 
                     if (awayScore > homeScore) {
-                        awayWins.push(awayScore - homeScore); // Diferença de pontos na vitória
+                        if (awayWins.length < 5) awayWins.push(awayScore - homeScore); // Diferença de pontos na vitória
                     } else if (awayScore < homeScore) {
-                        awayLosses.push(homeScore - awayScore); // Diferença de pontos na derrota
+                        if (awayLosses.length < 5) awayLosses.push(homeScore - awayScore); // Diferença de pontos na derrota
                     }
 
                     // Verificar se atingiu o limite de 5 vitórias ou 5 derrotas
