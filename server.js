@@ -962,18 +962,34 @@ app.get('/ultimosjogos4', async (req, res) => {
                     `SELECT home_team, away_team, home_score, away_score, datahora 
                      FROM ${homeTable} 
                      WHERE home_team = $1
-                     ORDER BY 
-                        CASE 
-                            -- Formato: "07.12.2024 HH:MM Após Prol."
-                            WHEN datahora ~ '^[0-9]{2}\\.[0-9]{2}\\.\\d{4} .*' THEN 
-                                TO_TIMESTAMP(SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2), 'DD.MM.YYYY HH24:MI')
-                            
-                            -- Formato: "19.01. HH:MM Após Prol." (sem ano)
-                            WHEN datahora ~ '^[0-9]{2}\\.[0-9]{2}\\. .*' THEN 
-                                TO_TIMESTAMP('2025.' || SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2), 'YYYY.DD.MM HH24:MI')
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI ou "Após Prol."
+    CASE
+        WHEN datahora LIKE '%Após Prol.' THEN 1  -- Tratamento para "Após Prol."
+        WHEN datahora LIKE '__.__. __:__' THEN 2  -- Sem ano
+        ELSE 3  -- Com ano completo
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        -- Se tiver "Após Prol.", removemos essa parte e tratamos a data
+        WHEN datahora LIKE '%Após Prol.' THEN 
+            TO_TIMESTAMP(
+                CONCAT(
+                    CASE
+                        WHEN datahora LIKE '__.__. __:__' THEN '2025.' -- Se data não tem ano, assume 2025
+                        ELSE '' -- Para as que já têm ano
+                    END, 
+                    REPLACE(datahora, ' Após Prol.', '') -- Remover "Após Prol."
+                ), 'YYYY.DD.MM HH24:MI'
+            )
+        -- Se data tem ano (no formato DD.MM.YYYY HH:MI)
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
+        -- Se data é apenas no formato DD.MM. HH:MI (sem ano)
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+    END DESC;
 
-                            ELSE NULL
-                        END DESC NULLS LAST`,
                     [time_home]
                 );
 
