@@ -1097,39 +1097,67 @@ app.get('/gamestats', async (req, res) => {
             const confrontations = confrontationResult.rows;
 
             let totalDiff = 0;
-            let gameCount = confrontations.length;
             let homeWins = 0;
             let awayWins = 0;
+            let homeTotalDiff = 0;
+            let awayTotalDiff = 0;
+            let homeGameCount = 0;
+            let awayGameCount = 0;
 
             confrontations.forEach(row => {
                 const diff = Math.abs(row.home_score - row.away_score);
                 totalDiff += diff;
 
+                // Contabilizar vitórias
                 if (row.home_score > row.away_score) {
-                    // Vitória do time da casa
                     if (row.home_team === time_home) {
                         homeWins++;
                     } else {
                         awayWins++;
                     }
                 } else if (row.away_score > row.home_score) {
-                    // Vitória do time visitante
                     if (row.away_team === time_home) {
                         homeWins++;
                     } else {
                         awayWins++;
                     }
                 }
+
+                // Somar a diferença de pontos para jogos em casa e fora
+                if (row.home_team === time_home) {
+                    homeTotalDiff += Math.abs(row.home_score - row.away_score);
+                    homeGameCount++;
+                }
+                if (row.away_team === time_home) {
+                    awayTotalDiff += Math.abs(row.home_score - row.away_score);
+                    awayGameCount++;
+                }
             });
 
+            const totalGames = confrontations.length;
+
             // Calcular a média da diferença de pontos
-            let avgDiff = gameCount > 0 ? (totalDiff / gameCount).toFixed(2) : 0;
+            let avgDiff = totalGames > 0 ? (totalDiff / totalGames).toFixed(2) : 0;
 
             // Ajustar o sinal da diferença com base no número de vitórias
             if (homeWins > awayWins) {
                 avgDiff = `-${avgDiff}`; // Se o time da casa venceu mais, diferença negativa
             } else if (awayWins > homeWins) {
                 avgDiff = `+${avgDiff}`; // Se o time visitante venceu mais, diferença positiva
+            } else {
+                // Empate de vitórias, comparar a maior vantagem no jogo em casa
+                const homeAvgDiff = homeGameCount > 0 ? (homeTotalDiff / homeGameCount).toFixed(2) : 0;
+                const awayAvgDiff = awayGameCount > 0 ? (awayTotalDiff / awayGameCount).toFixed(2) : 0;
+
+                // Compara quem teve a maior vantagem de pontos em casa
+                if (parseFloat(homeAvgDiff) > parseFloat(awayAvgDiff)) {
+                    avgDiff = `-${avgDiff}`; // Favorável ao time da casa
+                } else if (parseFloat(awayAvgDiff) > parseFloat(homeAvgDiff)) {
+                    avgDiff = `+${avgDiff}`; // Favorável ao time visitante
+                } else {
+                    // Caso as médias em casa sejam iguais, mantemos a diferença como estava
+                    avgDiff = `+${avgDiff}`;
+                }
             }
 
             results.push({
@@ -1137,7 +1165,9 @@ app.get('/gamestats', async (req, res) => {
                 time_away,
                 avg_difference: avgDiff, // Diferença ajustada com o sinal correto
                 home_wins: homeWins,
-                away_wins: awayWins
+                away_wins: awayWins,
+                home_average_diff: homeGameCount > 0 ? (homeTotalDiff / homeGameCount).toFixed(2) : 0,
+                away_average_diff: awayGameCount > 0 ? (awayTotalDiff / awayGameCount).toFixed(2) : 0
             });
         }
 
