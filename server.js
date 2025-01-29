@@ -2943,7 +2943,7 @@ app.post('/save-odds', async (req, res) => {
     }
 });
 
-app.get('/game-stats', async (req, res) => {
+app.get('/gamestats', async (req, res) => {
     try {
         console.log("🔍 Iniciando consulta ao banco de dados...");
         
