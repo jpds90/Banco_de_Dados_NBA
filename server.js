@@ -967,16 +967,16 @@ app.get('/ultimosjogos4', async (req, res) => {
                      FROM ${homeTable} 
                      WHERE home_team = $1
 ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
+    -- Prioriza registros no formato DD.MM. HH:MI primeiro, depois DD.MM.YYYY
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 1  -- Formato DD.MM. HH:MI
         WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2         -- Formato DD.MM.YYYY
         ELSE 3
     END,
-    -- Ordena corretamente dentro de cada grupo de formatos
+    -- Ordenação dentro de cada grupo
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')  -- Considera a hora
+            TO_TIMESTAMP(datahora, 'DD.MM. HH24:MI')  -- Mantém o formato original sem adicionar ano
         WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
             TO_DATE(datahora, 'DD.MM.YYYY')  -- Apenas a data, ignorando a hora
     END DESC`,
@@ -1014,16 +1014,16 @@ ORDER BY
                      FROM ${awayTable} 
                      WHERE away_team = $1
 ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
+    -- Prioriza registros no formato DD.MM. HH:MI primeiro, depois DD.MM.YYYY
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 1  -- Formato DD.MM. HH:MI
         WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2         -- Formato DD.MM.YYYY
         ELSE 3
     END,
-    -- Ordena corretamente dentro de cada grupo de formatos
+    -- Ordenação dentro de cada grupo
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')  -- Considera a hora
+            TO_TIMESTAMP(datahora, 'DD.MM. HH24:MI')  -- Mantém o formato original sem adicionar ano
         WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
             TO_DATE(datahora, 'DD.MM.YYYY')  -- Apenas a data, ignorando a hora
     END DESC`, [time_away]);
