@@ -959,97 +959,97 @@ app.get('/ultimosjogos4', async (req, res) => {
             const awayWins = []; // Vitórias do time_away fora de casa
             const awayLosses = []; // Derrotas do time_away fora de casa
 
-            // Buscar os últimos jogos do time_home em casa
+            // Buscar jogos do time_home em casa
             if (tableNames.includes(homeTable)) {
-                let homeOffset = 0; // Contador para percorrer os jogos
-                while (homeWins.length < 5 || homeLosses.length < 5) {
-                    const homeGamesResult = await pool.query(
-                        `SELECT 
-                            home_team, away_team, home_score, away_score, datahora
-                         FROM ${homeTable} 
-                         WHERE home_team = $1
-                         ORDER BY 
-                             CASE
-                                 WHEN datahora LIKE '__.__. __:__' THEN 1
-                                 ELSE 2
-                             END,
-                             CASE
-                                 WHEN datahora LIKE '__.__. __:__' THEN 
-                                     TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                                 WHEN datahora LIKE '__.__.____ __:__' THEN 
-                                     TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                             END DESC
-                         OFFSET $2 LIMIT 1`, // Usando OFFSET para pegar os jogos a partir do ponto desejado
-                        [time_home, homeOffset]
-                    );
-                    
-                    if (homeGamesResult.rows.length === 0) break; // Não há mais jogos para processar
+                const homeGamesResult = await pool.query(
+                    `SELECT 
+                        home_team, away_team, home_score, away_score 
+                     FROM ${homeTable} 
+                     WHERE home_team = $1
+                     ORDER BY 
+                         CASE
+                             WHEN datahora LIKE '__.__. __:__' THEN 1
+                             ELSE 2
+                         END,
+                         CASE
+                             WHEN datahora LIKE '__.__. __:__' THEN 
+                                 TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                             WHEN datahora LIKE '__.__.____ __:__' THEN 
+                                 TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
+                         END DESC`,
+                    [time_home]
+                );
 
-                    const game = homeGamesResult.rows[0];
+                // Filtrar vitórias e derrotas do time_home em casa
+                for (const game of homeGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
 
-                    if (homeScore > awayScore) {
-                        if (homeWins.length < 5) homeWins.push(homeScore - awayScore); // Diferença de pontos na vitória
-                    } else if (homeScore < awayScore) {
-                        if (homeLosses.length < 5) homeLosses.push(awayScore - homeScore); // Diferença de pontos na derrota
+                    if (homeScore > awayScore && homeWins.length < 5) {
+                        homeWins.push({
+                            adversario: game.away_team,
+                            diferenca: homeScore - awayScore
+                        });
+                    } else if (homeScore < awayScore && homeLosses.length < 5) {
+                        homeLosses.push({
+                            adversario: game.away_team,
+                            diferenca: awayScore - homeScore
+                        });
                     }
 
-                    // Verificar se atingiu o limite de 5 vitórias ou 5 derrotas
+                    // Parar se já encontrou 5 vitórias e 5 derrotas
                     if (homeWins.length === 5 && homeLosses.length === 5) break;
-
-                    homeOffset++; // Incrementa o OFFSET para pegar o próximo jogo
                 }
             }
 
-            // Buscar os últimos jogos do time_away fora de casa
+            // Buscar jogos do time_away fora de casa
             if (tableNames.includes(awayTable)) {
-                let awayOffset = 0; // Contador para percorrer os jogos
-                while (awayWins.length < 5 || awayLosses.length < 5) {
-                    const awayGamesResult = await pool.query(
-                        `SELECT 
-                            home_team, away_team, home_score, away_score, datahora
-                         FROM ${awayTable} 
-                         WHERE away_team = $1
-                         ORDER BY 
-                             CASE
-                                 WHEN datahora LIKE '__.__. __:__' THEN 1
-                                 ELSE 2
-                             END,
-                             CASE
-                                 WHEN datahora LIKE '__.__. __:__' THEN 
-                                     TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                                 WHEN datahora LIKE '__.__.____ __:__' THEN 
-                                     TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                             END DESC
-                         OFFSET $2 LIMIT 1`, // Usando OFFSET para pegar os jogos a partir do ponto desejado
-                        [time_away, awayOffset]
-                    );
-                    
-                    if (awayGamesResult.rows.length === 0) break; // Não há mais jogos para processar
+                const awayGamesResult = await pool.query(
+                    `SELECT 
+                        home_team, away_team, home_score, away_score 
+                     FROM ${awayTable} 
+                     WHERE away_team = $1
+                     ORDER BY 
+                         CASE
+                             WHEN datahora LIKE '__.__. __:__' THEN 1
+                             ELSE 2
+                         END,
+                         CASE
+                             WHEN datahora LIKE '__.__. __:__' THEN 
+                                 TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                             WHEN datahora LIKE '__.__.____ __:__' THEN 
+                                 TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
+                         END DESC`,
+                    [time_away]
+                );
 
-                    const game = awayGamesResult.rows[0];
+                // Filtrar vitórias e derrotas do time_away fora de casa
+                for (const game of awayGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
 
-                    if (awayScore > homeScore) {
-                        if (awayWins.length < 5) awayWins.push(awayScore - homeScore); // Diferença de pontos na vitória
-                    } else if (awayScore < homeScore) {
-                        if (awayLosses.length < 5) awayLosses.push(homeScore - awayScore); // Diferença de pontos na derrota
+                    if (awayScore > homeScore && awayWins.length < 5) {
+                        awayWins.push({
+                            adversario: game.home_team,
+                            diferenca: awayScore - homeScore
+                        });
+                    } else if (awayScore < homeScore && awayLosses.length < 5) {
+                        awayLosses.push({
+                            adversario: game.home_team,
+                            diferenca: homeScore - awayScore
+                        });
                     }
 
-                    // Verificar se atingiu o limite de 5 vitórias ou 5 derrotas
+                    // Parar se já encontrou 5 vitórias e 5 derrotas
                     if (awayWins.length === 5 && awayLosses.length === 5) break;
-
-                    awayOffset++; // Incrementa o OFFSET para pegar o próximo jogo
                 }
             }
 
             // Calcular médias
-            const homeWinAvg = homeWins.length > 0 ? (homeWins.reduce((a, b) => a + b, 0) / homeWins.length).toFixed(2) : 0;
-            const homeLossAvg = homeLosses.length > 0 ? (homeLosses.reduce((a, b) => a + b, 0) / homeLosses.length).toFixed(2) : 0;
-            const awayWinAvg = awayWins.length > 0 ? (awayWins.reduce((a, b) => a + b, 0) / awayWins.length).toFixed(2) : 0;
-            const awayLossAvg = awayLosses.length > 0 ? (awayLosses.reduce((a, b) => a + b, 0) / awayLosses.length).toFixed(2) : 0;
+            const homeWinAvg = homeWins.length > 0 ? (homeWins.reduce((sum, win) => sum + win.diferenca, 0) / homeWins.length).toFixed(2) : 0;
+            const homeLossAvg = homeLosses.length > 0 ? (homeLosses.reduce((sum, loss) => sum + loss.diferenca, 0) / homeLosses.length).toFixed(2) : 0;
+            const awayWinAvg = awayWins.length > 0 ? (awayWins.reduce((sum, win) => sum + win.diferenca, 0) / awayWins.length).toFixed(2) : 0;
+            const awayLossAvg = awayLosses.length > 0 ? (awayLosses.reduce((sum, loss) => sum + loss.diferenca, 0) / awayLosses.length).toFixed(2) : 0;
 
             results.push({
                 time_home,
@@ -1076,7 +1076,6 @@ app.get('/ultimosjogos4', async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 });
-
 
 
 
