@@ -2945,13 +2945,19 @@ app.post('/save-odds', async (req, res) => {
 
 app.get('/game-stats', async (req, res) => {
     try {
+        console.log("🔍 Iniciando consulta ao banco de dados...");
+        
         // Buscar os jogos de odds para obter os times
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
-        const oddsRows = oddsResult.rows;
+        console.log("✅ Dados recuperados da tabela odds:", oddsResult.rows);
+
+        if (!oddsResult.rows.length) {
+            return res.status(404).json({ error: "Nenhum jogo encontrado." });
+        }
 
         const results = [];
-
-        for (const { time_home, time_away } of oddsRows) {
+        for (const { time_home, time_away } of oddsResult.rows) {
+            console.log(`🔍 Buscando dados para ${time_home} x ${time_away}`);
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
             const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
@@ -3101,8 +3107,8 @@ app.get('/game-stats', async (req, res) => {
 
         res.json(results);
     } catch (error) {
-        console.error('Erro ao processar os dados:', error);
-        res.status(500).send('Erro no servidor');
+        console.error('❌ Erro ao processar os dados:', error);
+        res.status(500).json({ error: "Erro no servidor", details: error.message });
     }
 });
 
