@@ -1076,7 +1076,7 @@ ORDER BY
 
 app.get('/gamestats', async (req, res) => {
     try {
-        // Buscar os jogos de odds para obter os times
+        // Buscar os jogos para obter os confrontos diretos
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
 
@@ -1084,52 +1084,53 @@ app.get('/gamestats', async (req, res) => {
 
         for (const { time_home, time_away } of oddsRows) {
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
-            const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
             // Buscar confrontos diretos entre os times
             const confrontationResult = await pool.query(
-                `SELECT home_score, away_score, home_team, away_team
+                `SELECT home_team, away_team, home_score, away_score
                  FROM ${homeTable}
                  WHERE (home_team = $1 AND away_team = $2)
-                    OR (home_team = $2 AND away_team = $1)
-                 ORDER BY id ASC`,
+                    OR (home_team = $2 AND away_team = $1)`,
                 [time_home, time_away]
             );
 
             const confrontations = confrontationResult.rows;
 
-            let totalDiffHome = 0;  // Diferença de pontos para o time quando joga em casa
-            let totalDiffAway = 0;  // Diferença de pontos para o time quando joga fora
-            let homeGames = 0;      // Quantidade de jogos que o time jogou em casa
-            let awayGames = 0;      // Quantidade de jogos que o time jogou fora
+            let totalDiff = 0;
+            let gameCount = confrontations.length;
+            let homeWins = 0;  // Vitórias do time jogando em casa
+            let awayWins = 0;  // Vitórias do time jogando fora
 
             confrontations.forEach(row => {
-                const diff = Math.abs(row.home_score - row.away_score); // Diferença de pontos
+                const diff = Math.abs(row.home_score - row.away_score);
+                totalDiff += diff;
 
-                if (row.home_team === time_home) {
-                    totalDiffHome += diff;
-                    homeGames++;
-                } else {
-                    totalDiffAway += diff;
-                    awayGames++;
+                if (row.home_score > row.away_score) {
+                    // Vitória do time da casa
+                    if (row.home_team === time_home) {
+                        homeWins++;
+                    } else {
+                        awayWins++;
+                    }
+                } else if (row.away_score > row.home_score) {
+                    // Vitória do time visitante
+                    if (row.away_team === time_home) {
+                        homeWins++;
+                    } else {
+                        awayWins++;
+                    }
                 }
             });
 
-            // Média da diferença de pontos para o time jogando em casa e fora
-            const avgDiffHome = homeGames > 0 ? (totalDiffHome / homeGames).toFixed(2) : 0;
-            const avgDiffAway = awayGames > 0 ? (totalDiffAway / awayGames).toFixed(2) : 0;
+            // Média da diferença de pontos nos confrontos diretos
+            const avgDiff = gameCount > 0 ? (totalDiff / gameCount).toFixed(2) : 0;
 
-            // Normalização: Se um time jogou mais vezes em casa do que o outro jogou fora, ajustamos a média
-            const normalizationFactor = homeGames > awayGames ? awayGames / homeGames : homeGames / awayGames;
-            const normalizedAvgDiff = (normalizationFactor * ((totalDiffHome + totalDiffAway) / (homeGames + awayGames))).toFixed(2);
-
-            // Adicionar os resultados para a resposta
             results.push({
                 time_home,
                 time_away,
-                home_avg_diff: avgDiffHome,
-                away_avg_diff: avgDiffAway,
-                normalized_avg_diff: normalizedAvgDiff,
+                avg_difference: avgDiff,
+                home_wins,  // Vitórias do time da casa
+                away_wins   // Vitórias do time visitante
             });
         }
 
