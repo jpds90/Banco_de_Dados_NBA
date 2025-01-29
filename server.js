@@ -990,8 +990,8 @@ app.get('/ultimosjogos4', async (req, res) => {
             WHEN datahora LIKE '__.__. __:__' THEN 
                 TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         END DESC`,
-                    [time_home]
-                );
+    [time_home]
+);
 
                 // Filtrar vitórias e derrotas do time_home em casa
                 for (const game of homeGamesResult.rows) {
