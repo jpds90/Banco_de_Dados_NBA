@@ -931,7 +931,7 @@ Primeira versão do projeto
 });
 
 
-app.get('/ultimosjogos1', async (req, res) => {
+app.get('/ultimosjogos4', async (req, res) => {
     try {
         // Consultar times na tabela "odds"
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
