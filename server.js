@@ -2979,7 +2979,7 @@ app.get('/gamestats', async (req, res) => {
 
             // Buscar jogos do time_home em casa
             if (tableNames.includes(homeTable)) {
-                const homeGamesResult = await pool.query(
+                const homeGamesResult1 = await pool.query(
                     `SELECT home_team, away_team, home_score, away_score, datahora 
                      FROM ${homeTable} 
                      WHERE home_team = $1
@@ -2992,7 +2992,7 @@ app.get('/gamestats', async (req, res) => {
                     [time_home]
                 );
 
-                for (const game of homeGamesResult.rows) {
+                for (const game of homeGamesResult1.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
 
@@ -3016,7 +3016,7 @@ app.get('/gamestats', async (req, res) => {
 
             // Buscar jogos do time_away fora de casa
             if (tableNames.includes(awayTable)) {
-                const awayGamesResult = await pool.query(
+                const awayGamesResult1 = await pool.query(
                     `SELECT home_team, away_team, home_score, away_score, datahora 
                      FROM ${awayTable} 
                      WHERE away_team = $1
@@ -3029,7 +3029,7 @@ app.get('/gamestats', async (req, res) => {
                     [time_away]
                 );
 
-                for (const game of awayGamesResult.rows) {
+                for (const game of awayGamesResult1.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
 
@@ -3052,7 +3052,7 @@ app.get('/gamestats', async (req, res) => {
             }
 
             // Buscar confrontos diretos entre os times
-            const confrontationResult = await pool.query(`
+            const confrontationResult1 = await pool.query(`
                 SELECT home_score, away_score, home_team, away_team
                 FROM ${homeTable}
                 WHERE (home_team = $1 AND away_team = $2)
@@ -3060,7 +3060,7 @@ app.get('/gamestats', async (req, res) => {
                 ORDER BY id ASC
             `, [time_home, time_away]);
 
-            const confrontations = confrontationResult.rows;
+            const confrontations = confrontationResult1.rows;
 
             let totalHomePoints = 0;
             let totalAwayPoints = 0;
