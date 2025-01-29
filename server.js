@@ -936,7 +936,6 @@ app.get('/ultimosjogos4', async (req, res) => {
         // Consultar times na tabela "odds"
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
-
         const results = [];
 
         for (const { time_home, time_away } of oddsRows) {
@@ -954,55 +953,46 @@ app.get('/ultimosjogos4', async (req, res) => {
             const tableNames = tablesResult.rows.map(row => row.table_name);
 
             // Arrays para armazenar vitórias e derrotas
-            const homeWins = []; // Vitórias do time_home em casa
-            const homeLosses = []; // Derrotas do time_home em casa
-            const awayWins = []; // Vitórias do time_away fora de casa
-            const awayLosses = []; // Derrotas do time_away fora de casa
+            const homeWins = [];
+            const homeLosses = [];
+            const awayWins = [];
+            const awayLosses = [];
 
-// Buscar jogos do time_home em casa
-if (tableNames.includes(homeTable)) {
-    const homeGamesResult = await pool.query(
-        `SELECT 
-            home_team, away_team, home_score, away_score, datahora
-         FROM ${homeTable} 
-         WHERE home_team = $1
-         AND TO_TIMESTAMP(
-            CASE 
-                -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
-                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
-                THEN CONCAT('2025.', datahora)  
-                
-                -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
-                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
-                THEN datahora  
+            // Função para buscar jogos ordenados corretamente
+            async function buscarJogos(table, team, coluna) {
+                return await pool.query(
+                    `SELECT home_team, away_team, home_score, away_score, datahora 
+                     FROM ${table} 
+                     WHERE ${coluna} = $1
+                     AND TO_TIMESTAMP(
+                        CASE 
+                            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN CONCAT('2025.', datahora)  
+                            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN datahora  
+                            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+                            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+                        END,
+                        'YYYY.DD.MM HH24:MI'
+                    ) 
+                    BETWEEN '2024-01-01 00:00' AND '2030-01-16 01:00'
+                    
+                    ORDER BY 
+                        TO_TIMESTAMP(
+                            CASE 
+                                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN CONCAT('2025.', datahora)  
+                                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN datahora  
+                                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+                                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+                            END,
+                            'YYYY.DD.MM HH24:MI'
+                        ) DESC`,
+                    [team]
+                );
+            }
 
-                -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
-                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
-                THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+            // Buscar jogos do time_home em casa
+            if (tableNames.includes(homeTable)) {
+                const homeGamesResult = await buscarJogos(homeTable, time_home, 'home_team');
 
-                -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
-                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
-                THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
-            END,
-            'YYYY.DD.MM HH24:MI'
-        ) 
-        BETWEEN '2024-01-01 00:00' AND '2030-01-16 01:00'
-        
-        ORDER BY 
-            TO_TIMESTAMP(
-                CASE 
-                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN CONCAT('2025.', datahora)  
-                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN datahora  
-                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
-                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
-                END,
-                'YYYY.DD.MM HH24:MI'
-            ) DESC`,  // <-- Aqui DESC para começar de 16.01.2025 01:00
-        [time_home]
-    );
-
-
-                // Filtrar vitórias e derrotas do time_home em casa
                 for (const game of homeGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
@@ -1019,54 +1009,14 @@ if (tableNames.includes(homeTable)) {
                         });
                     }
 
-                    // Parar se já encontrou 5 vitórias e 5 derrotas
                     if (homeWins.length === 5 && homeLosses.length === 5) break;
                 }
             }
 
             // Buscar jogos do time_away fora de casa
             if (tableNames.includes(awayTable)) {
-                const awayGamesResult = await pool.query(
-                    `SELECT 
-                        home_team, away_team, home_score, away_score 
-                     FROM ${awayTable} 
-                     WHERE away_team = $1
-         AND TO_TIMESTAMP(
-            CASE 
-                -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
-                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
-                THEN CONCAT('2025.', datahora)  
-                
-                -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
-                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
-                THEN datahora  
+                const awayGamesResult = await buscarJogos(awayTable, time_away, 'away_team');
 
-                -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
-                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
-                THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
-
-                -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
-                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
-                THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
-            END,
-            'YYYY.DD.MM HH24:MI'
-        ) 
-        BETWEEN '2024-01-01 00:00' AND '2030-01-16 01:00'
-        
-        ORDER BY 
-            TO_TIMESTAMP(
-                CASE 
-                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN CONCAT('2025.', datahora)  
-                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN datahora  
-                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
-                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
-                END,
-                'YYYY.DD.MM HH24:MI'
-            ) DESC`,  // <-- Aqui DESC para começar de 16.01.2025 01:00
-        [time_away]
-    );
-
-                // Filtrar vitórias e derrotas do time_away fora de casa
                 for (const game of awayGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
@@ -1083,31 +1033,28 @@ if (tableNames.includes(homeTable)) {
                         });
                     }
 
-                    // Parar se já encontrou 5 vitórias e 5 derrotas
                     if (awayWins.length === 5 && awayLosses.length === 5) break;
                 }
             }
 
             // Calcular médias
-            const homeWinAvg = homeWins.length > 0 ? (homeWins.reduce((sum, win) => sum + win.diferenca, 0) / homeWins.length).toFixed(2) : 0;
-            const homeLossAvg = homeLosses.length > 0 ? (homeLosses.reduce((sum, loss) => sum + loss.diferenca, 0) / homeLosses.length).toFixed(2) : 0;
-            const awayWinAvg = awayWins.length > 0 ? (awayWins.reduce((sum, win) => sum + win.diferenca, 0) / awayWins.length).toFixed(2) : 0;
-            const awayLossAvg = awayLosses.length > 0 ? (awayLosses.reduce((sum, loss) => sum + loss.diferenca, 0) / awayLosses.length).toFixed(2) : 0;
+            const calcularMedia = (jogos) => 
+                jogos.length > 0 ? (jogos.reduce((sum, j) => sum + j.diferenca, 0) / jogos.length).toFixed(2) : 0;
 
             results.push({
                 time_home,
                 home_last_games: {
                     wins: homeWins,
                     losses: homeLosses,
-                    win_avg: homeWinAvg,
-                    loss_avg: homeLossAvg
+                    win_avg: calcularMedia(homeWins),
+                    loss_avg: calcularMedia(homeLosses)
                 },
                 time_away,
                 away_last_games: {
                     wins: awayWins,
                     losses: awayLosses,
-                    win_avg: awayWinAvg,
-                    loss_avg: awayLossAvg
+                    win_avg: calcularMedia(awayWins),
+                    loss_avg: calcularMedia(awayLosses)
                 },
             });
         }
