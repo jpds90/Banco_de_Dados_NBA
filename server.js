@@ -1086,155 +1086,50 @@ app.get('/gamestats', async (req, res) => {
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
             const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
-            // Verificar se as tabelas existem
-            const tablesResult = await pool.query(
-                `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
-                [homeTable, awayTable]
-            );
-            const tableNames = tablesResult.rows.map(row => row.table_name);
-
-            const homeWins = [];
-            const homeLosses = [];
-            const awayWins = [];
-            const awayLosses = [];
-            const headToHeadGames = [];
-
-            // Buscar jogos do time_home em casa
-            if (tableNames.includes(homeTable)) {
-                const homeGamesResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora 
-                     FROM ${homeTable} 
-                     WHERE home_team = $1
-                     ORDER BY 
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE 
-                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC NULLS LAST`,
-                    [time_home]
-                );
-
-                for (const game of homeGamesResult.rows) {
-                    const homeScore = parseInt(game.home_score, 10);
-                    const awayScore = parseInt(game.away_score, 10);
-
-                    if (homeScore > awayScore && homeWins.length < 5) {
-                        homeWins.push({
-                            adversario: game.away_team,
-                            diferenca: homeScore - awayScore,
-                            datahora: game.datahora
-                        });
-                    } else if (homeScore < awayScore && homeLosses.length < 5) {
-                        homeLosses.push({
-                            adversario: game.away_team,
-                            diferenca: awayScore - homeScore,
-                            datahora: game.datahora
-                        });
-                    }
-                    if (homeWins.length === 5 && homeLosses.length === 5) break;
-                }
-            }
-
-            // Buscar jogos do time_away fora de casa
-            if (tableNames.includes(awayTable)) {
-                const awayGamesResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora 
-                     FROM ${awayTable} 
-                     WHERE away_team = $1
-                     ORDER BY 
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE 
-                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC NULLS LAST`,
-                    [time_away]
-                );
-
-                for (const game of awayGamesResult.rows) {
-                    const homeScore = parseInt(game.home_score, 10);
-                    const awayScore = parseInt(game.away_score, 10);
-
-                    if (awayScore > homeScore && awayWins.length < 5) {
-                        awayWins.push({
-                            adversario: game.home_team,
-                            diferenca: awayScore - homeScore,
-                            datahora: game.datahora
-                        });
-                    } else if (awayScore < homeScore && awayLosses.length < 5) {
-                        awayLosses.push({
-                            adversario: game.home_team,
-                            diferenca: homeScore - awayScore,
-                            datahora: game.datahora
-                        });
-                    }
-                    if (awayWins.length === 5 && awayLosses.length === 5) break;
-                }
-            }
-
             // Buscar confrontos diretos entre os times
-            if (tableNames.includes(homeTable)) {
-                const confrontationResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora
-                     FROM ${homeTable}
-                     WHERE (home_team = $1 AND away_team = $2)
-                        OR (home_team = $2 AND away_team = $1)
-                     ORDER BY 
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE 
-                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC NULLS LAST
-                     LIMIT 5`,
-                    [time_home, time_away]
-                );
+            const confrontationResult = await pool.query(
+                `SELECT home_score, away_score, home_team, away_team
+                 FROM ${homeTable}
+                 WHERE (home_team = $1 AND away_team = $2)
+                    OR (home_team = $2 AND away_team = $1)
+                 ORDER BY id ASC`,
+                [time_home, time_away]
+            );
 
-                for (const game of confrontationResult.rows) {
-                    const homeScore = parseInt(game.home_score, 10);
-                    const awayScore = parseInt(game.away_score, 10);
-                    const diferenca = Math.abs(homeScore - awayScore);
+            const confrontations = confrontationResult.rows;
 
-                    headToHeadGames.push({
-                        home_team: game.home_team,
-                        away_team: game.away_team,
-                        home_score: homeScore,
-                        away_score: awayScore,
-                        diferenca,
-                        datahora: game.datahora
-                    });
+            let totalDiffHome = 0;  // Diferença de pontos para o time quando joga em casa
+            let totalDiffAway = 0;  // Diferença de pontos para o time quando joga fora
+            let homeGames = 0;      // Quantidade de jogos que o time jogou em casa
+            let awayGames = 0;      // Quantidade de jogos que o time jogou fora
+
+            confrontations.forEach(row => {
+                const diff = Math.abs(row.home_score - row.away_score); // Diferença de pontos
+
+                if (row.home_team === time_home) {
+                    totalDiffHome += diff;
+                    homeGames++;
+                } else {
+                    totalDiffAway += diff;
+                    awayGames++;
                 }
-            }
+            });
 
-            // Calcular média da diferença de pontos em confrontos diretos
-            const totalDifHome = headToHeadGames
-                .filter(g => g.home_team === time_home)
-                .reduce((sum, g) => sum + g.diferenca, 0);
-            const totalDifAway = headToHeadGames
-                .filter(g => g.away_team === time_away)
-                .reduce((sum, g) => sum + g.diferenca, 0);
+            // Média da diferença de pontos para o time jogando em casa e fora
+            const avgDiffHome = homeGames > 0 ? (totalDiffHome / homeGames).toFixed(2) : 0;
+            const avgDiffAway = awayGames > 0 ? (totalDiffAway / awayGames).toFixed(2) : 0;
 
-            const mediaDifHome = headToHeadGames.length > 0
-                ? (totalDifHome / headToHeadGames.length).toFixed(2)
-                : 0;
-            const mediaDifAway = headToHeadGames.length > 0
-                ? (totalDifAway / headToHeadGames.length).toFixed(2)
-                : 0;
+            // Normalização: Se um time jogou mais vezes em casa do que o outro jogou fora, ajustamos a média
+            const normalizationFactor = homeGames > awayGames ? awayGames / homeGames : homeGames / awayGames;
+            const normalizedAvgDiff = (normalizationFactor * ((totalDiffHome + totalDiffAway) / (homeGames + awayGames))).toFixed(2);
 
+            // Adicionar os resultados para a resposta
             results.push({
                 time_home,
-                home_last_games: {
-                    wins: homeWins,
-                    losses: homeLosses
-                },
                 time_away,
-                away_last_games: {
-                    wins: awayWins,
-                    losses: awayLosses
-                },
-                head_to_head: {
-                    last_games: headToHeadGames,
-                    media_diferenca_home: mediaDifHome,
-                    media_diferenca_away: mediaDifAway
-                }
+                home_avg_diff: avgDiffHome,
+                away_avg_diff: avgDiffAway,
+                normalized_avg_diff: normalizedAvgDiff,
             });
         }
 
