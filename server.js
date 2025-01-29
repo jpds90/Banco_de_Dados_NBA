@@ -966,32 +966,20 @@ app.get('/ultimosjogos4', async (req, res) => {
                         home_team, away_team, home_score, away_score, datahora 
                      FROM ${homeTable} 
                      WHERE home_team = $1
-     ORDER BY 
-        -- Prioriza registros no formato DD.MM. HH:MI ou "Após Prol."
-        CASE
-            WHEN datahora LIKE '%Após Prol.' THEN 1  -- Tratamento para "Após Prol."
-            WHEN datahora LIKE '__.__. __:__' THEN 2  -- Sem ano
-            ELSE 3  -- Com ano completo
-        END,
-        -- Ordena pela data/hora dentro de cada grupo de formatos
-        CASE
-            WHEN datahora LIKE '%Após Prol.' THEN 
-                TO_TIMESTAMP(
-                    CONCAT(
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN '2025.' -- Se data não tem ano, assume 2025
-                            ELSE '' -- Para as que já têm ano
-                        END, 
-                        REPLACE(datahora, ' Após Prol.', '') -- Remover "Após Prol."
-                    ), 'YYYY.DD.MM HH24:MI'
-                )
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
-            WHEN datahora LIKE '__.__. __:__' THEN 
-                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        END DESC`,
-    [time_home]
-);
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC`,
+    [time_home]);
 
                 // Filtrar vitórias e derrotas do time_home em casa
                 for (const game of homeGamesResult.rows) {
@@ -1024,32 +1012,19 @@ app.get('/ultimosjogos4', async (req, res) => {
                         home_team, away_team, home_score, away_score, datahora 
                      FROM ${awayTable} 
                      WHERE away_team = $1
-     ORDER BY 
-        -- Prioriza registros no formato DD.MM. HH:MI ou "Após Prol."
-        CASE
-            WHEN datahora LIKE '%Após Prol.' THEN 1  -- Tratamento para "Após Prol."
-            WHEN datahora LIKE '__.__. __:__' THEN 2  -- Sem ano
-            ELSE 3  -- Com ano completo
-        END,
-        -- Ordena pela data/hora dentro de cada grupo de formatos
-        CASE
-            WHEN datahora LIKE '%Após Prol.' THEN 
-                TO_TIMESTAMP(
-                    CONCAT(
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN '2025.' -- Se data não tem ano, assume 2025
-                            ELSE '' -- Para as que já têm ano
-                        END, 
-                        REPLACE(datahora, ' Após Prol.', '') -- Remover "Após Prol."
-                    ), 'YYYY.DD.MM HH24:MI'
-                )
-            WHEN datahora LIKE '__.__.____ __:__' THEN 
-                TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
-            WHEN datahora LIKE '__.__. __:__' THEN 
-                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        END DESC`,
-                    [time_away]
-                );
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC`, [time_away]);
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
                 for (const game of awayGamesResult.rows) {
