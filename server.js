@@ -1098,8 +1098,8 @@ app.get('/gamestats', async (req, res) => {
 
             let totalDiff = 0;
             let gameCount = confrontations.length;
-            let homeWins = 0;  // Vitórias do time jogando em casa
-            let awayWins = 0;  // Vitórias do time jogando fora
+            let homeWins = 0;  // Inicializa contagem de vitórias do time jogando em casa
+            let awayWins = 0;  // Inicializa contagem de vitórias do time jogando fora
 
             confrontations.forEach(row => {
                 const diff = Math.abs(row.home_score - row.away_score);
@@ -1108,16 +1108,16 @@ app.get('/gamestats', async (req, res) => {
                 if (row.home_score > row.away_score) {
                     // Vitória do time da casa
                     if (row.home_team === time_home) {
-                        homeWins++;
+                        homeWins++;  // Time_home venceu jogando em casa
                     } else {
-                        awayWins++;
+                        awayWins++;  // Time_away venceu jogando fora
                     }
                 } else if (row.away_score > row.home_score) {
                     // Vitória do time visitante
                     if (row.away_team === time_home) {
-                        homeWins++;
+                        homeWins++;  // Time_home venceu jogando fora
                     } else {
-                        awayWins++;
+                        awayWins++;  // Time_away venceu jogando em casa
                     }
                 }
             });
@@ -1129,8 +1129,8 @@ app.get('/gamestats', async (req, res) => {
                 time_home,
                 time_away,
                 avg_difference: avgDiff,
-                home_wins,  // Vitórias do time da casa
-                away_wins   // Vitórias do time visitante
+                home_wins: homeWins,  // Corrigido: Agora está inicializado corretamente
+                away_wins: awayWins   // Corrigido: Agora está inicializado corretamente
             });
         }
 
@@ -1140,7 +1140,6 @@ app.get('/gamestats', async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 });
-
 
 
 
