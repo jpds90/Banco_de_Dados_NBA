@@ -953,12 +953,13 @@ app.get('/ultimosjogos4', async (req, res) => {
 
             const tableNames = tablesResult.rows.map(row => row.table_name);
 
-            const homeWins = [];
-            const homeLosses = [];
-            const awayWins = [];
-            const awayLosses = [];
+            // Arrays para armazenar vitórias e derrotas
+            const homeWins = []; // Vitórias do time_home em casa
+            const homeLosses = []; // Derrotas do time_home em casa
+            const awayWins = []; // Vitórias do time_away fora de casa
+            const awayLosses = []; // Derrotas do time_away fora de casa
 
-            // Buscar os últimos 5 jogos do time da casa
+            // Buscar os últimos 5 jogos do time_home em casa
             if (tableNames.includes(homeTable)) {
                 const homeGamesResult = await pool.query(
                     `SELECT 
@@ -975,25 +976,26 @@ app.get('/ultimosjogos4', async (req, res) => {
                                  TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
                              WHEN datahora LIKE '__.__.____ __:__' THEN 
                                  TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                         END DESC
-                     LIMIT 5`,
+                         END DESC`,
                     [time_home]
                 );
 
-                homeGamesResult.rows.forEach(game => {
+                // Filtrar vitórias e derrotas do time_home em casa
+                for (const game of homeGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
-                    const totalPoints = homeScore + awayScore;
 
                     if (homeScore > awayScore) {
-                        homeWins.push(homeScore - awayScore);
-                    } else {
-                        homeLosses.push(awayScore - homeScore);
+                        homeWins.push(homeScore - awayScore); // Diferença de pontos na vitória
+                        if (homeWins.length === 5) break; // Limitar a 5 vitórias
+                    } else if (homeScore < awayScore) {
+                        homeLosses.push(awayScore - homeScore); // Diferença de pontos na derrota
+                        if (homeLosses.length === 5) break; // Limitar a 5 derrotas
                     }
-                });
+                }
             }
 
-            // Buscar os últimos 5 jogos do time visitante
+            // Buscar os últimos 5 jogos do time_away fora de casa
             if (tableNames.includes(awayTable)) {
                 const awayGamesResult = await pool.query(
                     `SELECT 
@@ -1010,22 +1012,23 @@ app.get('/ultimosjogos4', async (req, res) => {
                                  TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
                              WHEN datahora LIKE '__.__.____ __:__' THEN 
                                  TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                         END DESC
-                     LIMIT 5`,
+                         END DESC`,
                     [time_away]
                 );
 
-                awayGamesResult.rows.forEach(game => {
+                // Filtrar vitórias e derrotas do time_away fora de casa
+                for (const game of awayGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
-                    const totalPoints = homeScore + awayScore;
 
                     if (awayScore > homeScore) {
-                        awayWins.push(awayScore - homeScore);
-                    } else {
-                        awayLosses.push(homeScore - awayScore);
+                        awayWins.push(awayScore - homeScore); // Diferença de pontos na vitória
+                        if (awayWins.length === 5) break; // Limitar a 5 vitórias
+                    } else if (awayScore < homeScore) {
+                        awayLosses.push(homeScore - awayScore); // Diferença de pontos na derrota
+                        if (awayLosses.length === 5) break; // Limitar a 5 derrotas
                     }
-                });
+                }
             }
 
             // Calcular médias
