@@ -1076,32 +1076,40 @@ ORDER BY
 
 app.get('/gamestats', async (req, res) => {
     try {
+        // Buscar os jogos de odds para obter os times
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
+
         const results = [];
 
         for (const { time_home, time_away } of oddsRows) {
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
             const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
+            // Verificar se as tabelas existem
             const tablesResult = await pool.query(
                 `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
                 [homeTable, awayTable]
             );
             const tableNames = tablesResult.rows.map(row => row.table_name);
 
-            const homeWins = [], homeLosses = [], awayWins = [], awayLosses = [];
+            const homeWins = [];
+            const homeLosses = [];
+            const awayWins = [];
+            const awayLosses = [];
+            const headToHeadGames = [];
 
+            // Buscar jogos do time_home em casa
             if (tableNames.includes(homeTable)) {
                 const homeGamesResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora FROM ${homeTable} 
+                    `SELECT home_team, away_team, home_score, away_score, datahora 
+                     FROM ${homeTable} 
                      WHERE home_team = $1
                      ORDER BY 
                         CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 
-                            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI') 
-                        ELSE 
-                            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        CASE 
+                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
                         END DESC NULLS LAST`,
                     [time_home]
                 );
@@ -1111,24 +1119,33 @@ app.get('/gamestats', async (req, res) => {
                     const awayScore = parseInt(game.away_score, 10);
 
                     if (homeScore > awayScore && homeWins.length < 5) {
-                        homeWins.push({ adversario: game.away_team, diferenca: homeScore - awayScore, datahora: game.datahora });
+                        homeWins.push({
+                            adversario: game.away_team,
+                            diferenca: homeScore - awayScore,
+                            datahora: game.datahora
+                        });
                     } else if (homeScore < awayScore && homeLosses.length < 5) {
-                        homeLosses.push({ adversario: game.away_team, diferenca: awayScore - homeScore, datahora: game.datahora });
+                        homeLosses.push({
+                            adversario: game.away_team,
+                            diferenca: awayScore - homeScore,
+                            datahora: game.datahora
+                        });
                     }
                     if (homeWins.length === 5 && homeLosses.length === 5) break;
                 }
             }
 
+            // Buscar jogos do time_away fora de casa
             if (tableNames.includes(awayTable)) {
                 const awayGamesResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora FROM ${awayTable} 
+                    `SELECT home_team, away_team, home_score, away_score, datahora 
+                     FROM ${awayTable} 
                      WHERE away_team = $1
                      ORDER BY 
                         CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 
-                            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI') 
-                        ELSE 
-                            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        CASE 
+                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
                         END DESC NULLS LAST`,
                     [time_away]
                 );
@@ -1138,36 +1155,69 @@ app.get('/gamestats', async (req, res) => {
                     const awayScore = parseInt(game.away_score, 10);
 
                     if (awayScore > homeScore && awayWins.length < 5) {
-                        awayWins.push({ adversario: game.home_team, diferenca: awayScore - homeScore, datahora: game.datahora });
+                        awayWins.push({
+                            adversario: game.home_team,
+                            diferenca: awayScore - homeScore,
+                            datahora: game.datahora
+                        });
                     } else if (awayScore < homeScore && awayLosses.length < 5) {
-                        awayLosses.push({ adversario: game.home_team, diferenca: homeScore - awayScore, datahora: game.datahora });
+                        awayLosses.push({
+                            adversario: game.home_team,
+                            diferenca: homeScore - awayScore,
+                            datahora: game.datahora
+                        });
                     }
                     if (awayWins.length === 5 && awayLosses.length === 5) break;
                 }
             }
 
-            const confrontationResult = await pool.query(
-                `SELECT home_score, away_score, home_team FROM ${homeTable} 
-                 WHERE (home_team = $1 AND away_team = $2) OR (home_team = $2 AND away_team = $1)`,
-                [time_home, time_away]
-            );
-            
-            let totalDiffHome = 0, totalDiffAway = 0, countHome = 0, countAway = 0;
-            
-            confrontationResult.rows.forEach(row => {
-                const homeScore = parseInt(row.home_score, 10);
-                const awayScore = parseInt(row.away_score, 10);
-                if (row.home_team === time_home) {
-                    totalDiffHome += homeScore - awayScore;
-                    countHome++;
-                } else {
-                    totalDiffAway += awayScore - homeScore;
-                    countAway++;
+            // Buscar confrontos diretos entre os times
+            if (tableNames.includes(homeTable)) {
+                const confrontationResult = await pool.query(
+                    `SELECT home_team, away_team, home_score, away_score, datahora
+                     FROM ${homeTable}
+                     WHERE (home_team = $1 AND away_team = $2)
+                        OR (home_team = $2 AND away_team = $1)
+                     ORDER BY 
+                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
+                        CASE 
+                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC NULLS LAST
+                     LIMIT 5`,
+                    [time_home, time_away]
+                );
+
+                for (const game of confrontationResult.rows) {
+                    const homeScore = parseInt(game.home_score, 10);
+                    const awayScore = parseInt(game.away_score, 10);
+                    const diferenca = Math.abs(homeScore - awayScore);
+
+                    headToHeadGames.push({
+                        home_team: game.home_team,
+                        away_team: game.away_team,
+                        home_score: homeScore,
+                        away_score: awayScore,
+                        diferenca,
+                        datahora: game.datahora
+                    });
                 }
-            });
-            
-            const avgDiffHome = countHome > 0 ? (totalDiffHome / countHome).toFixed(2) : 0;
-            const avgDiffAway = countAway > 0 ? (totalDiffAway / countAway).toFixed(2) : 0;
+            }
+
+            // Calcular média da diferença de pontos em confrontos diretos
+            const totalDifHome = headToHeadGames
+                .filter(g => g.home_team === time_home)
+                .reduce((sum, g) => sum + g.diferenca, 0);
+            const totalDifAway = headToHeadGames
+                .filter(g => g.away_team === time_away)
+                .reduce((sum, g) => sum + g.diferenca, 0);
+
+            const mediaDifHome = headToHeadGames.length > 0
+                ? (totalDifHome / headToHeadGames.length).toFixed(2)
+                : 0;
+            const mediaDifAway = headToHeadGames.length > 0
+                ? (totalDifAway / headToHeadGames.length).toFixed(2)
+                : 0;
 
             results.push({
                 time_home,
@@ -1181,8 +1231,9 @@ app.get('/gamestats', async (req, res) => {
                     losses: awayLosses
                 },
                 head_to_head: {
-                    home_avg_diff: avgDiffHome,
-                    away_avg_diff: avgDiffAway
+                    last_games: headToHeadGames,
+                    media_diferenca_home: mediaDifHome,
+                    media_diferenca_away: mediaDifAway
                 }
             });
         }
