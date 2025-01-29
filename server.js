@@ -975,7 +975,7 @@ ORDER BY
     -- Ordena pela data/hora dentro de cada grupo de formatos
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')
         WHEN datahora LIKE '__.__.____ __:__' THEN 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC`,
@@ -1021,7 +1021,7 @@ ORDER BY
     -- Ordena pela data/hora dentro de cada grupo de formatos
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')
         WHEN datahora LIKE '__.__.____ __:__' THEN 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC`, [time_away]);
