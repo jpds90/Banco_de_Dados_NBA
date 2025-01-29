@@ -982,8 +982,8 @@ app.get('/ultimosjogos4', async (req, res) => {
 
                 // Filtrar vitórias e derrotas do time_home em casa
                 for (const game of homeGamesResult.rows) {
-                    const homeScore = parseInt(game.home_score, 10);
-                    const awayScore = parseInt(game.away_score, 10);
+                    const homeScore = parseInt(game.home_score, 50);
+                    const awayScore = parseInt(game.away_score, 50);
 
                     if (homeScore > awayScore) {
                         homeWins.push(homeScore - awayScore); // Diferença de pontos na vitória
@@ -1018,8 +1018,8 @@ app.get('/ultimosjogos4', async (req, res) => {
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
                 for (const game of awayGamesResult.rows) {
-                    const homeScore = parseInt(game.home_score, 10);
-                    const awayScore = parseInt(game.away_score, 10);
+                    const homeScore = parseInt(game.home_score, 50);
+                    const awayScore = parseInt(game.away_score, 50);
 
                     if (awayScore > homeScore) {
                         awayWins.push(awayScore - homeScore); // Diferença de pontos na vitória
