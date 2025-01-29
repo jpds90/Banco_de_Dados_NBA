@@ -966,17 +966,28 @@ app.get('/ultimosjogos4', async (req, res) => {
                         home_team, away_team, home_score, away_score 
                      FROM ${homeTable} 
                      WHERE home_team = $1
-                     ORDER BY 
-                         CASE
-                             WHEN datahora LIKE '__.__. __:__' THEN 1
-                             ELSE 2
-                         END,
-                         CASE
-                             WHEN datahora LIKE '__.__. __:__' THEN 
-                                 TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                             WHEN datahora LIKE '__.__.____ __:__' THEN 
-                                 TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
-                         END DESC`,
+ORDER BY 
+    TO_TIMESTAMP(
+        CASE 
+            -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
+            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
+            THEN CONCAT('2025.', datahora)  
+            
+            -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
+            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
+            THEN datahora  
+
+            -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
+            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
+            THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+
+            -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
+            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
+            THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+
+        END,
+        'YYYY.DD.MM HH24:MI'
+    ) DESC`,
                     [time_home]
                 );
 
@@ -1009,17 +1020,28 @@ app.get('/ultimosjogos4', async (req, res) => {
                         home_team, away_team, home_score, away_score 
                      FROM ${awayTable} 
                      WHERE away_team = $1
-                     ORDER BY 
-                         CASE
-                             WHEN datahora LIKE '__.__. __:__' THEN 1
-                             ELSE 2
-                         END,
-                         CASE
-                             WHEN datahora LIKE '__.__. __:__' THEN 
-                                 TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                             WHEN datahora LIKE '__.__.____ __:__' THEN 
-                                 TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
-                         END DESC`,
+ORDER BY 
+    TO_TIMESTAMP(
+        CASE 
+            -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
+            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
+            THEN CONCAT('2025.', datahora)  
+            
+            -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
+            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
+            THEN datahora  
+
+            -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
+            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
+            THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+
+            -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
+            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
+            THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+
+        END,
+        'YYYY.DD.MM HH24:MI'
+    ) DESC`,
                     [time_away]
                 );
 
