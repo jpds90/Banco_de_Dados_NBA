@@ -931,8 +931,9 @@ Primeira versão do projeto
 });
 
 
-app.get('/ultimosjogos4', async (req, res) => {
+app.get('/ultimosjogos1', async (req, res) => {
     try {
+        // Consultar times na tabela "odds"
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
 
@@ -942,6 +943,7 @@ app.get('/ultimosjogos4', async (req, res) => {
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
             const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
+            // Verificar tabelas existentes
             const tablesResult = await pool.query(
                 `SELECT table_name 
                  FROM information_schema.tables 
@@ -951,48 +953,47 @@ app.get('/ultimosjogos4', async (req, res) => {
 
             const tableNames = tablesResult.rows.map(row => row.table_name);
 
-            const homeWins = [];
-            const homeLosses = [];
-            const awayWins = [];
-            const awayLosses = [];
+            // Arrays para armazenar vitórias e derrotas
+            const homeWins = []; // Vitórias do time_home em casa
+            const homeLosses = []; // Derrotas do time_home em casa
+            const awayWins = []; // Vitórias do time_away fora de casa
+            const awayLosses = []; // Derrotas do time_away fora de casa
 
             // Buscar jogos do time_home em casa
             if (tableNames.includes(homeTable)) {
                 const homeGamesResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora 
+                    `SELECT 
+                        home_team, away_team, home_score, away_score, datahora 
                      FROM ${homeTable} 
                      WHERE home_team = $1
-ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI ou "Após Prol."
-    CASE
-        WHEN datahora LIKE '%Após Prol.' THEN 1  -- Tratamento para "Após Prol."
-        WHEN datahora LIKE '__.__. __:__' THEN 2  -- Sem ano
-        ELSE 3  -- Com ano completo
-    END,
-    -- Ordena pela data/hora dentro de cada grupo de formatos
-    CASE
-        -- Se tiver "Após Prol.", removemos essa parte e tratamos a data
-        WHEN datahora LIKE '%Após Prol.' THEN 
-            TO_TIMESTAMP(
-                CONCAT(
-                    CASE
-                        WHEN datahora LIKE '__.__. __:__' THEN '2025.' -- Se data não tem ano, assume 2025
-                        ELSE '' -- Para as que já têm ano
-                    END, 
-                    REPLACE(datahora, ' Após Prol.', '') -- Remover "Após Prol."
-                ), 'YYYY.DD.MM HH24:MI'
-            )
-        -- Se data tem ano (no formato DD.MM.YYYY HH:MI)
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
-        -- Se data é apenas no formato DD.MM. HH:MI (sem ano)
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-    END DESC;
-
+     ORDER BY 
+        -- Prioriza registros no formato DD.MM. HH:MI ou "Após Prol."
+        CASE
+            WHEN datahora LIKE '%Após Prol.' THEN 1  -- Tratamento para "Após Prol."
+            WHEN datahora LIKE '__.__. __:__' THEN 2  -- Sem ano
+            ELSE 3  -- Com ano completo
+        END,
+        -- Ordena pela data/hora dentro de cada grupo de formatos
+        CASE
+            WHEN datahora LIKE '%Após Prol.' THEN 
+                TO_TIMESTAMP(
+                    CONCAT(
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN '2025.' -- Se data não tem ano, assume 2025
+                            ELSE '' -- Para as que já têm ano
+                        END, 
+                        REPLACE(datahora, ' Após Prol.', '') -- Remover "Após Prol."
+                    ), 'YYYY.DD.MM HH24:MI'
+                )
+            WHEN datahora LIKE '__.__.____ __:__' THEN 
+                TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
+            WHEN datahora LIKE '__.__. __:__' THEN 
+                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        END DESC`,
                     [time_home]
                 );
 
+                // Filtrar vitórias e derrotas do time_home em casa
                 for (const game of homeGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
@@ -1011,6 +1012,7 @@ ORDER BY
                         });
                     }
 
+                    // Parar se já encontrou 5 vitórias e 5 derrotas
                     if (homeWins.length === 5 && homeLosses.length === 5) break;
                 }
             }
@@ -1018,24 +1020,38 @@ ORDER BY
             // Buscar jogos do time_away fora de casa
             if (tableNames.includes(awayTable)) {
                 const awayGamesResult = await pool.query(
-                    `SELECT home_team, away_team, home_score, away_score, datahora 
+                    `SELECT 
+                        home_team, away_team, home_score, away_score, datahora 
                      FROM ${awayTable} 
                      WHERE away_team = $1
-                     ORDER BY 
-                        CASE 
-                            -- Formato: "07.12.2024 HH:MM Após Prol."
-                            WHEN datahora ~ '^[0-9]{2}\\.[0-9]{2}\\.\\d{4} .*' THEN 
-                                TO_TIMESTAMP(SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2), 'DD.MM.YYYY HH24:MI')
-                            
-                            -- Formato: "19.01. HH:MM Após Prol." (sem ano)
-                            WHEN datahora ~ '^[0-9]{2}\\.[0-9]{2}\\. .*' THEN 
-                                TO_TIMESTAMP('2025.' || SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2), 'YYYY.DD.MM HH24:MI')
-
-                            ELSE NULL
-                        END DESC NULLS LAST`,
+     ORDER BY 
+        -- Prioriza registros no formato DD.MM. HH:MI ou "Após Prol."
+        CASE
+            WHEN datahora LIKE '%Após Prol.' THEN 1  -- Tratamento para "Após Prol."
+            WHEN datahora LIKE '__.__. __:__' THEN 2  -- Sem ano
+            ELSE 3  -- Com ano completo
+        END,
+        -- Ordena pela data/hora dentro de cada grupo de formatos
+        CASE
+            WHEN datahora LIKE '%Após Prol.' THEN 
+                TO_TIMESTAMP(
+                    CONCAT(
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN '2025.' -- Se data não tem ano, assume 2025
+                            ELSE '' -- Para as que já têm ano
+                        END, 
+                        REPLACE(datahora, ' Após Prol.', '') -- Remover "Após Prol."
+                    ), 'YYYY.DD.MM HH24:MI'
+                )
+            WHEN datahora LIKE '__.__.____ __:__' THEN 
+                TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
+            WHEN datahora LIKE '__.__. __:__' THEN 
+                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        END DESC`,
                     [time_away]
                 );
 
+                // Filtrar vitórias e derrotas do time_away fora de casa
                 for (const game of awayGamesResult.rows) {
                     const homeScore = parseInt(game.home_score, 10);
                     const awayScore = parseInt(game.away_score, 10);
@@ -1054,6 +1070,7 @@ ORDER BY
                         });
                     }
 
+                    // Parar se já encontrou 5 vitórias e 5 derrotas
                     if (awayWins.length === 5 && awayLosses.length === 5) break;
                 }
             }
@@ -1082,13 +1099,13 @@ ORDER BY
             });
         }
 
+        // Enviar resultados em JSON
         res.json(results);
     } catch (error) {
         console.error('Erro ao processar os dados:', error);
         res.status(500).send('Erro no servidor');
     }
 });
-
 
 
 
