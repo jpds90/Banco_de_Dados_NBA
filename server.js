@@ -976,9 +976,9 @@ ORDER BY
     -- Ordenação dentro de cada grupo
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')  -- Adiciona ano fictício
-        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')  -- Converte diretamente
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')  -- Adiciona ano fictício
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')  -- Converte diretamente
     END DESC`,
     [time_home]);
 
@@ -1023,9 +1023,9 @@ ORDER BY
     -- Ordenação dentro de cada grupo
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')  -- Adiciona ano fictício
-        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')  -- Converte diretamente
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')  -- Adiciona ano fictício
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')  -- Converte diretamente
     END DESC`, [time_away]);
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
