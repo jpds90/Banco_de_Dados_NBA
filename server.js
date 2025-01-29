@@ -967,18 +967,18 @@ app.get('/ultimosjogos4', async (req, res) => {
                      FROM ${homeTable} 
                      WHERE home_team = $1
 ORDER BY 
-    -- Primeiro, prioriza os formatos de data
+    -- Prioriza registros no formato DD.MM. HH:MI primeiro, depois DD.MM.YYYY
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 1  -- Formato DD.MM. HH:MI
-        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2         -- Formato DD.MM.YYYY
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2  -- Formato DD.MM.YYYY HH:MI
         ELSE 3
     END,
-    -- Agora, ordena dentro de cada grupo de formatos
+    -- Ordenação dentro de cada grupo
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM. HH24:MI')  -- Mantém o formato sem adicionar ano
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')  -- Adiciona ano fictício
         WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
-            TO_DATE(datahora, 'DD.MM.YYYY')  -- Apenas a data
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')  -- Converte diretamente
     END DESC`,
     [time_home]);
 
@@ -1014,18 +1014,18 @@ ORDER BY
                      FROM ${awayTable} 
                      WHERE away_team = $1
 ORDER BY 
-    -- Primeiro, prioriza os formatos de data
+    -- Prioriza registros no formato DD.MM. HH:MI primeiro, depois DD.MM.YYYY
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 1  -- Formato DD.MM. HH:MI
-        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2         -- Formato DD.MM.YYYY
+        WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 2  -- Formato DD.MM.YYYY HH:MI
         ELSE 3
     END,
-    -- Agora, ordena dentro de cada grupo de formatos
+    -- Ordenação dentro de cada grupo
     CASE
         WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM. HH24:MI')  -- Mantém o formato sem adicionar ano
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')  -- Adiciona ano fictício
         WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4}$' THEN 
-            TO_DATE(datahora, 'DD.MM.YYYY')  -- Apenas a data
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')  -- Converte diretamente
     END DESC`, [time_away]);
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
