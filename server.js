@@ -830,7 +830,13 @@ app.get('/ultimosjogos2', async (req, res) => {
             SELECT home_team, away_team, home_score, away_score, datahora, id 
             FROM ${timeFormatado} 
             WHERE home_team = $1 OR away_team = $1
+last week
+
+Update server.js
 ORDER BY 
+last week
+
+Update server.js
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 1
@@ -843,6 +849,9 @@ ORDER BY
         WHEN datahora LIKE '__.__.____ __:__' THEN 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
+2 weeks ago
+
+Primeira versão do projeto
             LIMIT 5
         `;
         console.log(`Query SQL que será executada: ${querySQL}`);
@@ -908,7 +917,21 @@ ORDER BY
             };
         });
         
-        app.get('/ultimosjogos4', async (req, res) => {
+        
+        
+
+        console.log('Jogos processados finalizados:', jogos);
+
+        // Retornar os jogos com data e hora no formato JSON
+        res.json(jogos);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
+
+app.get('/ultimosjogos4', async (req, res) => {
     try {
         // Consultar times na tabela "odds"
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
@@ -1047,19 +1070,6 @@ ORDER BY
         res.status(500).send('Erro no servidor');
     }
 });
-
-        
-
-        console.log('Jogos processados finalizados:', jogos);
-
-        // Retornar os jogos com data e hora no formato JSON
-        res.json(jogos);
-    } catch (error) {
-        console.error('Erro ao processar os dados:', error);
-        res.status(500).send('Erro no servidor');
-    }
-});
-
 
 
 
