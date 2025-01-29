@@ -972,12 +972,12 @@ ORDER BY
         WHEN datahora LIKE '__.__. __:__' THEN 1
         ELSE 2
     END,
-    -- Ordena pela data/hora dentro de cada grupo de formatos
+    -- Ordena pela data dentro de cada grupo de formatos
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')
+            TO_DATE(CONCAT('2025.', LEFT(datahora, 5)), 'YYYY.DD.MM') -- Pega apenas a parte da data
         WHEN datahora LIKE '__.__.____ __:__' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+            TO_DATE(datahora, 'DD.MM.YYYY')
     END DESC`,
     [time_home]);
 
@@ -1018,12 +1018,12 @@ ORDER BY
         WHEN datahora LIKE '__.__. __:__' THEN 1
         ELSE 2
     END,
-    -- Ordena pela data/hora dentro de cada grupo de formatos
+    -- Ordena pela data dentro de cada grupo de formatos
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM')
+            TO_DATE(CONCAT('2025.', LEFT(datahora, 5)), 'YYYY.DD.MM') -- Pega apenas a parte da data
         WHEN datahora LIKE '__.__.____ __:__' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+            TO_DATE(datahora, 'DD.MM.YYYY')
     END DESC`, [time_away]);
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
