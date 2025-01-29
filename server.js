@@ -987,7 +987,7 @@ ORDER BY
 
         END,
         'YYYY.DD.MM HH24:MI'
-    ) DESC`,
+    ) ASC`,
                     [time_home]
                 );
 
@@ -1041,7 +1041,7 @@ ORDER BY
 
         END,
         'YYYY.DD.MM HH24:MI'
-    ) DESC`,
+    ) ASC`,
                     [time_away]
                 );
 
