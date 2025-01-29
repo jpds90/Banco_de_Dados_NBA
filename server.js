@@ -959,37 +959,48 @@ app.get('/ultimosjogos4', async (req, res) => {
             const awayWins = []; // Vitórias do time_away fora de casa
             const awayLosses = []; // Derrotas do time_away fora de casa
 
-            // Buscar jogos do time_home em casa
-            if (tableNames.includes(homeTable)) {
-                const homeGamesResult = await pool.query(
-                    `SELECT 
-                        home_team, away_team, home_score, away_score 
-                     FROM ${homeTable} 
-                     WHERE home_team = $1
-ORDER BY 
-    TO_TIMESTAMP(
-        CASE 
-            -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
-            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
-            THEN CONCAT('2025.', datahora)  
-            
-            -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
-            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
-            THEN datahora  
+// Buscar jogos do time_home em casa
+if (tableNames.includes(homeTable)) {
+    const homeGamesResult = await pool.query(
+        `SELECT 
+            home_team, away_team, home_score, away_score, datahora
+         FROM ${homeTable} 
+         WHERE home_team = $1
+         AND TO_TIMESTAMP(
+            CASE 
+                -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
+                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
+                THEN CONCAT('2025.', datahora)  
+                
+                -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
+                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
+                THEN datahora  
 
-            -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
-            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
-            THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+                -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
+                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
+                THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
 
-            -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
-            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
-            THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+                -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
+                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
+                THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+            END,
+            'YYYY.DD.MM HH24:MI'
+        ) 
+        BETWEEN '2024-01-01 00:00' AND '2030-01-16 01:00'
+        
+        ORDER BY 
+            TO_TIMESTAMP(
+                CASE 
+                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN CONCAT('2025.', datahora)  
+                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN datahora  
+                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+                END,
+                'YYYY.DD.MM HH24:MI'
+            ) DESC`,  // <-- Aqui DESC para começar de 16.01.2025 01:00
+        [time_home]
+    );
 
-        END,
-        'YYYY.DD.MM HH24:MI'
-    ) ASC`,
-                    [time_home]
-                );
 
                 // Filtrar vitórias e derrotas do time_home em casa
                 for (const game of homeGamesResult.rows) {
@@ -1020,30 +1031,40 @@ ORDER BY
                         home_team, away_team, home_score, away_score 
                      FROM ${awayTable} 
                      WHERE away_team = $1
-ORDER BY 
-    TO_TIMESTAMP(
-        CASE 
-            -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
-            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
-            THEN CONCAT('2025.', datahora)  
-            
-            -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
-            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
-            THEN datahora  
+         AND TO_TIMESTAMP(
+            CASE 
+                -- Caso 1: Data no formato DD.MM. HH:MI (sem ano)
+                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' 
+                THEN CONCAT('2025.', datahora)  
+                
+                -- Caso 2: Data no formato DD.MM.YYYY HH:MI (com ano)
+                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' 
+                THEN datahora  
 
-            -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
-            WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
-            THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+                -- Caso 3: Data no formato DD.MM. HH:MI com texto adicional (ex: "Após Prol.")
+                WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' 
+                THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
 
-            -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
-            WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
-            THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
-
-        END,
-        'YYYY.DD.MM HH24:MI'
-    ) ASC`,
-                    [time_away]
-                );
+                -- Caso 4: Data no formato DD.MM.YYYY HH:MI com texto adicional (ex: "Após Prol.")
+                WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' 
+                THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+            END,
+            'YYYY.DD.MM HH24:MI'
+        ) 
+        BETWEEN '2024-01-01 00:00' AND '2030-01-16 01:00'
+        
+        ORDER BY 
+            TO_TIMESTAMP(
+                CASE 
+                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2}$' THEN CONCAT('2025.', datahora)  
+                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2}$' THEN datahora  
+                    WHEN datahora ~ '^\d{2}\.\d{2}\. \d{2}:\d{2} .+$' THEN CONCAT('2025.', SPLIT_PART(datahora, ' ', 1), ' ', SPLIT_PART(datahora, ' ', 2))  
+                    WHEN datahora ~ '^\d{2}\.\d{2}\.\d{4} \d{2}:\d{2} .+$' THEN SPLIT_PART(datahora, ' ', 1) || ' ' || SPLIT_PART(datahora, ' ', 2)  
+                END,
+                'YYYY.DD.MM HH24:MI'
+            ) DESC`,  // <-- Aqui DESC para começar de 16.01.2025 01:00
+        [time_away]
+    );
 
                 // Filtrar vitórias e derrotas do time_away fora de casa
                 for (const game of awayGamesResult.rows) {
