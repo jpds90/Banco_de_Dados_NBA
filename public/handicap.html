@@ -4,6 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Handicap Estimado</title>
+  <style>
+    .side-by-side {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+  </style>
   <script>
     async function calcularHandicap() {
       try {
@@ -17,60 +38,76 @@
 
         // Verifique se existem dados
         if (!averages || averages.length === 0) {
-          document.getElementById('handicap').textContent = "Nenhum dado encontrado.";
+          document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Nenhum dado encontrado.</td></tr>";
           return;
         }
 
-        // Busque as informações necessárias para o cálculo
-        const mediaTimeAEmCasa = averages[0].home_avg || 0;
-        const mediaTimeBEmFora = averages[0].away_avg || 0;
-
-        // Agora, buscamos os dados dos últimos jogos
+        // Buscar as informações dos últimos jogos
         const resposta2 = await fetch('/ultimosjogos4');
         const jogos = await resposta2.json();
 
-        // Achar os jogos para o time que estamos calculando (vamos assumir o primeiro par de times)
-        const jogo = jogos[0]; // Considerando o primeiro par de times, modifique conforme necessário
-        const homeWinAvg = parseFloat(jogo.home_last_games.win_avg) || 0;
-        const homeLossAvg = parseFloat(jogo.home_last_games.loss_avg) || 0;
-        const awayWinAvg = parseFloat(jogo.away_last_games.win_avg) || 0;
-        const awayLossAvg = parseFloat(jogo.away_last_games.loss_avg) || 0;
-
-        // Agora, buscamos os dados dos confrontos diretos
+        // Buscar os dados dos confrontos diretos
         const resposta3 = await fetch(`/gamestats`);
         const gamestats = await resposta3.json();
 
-        // Achar o confronto direto entre os times
-        const confrontosDiretos = gamestats.find(confronto => confronto.time_home === averages[0].time_home && confronto.time_away === averages[0].time_away);
-        const avgDiffConfrontoDireto = confrontosDiretos ? confrontosDiretos.avg_difference : 0;
+        const rows = averages.map((avg) => {
+          // Achar o confronto direto entre os times
+          const confrontoDireto = gamestats.find(confronto => confronto.time_home === avg.time_home && confronto.time_away === avg.time_away);
+          const avgDiffConfrontoDireto = confrontoDireto ? confrontoDireto.avg_difference : 0;
 
-        // Cálculo do Handicap Estimado
-        const diferencaTimeAEmCasa = homeWinAvg - homeLossAvg;
-        const diferencaTimeBEmFora = awayWinAvg - awayLossAvg;
-        
-        // Buscar a vantagem do confronto direto
-        const vantagemConfrontoDireto = parseFloat(avgDiffConfrontoDireto);
+          // Achar os jogos para o time que estamos calculando (vamos assumir o primeiro par de times)
+          const jogo = jogos.find(jogo => jogo.time_home === avg.time_home && jogo.time_away === avg.time_away);
+          
+          if (!jogo) {
+            return null;
+          }
 
-        // Cálculo do Handicap Estimado
-        const handicap = (mediaTimeAEmCasa - mediaTimeBEmFora) +
-                         (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
-                         vantagemConfrontoDireto;
+          const homeWinAvg = parseFloat(jogo.home_last_games.win_avg) || 0;
+          const homeLossAvg = parseFloat(jogo.home_last_games.loss_avg) || 0;
+          const awayWinAvg = parseFloat(jogo.away_last_games.win_avg) || 0;
+          const awayLossAvg = parseFloat(jogo.away_last_games.loss_avg) || 0;
 
-        // Exibir o resultado
-        document.getElementById('handicap').textContent = `Handicap Estimado: ${handicap.toFixed(2)}`;
+          // Cálculo do Handicap Estimado
+          const diferencaTimeAEmCasa = homeWinAvg - homeLossAvg;
+          const diferencaTimeBEmFora = awayWinAvg - awayLossAvg;
 
-        // Exibir os dados usados para o cálculo
-        document.getElementById('dados').innerHTML = `
-          <p>Média de pontos Time A em casa: ${mediaTimeAEmCasa}</p>
-          <p>Média de pontos Time B fora: ${mediaTimeBEmFora}</p>
-          <p>Diferença de pontos Time A em casa: ${diferencaTimeAEmCasa.toFixed(2)}</p>
-          <p>Diferença de pontos Time B fora: ${diferencaTimeBEmFora.toFixed(2)}</p>
-          <p>Vantagem do confronto direto: ${vantagemConfrontoDireto}</p>
-        `;
-        
+          // Cálculo do Handicap Estimado
+          const handicap = (avg.mediaTimeAEmCasa - avg.mediaTimeBEmFora) +
+                           (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
+                           parseFloat(avgDiffConfrontoDireto);
+
+          return {
+            time_home: avg.time_home,
+            time_away: avg.time_away,
+            mediaTimeAEmCasa: avg.mediaTimeAEmCasa,
+            mediaTimeBEmFora: avg.mediaTimeBEmFora,
+            diferencaTimeAEmCasa: diferencaTimeAEmCasa.toFixed(2),
+            diferencaTimeBEmFora: diferencaTimeBEmFora.toFixed(2),
+            vantagemConfrontoDireto: avgDiffConfrontoDireto,
+            handicap: handicap.toFixed(2)
+          };
+        }).filter(row => row !== null); // Remove qualquer valor nulo
+
+        // Atualizar a tabela com os dados
+        const dadosElement = document.getElementById('dados');
+        dadosElement.innerHTML = rows.map(row => {
+          return `
+            <tr>
+              <td>${row.time_home}</td>
+              <td>${row.time_away}</td>
+              <td>${row.mediaTimeAEmCasa}</td>
+              <td>${row.mediaTimeBEmFora}</td>
+              <td>${row.diferencaTimeAEmCasa}</td>
+              <td>${row.diferencaTimeBEmFora}</td>
+              <td>${row.vantagemConfrontoDireto}</td>
+              <td>${row.handicap}</td>
+            </tr>
+          `;
+        }).join('');
+
       } catch (error) {
         console.error("Erro ao calcular o handicap:", error);
-        document.getElementById('handicap').textContent = "Erro ao calcular o Handicap.";
+        document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Erro ao calcular o Handicap.</td></tr>";
       }
     }
 
@@ -81,11 +118,24 @@
 <body>
   <h1>Handicap Estimado</h1>
 
-  <div id="dados">
-    <!-- Aqui serão exibidos os dados necessários para o cálculo -->
+  <div class="side-by-side">
+    <table>
+      <thead>
+        <tr>
+          <th>Casa</th>
+          <th>Visitante</th>
+          <th>mediaTimeAEmCasa</th>
+          <th>mediaTimeBEmFora</th>
+          <th>diferencaTimeAEmCasa</th>
+          <th>diferencaTimeBEmFora</th>
+          <th>vantagemConfrontoDireto</th>
+          <th>handicap</th>
+        </tr>
+      </thead>
+      <tbody id="dados">
+        <!-- As linhas serão inseridas aqui dinamicamente -->
+      </tbody>
+    </table>
   </div>
-
-  <h2 id="handicap"></h2>
-  
 </body>
 </html>
