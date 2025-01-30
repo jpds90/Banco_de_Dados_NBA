@@ -72,15 +72,15 @@
           const diferencaTimeBEmFora = awayWinAvg - awayLossAvg;
 
           // Cálculo do Handicap Estimado
-          const handicap = (avg.mediaTimeAEmCasa - avg.mediaTimeBEmFora) +
+          const handicap = (average.home_avg - average.away_avg) +
                            (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
                            parseFloat(avgDiffConfrontoDireto);
 
           return {
             time_home: avg.time_home,
             time_away: avg.time_away,
-            mediaTimeAEmCasa: avg.mediaTimeAEmCasa,
-            mediaTimeBEmFora: avg.mediaTimeBEmFora,
+            mediaTimeAEmCasa: average.home_avg,
+            mediaTimeBEmFora: average.away_avg,
             diferencaTimeAEmCasa: diferencaTimeAEmCasa.toFixed(2),
             diferencaTimeBEmFora: diferencaTimeBEmFora.toFixed(2),
             vantagemConfrontoDireto: avgDiffConfrontoDireto,
