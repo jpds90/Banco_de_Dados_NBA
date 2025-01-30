@@ -829,75 +829,76 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
         fetch('/odds-nba')
             .then(response => response.json())
             .then(oddsnbaData => {
-                const tableBody = document.getElementById('confrontationTable');
+                fetch('/ultimosjogos')
+                    .then(response => response.json())
+                    .then(ultimosJogosData => {
+                        const tableBody = document.getElementById('confrontationTable');
 
-                confrontationData.forEach(confrontation => {
-                    const row = document.createElement('tr');
+                        confrontationData.forEach(confrontation => {
+                            const row = document.createElement('tr');
 
-                    // Encontrar o Handicap correspondente ao confronto
-                    const handicapItem = handicapData.find(h =>
-                        h.time_home === confrontation.time_home && h.time_away === confrontation.time_away
-                    );
+                            const handicapItem = handicapData.find(h =>
+                                h.time_home === confrontation.time_home && h.time_away === confrontation.time_away
+                            );
+                            const handicapValue = handicapItem ? handicapItem.handicap : 'N/A';
 
-                    const handicapValue = handicapItem ? handicapItem.handicap : 'N/A';
+                            const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
+                            const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
 
-                    // Encontrar a classificação do time da casa e do visitante
-                    const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
-                    const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
+                            const homeRank = parseInt(homeClassification);
+                            const awayRank = parseInt(awayClassification);
+                            const homeRankWeight = getRankWeight(homeRank);
+                            const awayRankWeight = getRankWeight(awayRank);
 
-                    // Determinar o peso do rank
-                    const homeRank = parseInt(homeClassification);
-                    const awayRank = parseInt(awayClassification);
-                    const homeRankWeight = getRankWeight(homeRank);
-                    const awayRankWeight = getRankWeight(awayRank);
+                            const homeUltimos = ultimosJogosData.find(jogo => jogo.time_home === confrontation.time_home);
+                            const awayUltimos = ultimosJogosData.find(jogo => jogo.time_away === confrontation.time_away);
 
-                    // Garantir que os valores sejam números usando parseFloat
-                    const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
-                    const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
-                    const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
-                    const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
-                    const homeWins = parseFloat(confrontation.total_home_general_wins) || 0;
-                    const awayWins = parseFloat(confrontation.total_away_general_wins) || 0;
+                            const homeWins = homeUltimos ? homeUltimos.home_wins_last_10 : 0;
+                            const awayWins = awayUltimos ? awayUltimos.away_wins_last_10 : 0;
 
-                    // Calcular peso das vitórias
-                    const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
-                    const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
+                            const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
+                            const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
+                            const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
+                            const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
 
-                    // Calcular porcentagens
-                    const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
-                    const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
-                    const totalSum = homeTotal + awayTotal;
-                    const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
-                    const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
+                            const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
+                            const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
 
-                    // Condição para cor verde ou vermelha para Casa e Visitante
-                    let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
-                    let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
+                            const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
+                            const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
+                            const totalSum = homeTotal + awayTotal;
+                            const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
+                            const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
 
-                    // Adicionar os dados na linha (incluindo Handicap)
-                    row.innerHTML = `
-                        <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
-                        <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
-                        <td>${homeHomeWins}</td>
-                        <td>${confrontation.home_away_wins}</td>
-                        <td>${confrontation.away_home_wins}</td>
-                        <td>${awayAwayWins}</td>
-                        <td>${confrontation.total_home_wins}</td>
-                        <td>${confrontation.total_away_wins}</td>
-                        <td>${homeWins} (${confrontation.total_home_games})</td>
-                        <td>${homeWinPercentage.toFixed(2)}%</td>
-                        <td>${awayWins} (${confrontation.total_away_games})</td>
-                        <td>${awayWinPercentage.toFixed(2)}%</td>
-                        <td>${homePercentage}%</td>
-                        <td>${awayPercentage}%</td>
-                        <td>${handicapValue}</td> <!-- Nova coluna com o Handicap -->
-                    `;
-                    tableBody.appendChild(row);
-                });
+                            let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
+                            let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
+
+                            row.innerHTML = `
+                                <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
+                                <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
+                                <td>${homeHomeWins}</td>
+                                <td>${confrontation.home_away_wins}</td>
+                                <td>${confrontation.away_home_wins}</td>
+                                <td>${awayAwayWins}</td>
+                                <td>${confrontation.total_home_wins}</td>
+                                <td>${confrontation.total_away_wins}</td>
+                                <td>${homeWins} (10)</td>
+                                <td>${homeWinPercentage.toFixed(2)}%</td>
+                                <td>${awayWins} (10)</td>
+                                <td>${awayWinPercentage.toFixed(2)}%</td>
+                                <td>${homePercentage}%</td>
+                                <td>${awayPercentage}%</td>
+                                <td>${handicapValue}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        });
+                    })
+                    .catch(error => console.error('Erro ao carregar ultimosjogos:', error));
             })
             .catch(error => console.error('Erro ao carregar odds-nba:', error));
     })
     .catch(error => console.error('Erro ao carregar confrontos:', error));
+
 
 
 
