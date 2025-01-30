@@ -669,129 +669,78 @@ ORDER BY
 
 app.get('/ultimosjogos', async (req, res) => {
     try {
-        const { time } = req.query; // O time vem pela query params, por exemplo: /ultimosjogos?time=Oklahoma City Thunder
-        if (!time) {
-            return res.status(400).send('Time não informado');
-        }
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+        const results = [];
 
-        const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
-        console.log(`Time recebido: ${time}`);
-        console.log(`Nome da tabela formatada: ${timeFormatado}`);
-        
-        // Verificar se a tabela do time existe
-        const tablesResult = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_name = $1
-        `, [timeFormatado]);
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
-        console.log(`Resultado da verificação da tabela:`, tablesResult.rows);
+            const tablesResult = await pool.query(
+                `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`, 
+                [homeTable, awayTable]
+            );
+            const tableNames = tablesResult.rows.map(row => row.table_name);
 
-        if (!tablesResult.rows.length) {
-            console.log('Tabela não encontrada para o time informado.');
-            return res.status(404).send('Tabela do time não encontrada');
-        }
+            let homeGames = [];
+            let awayGames = [];
+            let homeWins = 0;
+            let awayWins = 0;
 
-        // Buscar os 3 últimos jogos como time da casa
-        const queryCasa = `
-            SELECT home_team, away_team, home_score, away_score, id 
-            FROM ${timeFormatado} 
-            WHERE home_team = $1
-            ORDER BY 
-    TO_TIMESTAMP(
-        CASE
-            -- Formato DD.MM. HH:MI, assume o ano 2025
-            WHEN datahora LIKE '__.__. __:__' THEN CONCAT(datahora, '.2025') 
-            -- Formato DD.MM.YYYY, adiciona 00:00 caso a hora não esteja presente
-            WHEN datahora LIKE '__.__.____' THEN CONCAT(datahora, ' 00:00') 
-            -- Formato DD.MM.YYYY HH:MI, usa diretamente
-            ELSE datahora
-        END, 
-        'DD.MM.YYYY'
-    ) DESC            LIMIT 3
-        `;
-        console.log(`Query SQL para jogos em casa: ${queryCasa}`);
+            if (tableNames.includes(homeTable)) {
+                const homeGamesResult = await pool.query(
+                    `SELECT home_team, away_team, home_score, away_score FROM ${homeTable} WHERE home_team = $1
+                    ORDER BY TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI') DESC LIMIT 10`, 
+                    [time_home]
+                );
 
-        const jogosCasaResult = await pool.query(queryCasa, [time]);
-        console.log(`Jogos em casa retornados pela query:`, jogosCasaResult.rows);
-
-        // Buscar os 3 últimos jogos como time visitante
-        const queryVisitante = `
-            SELECT home_team, away_team, home_score, away_score, id 
-            FROM ${timeFormatado} 
-            WHERE away_team = $1
-            ORDER BY      TO_TIMESTAMP(         CASE              -- Se a data tiver apenas o formato DD.MM. HH:MI (sem ano), adicionamos o ano 2025.             WHEN datahora LIKE '__.__. __:__' THEN CONCAT('2025.', datahora)                          -- Se a data já tiver o ano (com formato completo DD.MM.YYYY HH:MI), usamos a data diretamente.             ELSE datahora         END,          'YYYY.MM.DD HH24:MI'     ) DESC
-            LIMIT 3
-        `;
-        console.log(`Query SQL para jogos como visitante: ${queryVisitante}`);
-
-        const jogosVisitanteResult = await pool.query(queryVisitante, [time]);
-        console.log(`Jogos como visitante retornados pela query:`, jogosVisitanteResult.rows);
-
-        let vitoriasCasa = 0;  // Contador de vitórias como time da casa
-        let vitoriasVisitante = 0;  // Contador de vitórias como time visitante
-
-        // Processando os jogos da casa
-        const jogosCasa = jogosCasaResult.rows.map(row => {
-            const { home_team, away_team, home_score, away_score } = row;
-            let statusResultado;
-            const pontosTime = parseInt(home_score, 10);
-            const pontosAdversario = parseInt(away_score, 10);
-
-            if (pontosTime > pontosAdversario) {
-                statusResultado = `${time} ✅`;  // Venceu
-                vitoriasCasa++;  // Vitória como time da casa
-            } else if (pontosTime < pontosAdversario) {
-                statusResultado = `${time} ❌`;  // Perdeu
-            } else {
-                statusResultado = `Empate`;  // Caso de empate
+                homeGamesResult.rows.forEach(game => {
+                    const homeScore = parseInt(game.home_score, 10);
+                    const awayScore = parseInt(game.away_score, 10);
+                    const result = homeScore > awayScore ? 'Venceu' : 'Perdeu';
+                    if (homeScore > awayScore) homeWins++;
+                    
+                    homeGames.push({
+                        adversario: game.away_team,
+                        resultado: `${game.home_team} X ${game.away_team} Total Pontos = ${homeScore} x ${awayScore}`,
+                        status: `${game.home_team} ${result}`
+                    });
+                });
             }
 
-            return {
-                adversario: away_team,
-                pontos_time: home_score,
-                pontos_adversario: away_score,
-                resultado: statusResultado,
-            };
-        });
+            if (tableNames.includes(awayTable)) {
+                const awayGamesResult = await pool.query(
+                    `SELECT home_team, away_team, home_score, away_score FROM ${awayTable} WHERE away_team = $1
+                    ORDER BY TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI') DESC LIMIT 10`, 
+                    [time_away]
+                );
 
-        // Processando os jogos como visitante
-        const jogosVisitante = jogosVisitanteResult.rows.map(row => {
-            const { home_team, away_team, home_score, away_score } = row;
-            let statusResultado;
-            const pontosTime = parseInt(away_score, 10);
-            const pontosAdversario = parseInt(home_score, 10);
-
-            if (pontosTime > pontosAdversario) {
-                statusResultado = `${time} ✅`;  // Venceu
-                vitoriasVisitante++;  // Vitória como time visitante
-            } else if (pontosTime < pontosAdversario) {
-                statusResultado = `${time} ❌`;  // Perdeu
-            } else {
-                statusResultado = `Empate`;  // Caso de empate
+                awayGamesResult.rows.forEach(game => {
+                    const homeScore = parseInt(game.home_score, 10);
+                    const awayScore = parseInt(game.away_score, 10);
+                    const result = awayScore > homeScore ? 'Venceu' : 'Perdeu';
+                    if (awayScore > homeScore) awayWins++;
+                    
+                    awayGames.push({
+                        adversario: game.home_team,
+                        resultado: `${game.home_team} X ${game.away_team} Total Pontos = ${homeScore} x ${awayScore}`,
+                        status: `${game.away_team} ${result}`
+                    });
+                });
             }
 
-            return {
-                adversario: home_team,
-                pontos_time: away_score,
-                pontos_adversario: home_score,
-                resultado: statusResultado,
-            };
-        });
+            results.push({
+                time_home,
+                home_last_games: homeGames,
+                home_wins_last_10: homeWins,
+                time_away,
+                away_last_games: awayGames,
+                away_wins_last_10: awayWins
+            });
+        }
 
-        console.log('Jogos processados como time da casa:', jogosCasa);
-        console.log('Jogos processados como time visitante:', jogosVisitante);
-        console.log(`Vitórias como time da casa: ${vitoriasCasa}`);
-        console.log(`Vitórias como time visitante: ${vitoriasVisitante}`);
-
-        // Retornar os jogos e as vitórias em formato JSON
-        res.json({
-            jogosCasa,
-            jogosVisitante,
-            vitoriasCasa,
-            vitoriasVisitante
-        });
-
+        res.json(results);
     } catch (error) {
         console.error('Erro ao processar os dados:', error);
         res.status(500).send('Erro no servidor');
