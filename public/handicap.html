@@ -84,7 +84,8 @@ async function calcularHandicap() {
       const handicap = (mediaTimeAEmCasa - mediaTimeBEmFora) +
                        (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
                        avgDiffConfrontoDireto;
-
+    localStorage.setItem("handicap", JSON.stringify(rows));
+    window.location.href = "odds.html";
       return {
         time_home: avg.time_home,
         time_away: avg.time_away,
