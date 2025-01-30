@@ -856,13 +856,11 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const homeWins = homeUltimos ? homeUltimos.home_wins_last_10 : 0;
                             const awayWins = awayUltimos ? awayUltimos.away_wins_last_10 : 0;
 
-                            const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
-                            const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
-                            const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
-                            const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
+                            const homeWinPercentage = ((homeWins / 10) * 100).toFixed(0);
+                            const awayWinPercentage = ((awayWins / 10) * 100).toFixed(0);
 
-                            const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
-                            const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
+                            const homeWinWeight = (homeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
+                            const awayWinWeight = (awayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
 
                             const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
                             const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
@@ -870,8 +868,6 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
                             const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
 
-                            const homeWinPercentage = ((homeWins / 10) * 100).toFixed(0);
-                            const awayWinPercentage = ((awayWins / 10) * 100).toFixed(0);
                             let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
                             let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
 
