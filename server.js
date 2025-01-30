@@ -387,7 +387,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 12`, [time_home, formattedStartDate, formattedEndDate]);
+    END DESC NULLS LAST 
+              LIMIT 12
+              `, [time_home, formattedStartDate, formattedEndDate]);
 
     const homeScores = homeScoresResult.rows
         .map(row => parseInt(row.home_score, 10))
@@ -418,7 +420,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 12`, [time_away, formattedStartDate, formattedEndDate]);
+    END DESC NULLS LAST 
+                   LIMIT 12
+                   `, [time_away, formattedStartDate, formattedEndDate]);
 
     const awayScores = awayScoresResult.rows
         .map(row => parseInt(row.away_score, 10))
@@ -487,7 +491,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 12`, [time_home]);
+    END DESC NULLS LAST 
+                       LIMIT 12
+                       `, [time_home]);
 
                 const homeScores = homeScoresResult.rows
                     .map(row => parseInt(row.home_score, 10))
@@ -517,7 +523,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 12`, [time_away]);
+    END DESC NULLS LAST 
+                    LIMIT 12
+                    `, [time_away]);
 
                 const awayScores = awayScoresResult.rows
                     .map(row => parseInt(row.away_score, 10))
@@ -589,7 +597,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 5`, [time_home]);
+    END DESC NULLS LAST 
+                       LIMIT 5
+                       `, [time_home]);
 
                 homeGamesResult.rows.forEach(game => {
                     const homeScore = parseInt(game.home_score, 10);  // Converter para número
@@ -623,7 +633,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 5`, [time_away]);
+    END DESC NULLS LAST 
+                        LIMIT 5
+                        `, [time_away]);
 
                 awayGamesResult.rows.forEach(game => {
                     const homeScore = parseInt(game.home_score, 10);  // Converter para número
@@ -697,7 +709,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 5`,
+    END DESC NULLS LAST 
+                LIMIT 5
+                `,
         console.log(`Query SQL para jogos em casa: ${queryCasa}`);
 
         const jogosCasaResult = await pool.query(queryCasa, [time]);
@@ -720,7 +734,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 5`,
+    END DESC NULLS LAST 
+           LIMIT 5
+           `,
         console.log(`Query SQL para jogos como visitante: ${queryVisitante}`);
 
         const jogosVisitanteResult = await pool.query(queryVisitante, [time]);
@@ -840,8 +856,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 5`,
-        `;
+    END DESC NULLS LAST 
+       LIMIT 5
+       `,
         console.log(`Query SQL que será executada: ${querySQL}`);
 
         const jogosResult = await pool.query(querySQL, [time]);
@@ -1182,7 +1199,9 @@ ORDER BY
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC NULLS LAST LIMIT 10`,
+    END DESC NULLS LAST 
+             LIMIT 10
+             `,
                 [time_home, time_away]
             );
 
