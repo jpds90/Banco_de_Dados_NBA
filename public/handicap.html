@@ -53,7 +53,7 @@ async function calcularHandicap() {
     const rows = averages.map((avg) => {
       // Achar o confronto direto entre os times
       const confrontoDireto = gamestats.find(confronto => confronto.time_home === avg.time_home && confronto.time_away === avg.time_away);
-      const avgDiffConfrontoDireto = confrontoDireto ? confrontoDireto.avg_difference : 0;
+      const avgDiffConfrontoDireto = confrontoDireto ? parseFloat(confrontoDireto.avg_difference) : 0; // Garantir que seja número
 
       // Achar os jogos para o time que estamos calculando (vamos assumir o primeiro par de times)
       const jogo = jogos.find(jogo => jogo.time_home === avg.time_home && jogo.time_away === avg.time_away);
@@ -78,7 +78,7 @@ async function calcularHandicap() {
       // Cálculo do Handicap Estimado
       const handicap = (mediaTimeAEmCasa - mediaTimeBEmFora) +
                        (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
-                       parseFloat(avgDiffConfrontoDireto);
+                       avgDiffConfrontoDireto;
 
       return {
         time_home: avg.time_home,
@@ -114,6 +114,7 @@ async function calcularHandicap() {
     document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Erro ao calcular o Handicap.</td></tr>";
   }
 }
+
 
 
     // Chama a função de calcular o Handicap ao carregar a página
