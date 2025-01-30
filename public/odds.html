@@ -856,11 +856,16 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const homeWins = homeUltimos ? homeUltimos.home_wins_last_10 : 0;
                             const awayWins = awayUltimos ? awayUltimos.away_wins_last_10 : 0;
 
-                            const homeWinPercentage = ((homeWins / 10) * 100).toFixed(0);
-                            const awayWinPercentage = ((awayWins / 10) * 100).toFixed(0);
+                            const homeWinPercentage1 = ((homeWins / 10) * 100).toFixed(0);
+                            const awayWinPercentage2 = ((awayWins / 10) * 100).toFixed(0);
 
-                            const homeWinWeight = (homeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
-                            const awayWinWeight = (awayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
+                            const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
+                            const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
+                            const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
+                            const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
+
+                            const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
+                            const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
 
                             const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
                             const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
@@ -881,9 +886,9 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                 <td>${confrontation.total_home_wins}</td>
                                 <td>${confrontation.total_away_wins}</td>
                                 <td>${homeWins} (10)</td>
-                                <td>${homeWinPercentage}%</td>
+                                <td>${homeWinPercentage1}%</td>
                                 <td>${awayWins} (10)</td>
-                                <td>${awayWinPercentage}%</td>
+                                <td>${awayWinPercentage2}%</td>
                                 <td>${homePercentage}%</td>
                                 <td>${awayPercentage}%</td>
                                 <td>${handicapValue}</td>
