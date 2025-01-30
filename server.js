@@ -1075,7 +1075,6 @@ ORDER BY
 
 
 app.get('/gamestats', async (req, res) => {
-app.get('/head-to-head-total-difference', async (req, res) => {
     try {
         // Buscar os confrontos diretos dos times
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
