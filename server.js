@@ -1158,6 +1158,115 @@ app.get('/gamestats', async (req, res) => {
 });
 
 
+app.get('/handpontos', async (req, res) => {
+    try {
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+
+        const results = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+
+            const confrontationResult = await pool.query(
+                `SELECT home_team, away_team, home_score, away_score, id
+                 FROM ${homeTable}
+                 WHERE (home_team = $1 AND away_team = $2)
+                    OR (home_team = $2 AND away_team = $1)
+                 ORDER BY id DESC`,
+                [time_home, time_away]
+            );
+
+            const confrontations = confrontationResult.rows;
+
+            let totalDifferenceHome = 0;
+            let totalDifferenceAway = 0;
+            let totalGames = confrontations.length;
+            let homeWins = 0;
+            let awayWins = 0;
+
+            const games = [];
+
+            confrontations.forEach(row => {
+                const homeScore = parseInt(row.home_score, 10) || 0;
+                const awayScore = parseInt(row.away_score, 10) || 0;
+                const difference = Math.abs(homeScore - awayScore);
+
+                // Identificar quem venceu e acumular diferenças para cada time
+                if (homeScore > awayScore) {
+                    if (row.home_team === time_home) {
+                        homeWins++;
+                        totalDifferenceHome += difference; // Vitória do time_home
+                    } else {
+                        awayWins++;
+                        totalDifferenceAway += difference; // Vitória do time_away
+                    }
+                } else if (awayScore > homeScore) {
+                    if (row.away_team === time_home) {
+                        homeWins++;
+                        totalDifferenceHome += difference; // Vitória do time_home
+                    } else {
+                        awayWins++;
+                        totalDifferenceAway += difference; // Vitória do time_away
+                    }
+                }
+
+                games.push({
+                    home_team: row.home_team,
+                    away_team: row.away_team,
+                    home_score: homeScore,
+                    away_score: awayScore,
+                    difference: homeScore - awayScore
+                });
+            });
+
+            // Calcular a média da diferença de pontos para cada time
+            const avgDifferenceHome = totalGames > 0 ? (totalDifferenceHome / totalGames).toFixed(2) : "0.00";
+            const avgDifferenceAway = totalGames > 0 ? (totalDifferenceAway / totalGames).toFixed(2) : "0.00";
+
+            // Contar os jogos com diferença maior ou igual à média nos últimos 10 jogos
+            const last10Games = confrontations.slice(0, 10);  // Pega os últimos 10 jogos
+            let homeLossesAboveAvg = 0;
+            let awayLossesAboveAvg = 0;
+
+            last10Games.forEach(row => {
+                const homeScore = parseInt(row.home_score, 10) || 0;
+                const awayScore = parseInt(row.away_score, 10) || 0;
+                const difference = Math.abs(homeScore - awayScore);
+
+                // Verificar se o jogo tem diferença maior ou igual à média
+                if (difference >= avgDifferenceHome) {
+                    if (homeScore < awayScore && row.home_team === time_home) {
+                        homeLossesAboveAvg++;
+                    }
+                }
+
+                if (difference >= avgDifferenceAway) {
+                    if (awayScore < homeScore && row.away_team === time_home) {
+                        awayLossesAboveAvg++;
+                    }
+                }
+            });
+
+            results.push({
+                time_home,
+                time_away,
+                avg_difference_home: avgDifferenceHome, // Média do time_home
+                avg_difference_away: avgDifferenceAway, // Média do time_away
+                home_wins: homeWins,
+                away_wins: awayWins,
+                home_losses_above_avg: homeLossesAboveAvg, // Perdas do time_home com diferença maior ou igual à média
+                away_losses_above_avg: awayLossesAboveAvg, // Perdas do time_away com diferença maior ou igual à média
+                games
+            });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
 
 
 
