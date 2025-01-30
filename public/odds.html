@@ -500,28 +500,6 @@
     fetchResults();
     fetchResults1();
 
-document.addEventListener("DOMContentLoaded", function () {
-    const tabela = document.getElementById('confrontationTable');
-    const handicapData = JSON.parse(localStorage.getItem("handicap"));
-
-    if (!handicapData || handicapData.length === 0) {
-        tabela.innerHTML = "<tr><td colspan='15'>Nenhum dado encontrado.</td></tr>";
-        return;
-    }
-
-    tabela.innerHTML = handicapData.map(row => `
-        <tr>
-            <td>${row.time_home}</td>
-            <td>${row.time_away}</td>
-            <td>${row.mediaTimeAEmCasa}</td>
-            <td>${row.mediaTimeBEmFora}</td>
-            <td>${row.diferencaTimeAEmCasa}</td>
-            <td>${row.diferencaTimeBEmFora}</td>
-            <td>${row.vantagemConfrontoDireto}</td>
-            <td>${row.handicap}</td> <!-- INSERINDO O HANDICAP -->
-        </tr>
-    `).join('');
-});
 
 
 
@@ -836,18 +814,26 @@ function getRankWeight(rank) {
     return 0;  // Se o rank não for de 1 a 15
 }
 
-// Carregar Confrontos
+// Recuperar os dados do Handicap do localStorage
+const handicapData = JSON.parse(localStorage.getItem("handicapData")) || [];
+
 fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
     .then(response => response.json())
     .then(confrontationData => {
-        // Depois de carregar os confrontos, carregar as odds-nba
         fetch('/odds-nba')
             .then(response => response.json())
             .then(oddsnbaData => {
                 const tableBody = document.getElementById('confrontationTable');
-                
+
                 confrontationData.forEach(confrontation => {
                     const row = document.createElement('tr');
+
+                    // Encontrar o Handicap correspondente ao confronto
+                    const handicapItem = handicapData.find(h =>
+                        h.time_home === confrontation.time_home && h.time_away === confrontation.time_away
+                    );
+
+                    const handicapValue = handicapItem ? handicapItem.handicap : 'N/A';
 
                     // Encontrar a classificação do time da casa e do visitante
                     const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
@@ -871,52 +857,18 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                     const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
                     const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
 
-// Somar os valores para o time casa e visitante
-const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
-const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
-
-// Calcular a soma total para gerar percentuais
-const totalSum = homeTotal + awayTotal;
-
-// Calcular as porcentagens
-const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0); // Exemplo: 60
-const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0); // Exemplo: 40
-
-// Exibir os valores como porcentagens no console para debug
-console.log(`Time casa: ${homePercentage}%`);
-console.log(`Time visitante: ${awayPercentage}%`);
-
-                    // Exibir os valores somados para debugar
-                    console.log(`Time de casa: ${confrontation.time_home}`);
-                    console.log(`Classificação casa: ${homeClassification} (Peso: ${homeRankWeight})`);
-                    console.log(`Vitórias casa: ${homeHomeWins} | Percentual de vitórias casa: ${homeWinPercentage} | Peso das vitórias: ${homeWinWeight}`);
-                    console.log(`Soma para Time Casa: ${homeTotal}`);
-                    console.log('---');
-                    console.log(`Time visitante: ${confrontation.time_away}`);
-                    console.log(`Classificação visitante: ${awayClassification} (Peso: ${awayRankWeight})`);
-                    console.log(`Vitórias visitante: ${awayAwayWins} | Percentual de vitórias visitante: ${awayWinPercentage} | Peso das vitórias: ${awayWinWeight}`);
-                    console.log(`Soma para Time Visitante: ${awayTotal}`);
-                    console.log('---');
-
-                    // Adicionar vantagem se a diferença de vitórias gerais for maior que 5
-                    const winsDifference = Math.abs(homeWins - awayWins);
-                    let adjustedHomeWinPercentage = homeWinPercentage;
-                    let adjustedAwayWinPercentage = awayWinPercentage;
-
-                    if (winsDifference > 5) {
-                        const advantage = winsDifference - 5; // Cada ponto acima de 5 dá 1% de vantagem
-                        if (homeWins > awayWins) {
-                            adjustedHomeWinPercentage += advantage; // Adiciona vantagem à casa
-                        } else {
-                            adjustedAwayWinPercentage += advantage; // Adiciona vantagem ao visitante
-                        }
-                    }
+                    // Calcular porcentagens
+                    const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
+                    const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
+                    const totalSum = homeTotal + awayTotal;
+                    const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
+                    const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
 
                     // Condição para cor verde ou vermelha para Casa e Visitante
                     let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
                     let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
 
-                    // Adicionar os dados na linha
+                    // Adicionar os dados na linha (incluindo Handicap)
                     row.innerHTML = `
                         <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
                         <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
@@ -927,11 +879,12 @@ console.log(`Time visitante: ${awayPercentage}%`);
                         <td>${confrontation.total_home_wins}</td>
                         <td>${confrontation.total_away_wins}</td>
                         <td>${homeWins} (${confrontation.total_home_games})</td>
-                        <td>${adjustedHomeWinPercentage.toFixed(2)}%</td>
+                        <td>${homeWinPercentage.toFixed(2)}%</td>
                         <td>${awayWins} (${confrontation.total_away_games})</td>
-                        <td>${adjustedAwayWinPercentage.toFixed(2)}%</td>
+                        <td>${awayWinPercentage.toFixed(2)}%</td>
                         <td>${homePercentage}%</td>
                         <td>${awayPercentage}%</td>
+                        <td>${handicapValue}</td> <!-- Nova coluna com o Handicap -->
                     `;
                     tableBody.appendChild(row);
                 });
@@ -939,6 +892,7 @@ console.log(`Time visitante: ${awayPercentage}%`);
             .catch(error => console.error('Erro ao carregar odds-nba:', error));
     })
     .catch(error => console.error('Erro ao carregar confrontos:', error));
+
 
 
         // Seleciona todas as caixas de seleção
