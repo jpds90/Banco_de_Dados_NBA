@@ -1075,7 +1075,9 @@ ORDER BY
 
 
 app.get('/gamestats', async (req, res) => {
+app.get('/head-to-head-total-difference', async (req, res) => {
     try {
+        // Buscar os confrontos diretos dos times
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
 
@@ -1084,7 +1086,7 @@ app.get('/gamestats', async (req, res) => {
         for (const { time_home, time_away } of oddsRows) {
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
 
-            // Buscar confrontos diretos
+            // Buscar confrontos diretos entre os times
             const confrontationResult = await pool.query(
                 `SELECT home_team, away_team, home_score, away_score
                  FROM ${homeTable}
@@ -1107,6 +1109,7 @@ app.get('/gamestats', async (req, res) => {
                 const diff = row.home_score - row.away_score;
                 totalDiff += diff;
 
+                // Contabilizar vitórias
                 if (row.home_score > row.away_score) {
                     if (row.home_team === time_home) {
                         homeWins++;
@@ -1121,49 +1124,40 @@ app.get('/gamestats', async (req, res) => {
                     }
                 }
 
+                // Somar a diferença de pontos para jogos em casa e fora
                 if (row.home_team === time_home) {
                     homeTotalDiff += diff;
                     homeGameCount++;
                 }
                 if (row.away_team === time_home) {
-                    awayTotalDiff -= diff;
+                    awayTotalDiff -= diff; // Inverte sinal, pois foi fora de casa
                     awayGameCount++;
                 }
             });
 
-            // Calcular o fator de normalização
-            let normalizationFactor = 1;
-            if (homeGameCount !== awayGameCount) {
-                const menorJogos = Math.min(homeGameCount, awayGameCount);
-                const maiorJogos = Math.max(homeGameCount, awayGameCount);
-                normalizationFactor = menorJogos / maiorJogos;
-            }
-
-            // Aplicar a normalização na diferença de pontos
-            let normalizedDiff = totalDiff * normalizationFactor;
-
-            // Ajustar o sinal da diferença
+            // Ajuste do sinal da diferença total de pontos
+            let finalDiff = totalDiff;
             if (homeWins > awayWins) {
-                normalizedDiff = `-${Math.abs(normalizedDiff.toFixed(2))}`;
+                finalDiff = `-${Math.abs(finalDiff)}`;
             } else if (awayWins > homeWins) {
-                normalizedDiff = `+${Math.abs(normalizedDiff.toFixed(2))}`;
+                finalDiff = `+${Math.abs(finalDiff)}`;
             } else {
+                // Empate: decidir pelo maior saldo em casa
                 if (Math.abs(homeTotalDiff) > Math.abs(awayTotalDiff)) {
-                    normalizedDiff = `-${Math.abs(normalizedDiff.toFixed(2))}`;
+                    finalDiff = `-${Math.abs(finalDiff)}`;
                 } else {
-                    normalizedDiff = `+${Math.abs(normalizedDiff.toFixed(2))}`;
+                    finalDiff = `+${Math.abs(finalDiff)}`;
                 }
             }
 
             results.push({
                 time_home,
                 time_away,
-                total_difference: normalizedDiff, // Diferença ajustada
+                total_difference: finalDiff, // Diferença real de pontos
                 home_wins: homeWins,
                 away_wins: awayWins,
-                home_games: homeGameCount,
-                away_games: awayGameCount,
-                normalization_factor: normalizationFactor.toFixed(2) // Apenas para verificação
+                home_total_diff: homeTotalDiff,
+                away_total_diff: awayTotalDiff
             });
         }
 
@@ -1173,6 +1167,7 @@ app.get('/gamestats', async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 });
+
 
 
 
