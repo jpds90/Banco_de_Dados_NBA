@@ -870,6 +870,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
                             const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
 
+                            const homeWinPercentage = ((homeWins / 10) * 100).toFixed(0);
+                            const awayWinPercentage = ((awayWins / 10) * 100).toFixed(0);
                             let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
                             let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
 
@@ -883,9 +885,9 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                 <td>${confrontation.total_home_wins}</td>
                                 <td>${confrontation.total_away_wins}</td>
                                 <td>${homeWins} (10)</td>
-                                <td>${homeWinPercentage.toFixed(2)}%</td>
+                                <td>${homeWinPercentage}%</td>
                                 <td>${awayWins} (10)</td>
-                                <td>${awayWinPercentage.toFixed(2)}%</td>
+                                <td>${awayWinPercentage}%</td>
                                 <td>${homePercentage}%</td>
                                 <td>${awayPercentage}%</td>
                                 <td>${handicapValue}</td>
