@@ -1076,7 +1076,6 @@ ORDER BY
 
 app.get('/gamestats', async (req, res) => {
     try {
-        // Buscar os confrontos diretos dos times
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
 
@@ -1085,7 +1084,6 @@ app.get('/gamestats', async (req, res) => {
         for (const { time_home, time_away } of oddsRows) {
             const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
 
-            // Buscar confrontos diretos entre os times
             const confrontationResult = await pool.query(
                 `SELECT home_team, away_team, home_score, away_score
                  FROM ${homeTable}
@@ -1096,79 +1094,55 @@ app.get('/gamestats', async (req, res) => {
 
             const confrontations = confrontationResult.rows;
 
-            let totalDiff = 0;
             let homeWins = 0;
             let awayWins = 0;
-            let homeTotalDiff = 0;
-            let awayTotalDiff = 0;
-            let homeGameCount = 0;
-            let awayGameCount = 0;
+            let homeTotalPointsWon = 0;
+            let awayTotalPointsWon = 0;
 
-            const games = []; // Armazena os jogos para visualização
+            const games = []; // Lista de jogos analisados
 
             confrontations.forEach(row => {
-                const diff = row.home_score - row.away_score;
-                totalDiff += diff;
+                const homeScore = parseInt(row.home_score, 10) || 0;
+                const awayScore = parseInt(row.away_score, 10) || 0;
+                const diff = homeScore - awayScore;
 
-                // Salvar o jogo na lista de jogos analisados
                 games.push({
                     home_team: row.home_team,
                     away_team: row.away_team,
-                    home_score: row.home_score,
-                    away_score: row.away_score,
+                    home_score: homeScore,
+                    away_score: awayScore,
                     difference: diff
                 });
 
-                // Contabilizar vitórias
-                if (row.home_score > row.away_score) {
+                if (homeScore > awayScore) {
                     if (row.home_team === time_home) {
                         homeWins++;
+                        homeTotalPointsWon += diff;
                     } else {
                         awayWins++;
+                        awayTotalPointsWon += Math.abs(diff);
                     }
-                } else if (row.away_score > row.home_score) {
+                } else if (awayScore > homeScore) {
                     if (row.away_team === time_home) {
                         homeWins++;
+                        homeTotalPointsWon += Math.abs(diff);
                     } else {
                         awayWins++;
+                        awayTotalPointsWon += diff;
                     }
-                }
-
-                // Somar a diferença de pontos para jogos em casa e fora
-                if (row.home_team === time_home) {
-                    homeTotalDiff += diff;
-                    homeGameCount++;
-                }
-                if (row.away_team === time_home) {
-                    awayTotalDiff += Math.abs(diff); // Sempre positivo
-                    awayGameCount++;
                 }
             });
 
-            // Ajuste do sinal da diferença total de pontos
-            let finalDiff = totalDiff;
-            if (homeWins > awayWins) {
-                finalDiff = `-${Math.abs(finalDiff)}`;
-            } else if (awayWins > homeWins) {
-                finalDiff = `+${Math.abs(finalDiff)}`;
-            } else {
-                // Empate: decidir pelo maior saldo em casa
-                if (Math.abs(homeTotalDiff) > Math.abs(awayTotalDiff)) {
-                    finalDiff = `-${Math.abs(finalDiff)}`;
-                } else {
-                    finalDiff = `+${Math.abs(finalDiff)}`;
-                }
-            }
+            // Calcular a diferença final correta
+            const finalDifference = homeTotalPointsWon - awayTotalPointsWon;
 
             results.push({
                 time_home,
                 time_away,
-                total_difference: finalDiff, // Diferença real de pontos
+                total_difference: finalDifference, // Agora está correto!
                 home_wins: homeWins,
                 away_wins: awayWins,
-                home_total_diff: Math.abs(homeTotalDiff), // Sempre positivo
-                away_total_diff: Math.abs(awayTotalDiff), // Sempre positivo
-                games // Lista de jogos analisados
+                games
             });
         }
 
@@ -1178,7 +1152,6 @@ app.get('/gamestats', async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 });
-
 
 
 
