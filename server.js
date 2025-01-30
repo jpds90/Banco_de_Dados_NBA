@@ -1135,9 +1135,15 @@ app.get('/gamestats', async (req, res) => {
             });
 
             const totalGames = confrontations.length;
-
-            // Calcular a média da diferença de pontos
             let avgDiff = totalGames > 0 ? (totalDiff / totalGames).toFixed(2) : 0;
+
+            // Normalização da média
+            let normalizationFactor = 1;
+            if (homeGameCount !== awayGameCount && homeGameCount > 0 && awayGameCount > 0) {
+                normalizationFactor = Math.min(homeGameCount, awayGameCount) / Math.max(homeGameCount, awayGameCount);
+            }
+
+            avgDiff = (avgDiff * normalizationFactor).toFixed(2);
 
             // Ajustar o sinal da diferença com base no número de vitórias
             if (homeWins > awayWins) {
@@ -1149,13 +1155,11 @@ app.get('/gamestats', async (req, res) => {
                 const homeAvgDiff = homeGameCount > 0 ? (homeTotalDiff / homeGameCount).toFixed(2) : 0;
                 const awayAvgDiff = awayGameCount > 0 ? (awayTotalDiff / awayGameCount).toFixed(2) : 0;
 
-                // Compara quem teve a maior vantagem de pontos em casa
                 if (parseFloat(homeAvgDiff) > parseFloat(awayAvgDiff)) {
-                    avgDiff = `-${avgDiff}`; // Favorável ao time da casa
+                    avgDiff = `-${avgDiff}`;
                 } else if (parseFloat(awayAvgDiff) > parseFloat(homeAvgDiff)) {
-                    avgDiff = `+${avgDiff}`; // Favorável ao time visitante
+                    avgDiff = `+${avgDiff}`;
                 } else {
-                    // Caso as médias em casa sejam iguais, mantemos a diferença como estava
                     avgDiff = `+${avgDiff}`;
                 }
             }
@@ -1163,11 +1167,12 @@ app.get('/gamestats', async (req, res) => {
             results.push({
                 time_home,
                 time_away,
-                avg_difference: avgDiff, // Diferença ajustada com o sinal correto
+                avg_difference: avgDiff, // Diferença ajustada com sinal correto e normalização
                 home_wins: homeWins,
                 away_wins: awayWins,
                 home_average_diff: homeGameCount > 0 ? (homeTotalDiff / homeGameCount).toFixed(2) : 0,
-                away_average_diff: awayGameCount > 0 ? (awayTotalDiff / awayGameCount).toFixed(2) : 0
+                away_average_diff: awayGameCount > 0 ? (awayTotalDiff / awayGameCount).toFixed(2) : 0,
+                normalization_factor: normalizationFactor.toFixed(2) // Para verificação
             });
         }
 
