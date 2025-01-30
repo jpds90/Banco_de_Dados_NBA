@@ -1129,7 +1129,7 @@ app.get('/gamestats', async (req, res) => {
                     homeGameCount++;
                 }
                 if (row.away_team === time_home) {
-                    awayTotalDiff -= diff; // Inverte sinal, pois foi fora de casa
+                    awayTotalDiff += Math.abs(diff); // Sempre positivo
                     awayGameCount++;
                 }
             });
@@ -1155,8 +1155,8 @@ app.get('/gamestats', async (req, res) => {
                 total_difference: finalDiff, // Diferença real de pontos
                 home_wins: homeWins,
                 away_wins: awayWins,
-                home_total_diff: homeTotalDiff,
-                away_total_diff: awayTotalDiff
+                home_total_diff: Math.abs(homeTotalDiff), // Sempre positivo
+                away_total_diff: Math.abs(awayTotalDiff)  // Sempre positivo
             });
         }
 
