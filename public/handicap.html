@@ -26,90 +26,95 @@
     }
   </style>
   <script>
-    async function calcularHandicap() {
-      try {
-        // Receber as datas de início e fim
-        const startDate = '01.01'; // Exemplo de data de início
-        const endDate = '31.12';   // Exemplo de data de fim
+async function calcularHandicap() {
+  try {
+    // Receber as datas de início e fim
+    const startDate = '01.01'; // Exemplo de data de início
+    const endDate = '31.12';   // Exemplo de data de fim
 
-        // Buscar as médias de pontos dos times
-        const resposta1 = await fetch(`/team-averages?start_date=${startDate}&end_date=${endDate}`);
-        const averages = await resposta1.json();
+    // Buscar as médias de pontos dos times
+    const resposta1 = await fetch(`/team-averages?start_date=${startDate}&end_date=${endDate}`);
+    const averages = await resposta1.json();
 
-        // Verifique se existem dados
-        if (!averages || averages.length === 0) {
-          document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Nenhum dado encontrado.</td></tr>";
-          return;
-        }
-
-        // Buscar as informações dos últimos jogos
-        const resposta2 = await fetch('/ultimosjogos4');
-        const jogos = await resposta2.json();
-
-        // Buscar os dados dos confrontos diretos
-        const resposta3 = await fetch(`/gamestats`);
-        const gamestats = await resposta3.json();
-
-        const rows = averages.map((avg) => {
-          // Achar o confronto direto entre os times
-          const confrontoDireto = gamestats.find(confronto => confronto.time_home === avg.time_home && confronto.time_away === avg.time_away);
-          const avgDiffConfrontoDireto = confrontoDireto ? confrontoDireto.avg_difference : 0;
-
-          // Achar os jogos para o time que estamos calculando (vamos assumir o primeiro par de times)
-          const jogo = jogos.find(jogo => jogo.time_home === avg.time_home && jogo.time_away === avg.time_away);
-          
-          if (!jogo) {
-            return null;
-          }
-
-          const homeWinAvg = parseFloat(jogo.home_last_games.win_avg) || 0;
-          const homeLossAvg = parseFloat(jogo.home_last_games.loss_avg) || 0;
-          const awayWinAvg = parseFloat(jogo.away_last_games.win_avg) || 0;
-          const awayLossAvg = parseFloat(jogo.away_last_games.loss_avg) || 0;
-
-          // Cálculo do Handicap Estimado
-          const diferencaTimeAEmCasa = homeWinAvg - homeLossAvg;
-          const diferencaTimeBEmFora = awayWinAvg - awayLossAvg;
-
-          // Cálculo do Handicap Estimado
-          const handicap = (average.home_avg - average.away_avg) +
-                           (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
-                           parseFloat(avgDiffConfrontoDireto);
-
-          return {
-            time_home: avg.time_home,
-            time_away: avg.time_away,
-            mediaTimeAEmCasa: average.home_avg,
-            mediaTimeBEmFora: average.away_avg,
-            diferencaTimeAEmCasa: diferencaTimeAEmCasa.toFixed(2),
-            diferencaTimeBEmFora: diferencaTimeBEmFora.toFixed(2),
-            vantagemConfrontoDireto: avgDiffConfrontoDireto,
-            handicap: handicap.toFixed(2)
-          };
-        }).filter(row => row !== null); // Remove qualquer valor nulo
-
-        // Atualizar a tabela com os dados
-        const dadosElement = document.getElementById('dados');
-        dadosElement.innerHTML = rows.map(row => {
-          return `
-            <tr>
-              <td>${row.time_home}</td>
-              <td>${row.time_away}</td>
-              <td>${row.mediaTimeAEmCasa}</td>
-              <td>${row.mediaTimeBEmFora}</td>
-              <td>${row.diferencaTimeAEmCasa}</td>
-              <td>${row.diferencaTimeBEmFora}</td>
-              <td>${row.vantagemConfrontoDireto}</td>
-              <td>${row.handicap}</td>
-            </tr>
-          `;
-        }).join('');
-
-      } catch (error) {
-        console.error("Erro ao calcular o handicap:", error);
-        document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Erro ao calcular o Handicap.</td></tr>";
-      }
+    // Verifique se existem dados
+    if (!averages || averages.length === 0) {
+      document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Nenhum dado encontrado.</td></tr>";
+      return;
     }
+
+    // Buscar as informações dos últimos jogos
+    const resposta2 = await fetch('/ultimosjogos4');
+    const jogos = await resposta2.json();
+
+    // Buscar os dados dos confrontos diretos
+    const resposta3 = await fetch(`/gamestats`);
+    const gamestats = await resposta3.json();
+
+    const rows = averages.map((avg) => {
+      // Achar o confronto direto entre os times
+      const confrontoDireto = gamestats.find(confronto => confronto.time_home === avg.time_home && confronto.time_away === avg.time_away);
+      const avgDiffConfrontoDireto = confrontoDireto ? confrontoDireto.avg_difference : 0;
+
+      // Achar os jogos para o time que estamos calculando (vamos assumir o primeiro par de times)
+      const jogo = jogos.find(jogo => jogo.time_home === avg.time_home && jogo.time_away === avg.time_away);
+
+      if (!jogo) {
+        return null;
+      }
+
+      // Agora buscamos as médias de pontos diretamente da variável averages
+      const mediaTimeAEmCasa = parseFloat(avg.home_avg) || 0; // Média do time da casa
+      const mediaTimeBEmFora = parseFloat(avg.away_avg) || 0; // Média do time visitante fora de casa
+
+      const homeWinAvg = parseFloat(jogo.home_last_games.win_avg) || 0;
+      const homeLossAvg = parseFloat(jogo.home_last_games.loss_avg) || 0;
+      const awayWinAvg = parseFloat(jogo.away_last_games.win_avg) || 0;
+      const awayLossAvg = parseFloat(jogo.away_last_games.loss_avg) || 0;
+
+      // Cálculo do Handicap Estimado
+      const diferencaTimeAEmCasa = homeWinAvg - homeLossAvg;
+      const diferencaTimeBEmFora = awayWinAvg - awayLossAvg;
+
+      // Cálculo do Handicap Estimado
+      const handicap = (mediaTimeAEmCasa - mediaTimeBEmFora) +
+                       (diferencaTimeAEmCasa - diferencaTimeBEmFora) +
+                       parseFloat(avgDiffConfrontoDireto);
+
+      return {
+        time_home: avg.time_home,
+        time_away: avg.time_away,
+        mediaTimeAEmCasa: mediaTimeAEmCasa.toFixed(2),
+        mediaTimeBEmFora: mediaTimeBEmFora.toFixed(2),
+        diferencaTimeAEmCasa: diferencaTimeAEmCasa.toFixed(2),
+        diferencaTimeBEmFora: diferencaTimeBEmFora.toFixed(2),
+        vantagemConfrontoDireto: avgDiffConfrontoDireto.toFixed(2),
+        handicap: handicap.toFixed(2)
+      };
+    }).filter(row => row !== null); // Remove qualquer valor nulo
+
+    // Atualizar a tabela com os dados
+    const dadosElement = document.getElementById('dados');
+    dadosElement.innerHTML = rows.map(row => {
+      return `
+        <tr>
+          <td>${row.time_home}</td>
+          <td>${row.time_away}</td>
+          <td>${row.mediaTimeAEmCasa}</td>
+          <td>${row.mediaTimeBEmFora}</td>
+          <td>${row.diferencaTimeAEmCasa}</td>
+          <td>${row.diferencaTimeBEmFora}</td>
+          <td>${row.vantagemConfrontoDireto}</td>
+          <td>${row.handicap}</td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (error) {
+    console.error("Erro ao calcular o handicap:", error);
+    document.getElementById('dados').innerHTML = "<tr><td colspan='8'>Erro ao calcular o Handicap.</td></tr>";
+  }
+}
+
 
     // Chama a função de calcular o Handicap ao carregar a página
     window.onload = calcularHandicap;
