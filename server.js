@@ -1094,7 +1094,8 @@ app.get('/gamestats', async (req, res) => {
 
             const confrontations = confrontationResult.rows;
 
-            let totalDifference = 0;
+            let totalDifferenceHome = 0;
+            let totalDifferenceAway = 0;
             let totalGames = confrontations.length;
             let homeWins = 0;
             let awayWins = 0;
@@ -1104,24 +1105,26 @@ app.get('/gamestats', async (req, res) => {
             confrontations.forEach(row => {
                 const homeScore = parseInt(row.home_score, 10) || 0;
                 const awayScore = parseInt(row.away_score, 10) || 0;
-                const difference = Math.abs(homeScore - awayScore); // Diferença absoluta
+                const difference = Math.abs(homeScore - awayScore);
 
-                // Identificar quem venceu
+                // Identificar quem venceu e acumular diferenças para cada time
                 if (homeScore > awayScore) {
                     if (row.home_team === time_home) {
                         homeWins++;
+                        totalDifferenceHome += difference; // Vitória do time_home
                     } else {
                         awayWins++;
+                        totalDifferenceAway += difference; // Vitória do time_away
                     }
                 } else if (awayScore > homeScore) {
                     if (row.away_team === time_home) {
                         homeWins++;
+                        totalDifferenceHome += difference; // Vitória do time_home
                     } else {
                         awayWins++;
+                        totalDifferenceAway += difference; // Vitória do time_away
                     }
                 }
-
-                totalDifference += difference;
 
                 games.push({
                     home_team: row.home_team,
@@ -1132,13 +1135,15 @@ app.get('/gamestats', async (req, res) => {
                 });
             });
 
-            // Média da diferença de pontos
-            const avgDifference = totalGames > 0 ? (totalDifference / totalGames).toFixed(2) : 0;
+            // Calcular a média da diferença de pontos para cada time
+            const avgDifferenceHome = totalGames > 0 ? (totalDifferenceHome / totalGames).toFixed(2) : "0.00";
+            const avgDifferenceAway = totalGames > 0 ? (totalDifferenceAway / totalGames).toFixed(2) : "0.00";
 
             results.push({
                 time_home,
                 time_away,
-                avg_difference: avgDifference, // Média da diferença de pontos
+                avg_difference_home: avgDifferenceHome, // Média do time_home
+                avg_difference_away: avgDifferenceAway, // Média do time_away
                 home_wins: homeWins,
                 away_wins: awayWins,
                 games
