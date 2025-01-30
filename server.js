@@ -1387,14 +1387,14 @@ const homeIdsResult = await pool.query(`
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
     END,
-    -- Ordena pela data/hora dentro de cada grupo de formatos
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
+        ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
             LIMIT 10
@@ -1414,14 +1414,14 @@ const awayIdsResult = await pool.query(`
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
     END,
-    -- Ordena pela data/hora dentro de cada grupo de formatos
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
+        ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
             LIMIT 10
