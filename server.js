@@ -1104,9 +1104,20 @@ app.get('/gamestats', async (req, res) => {
             let homeGameCount = 0;
             let awayGameCount = 0;
 
+            const games = []; // Armazena os jogos para visualização
+
             confrontations.forEach(row => {
                 const diff = row.home_score - row.away_score;
                 totalDiff += diff;
+
+                // Salvar o jogo na lista de jogos analisados
+                games.push({
+                    home_team: row.home_team,
+                    away_team: row.away_team,
+                    home_score: row.home_score,
+                    away_score: row.away_score,
+                    difference: diff
+                });
 
                 // Contabilizar vitórias
                 if (row.home_score > row.away_score) {
@@ -1156,7 +1167,8 @@ app.get('/gamestats', async (req, res) => {
                 home_wins: homeWins,
                 away_wins: awayWins,
                 home_total_diff: Math.abs(homeTotalDiff), // Sempre positivo
-                away_total_diff: Math.abs(awayTotalDiff)  // Sempre positivo
+                away_total_diff: Math.abs(awayTotalDiff), // Sempre positivo
+                games // Lista de jogos analisados
             });
         }
 
