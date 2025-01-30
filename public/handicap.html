@@ -72,8 +72,8 @@ async function calcularHandicap() {
       const awayLossAvg = parseFloat(jogo.away_last_games.loss_avg) || 0;
 
       // Cálculo do Handicap Estimado
-      const diferencaTimeAEmCasa = homeWinAvg - homeLossAvg;
-      const diferencaTimeBEmFora = awayWinAvg - awayLossAvg;
+      const diferencaTimeAEmCasa = homeWinAvg;
+      const diferencaTimeBEmFora = awayLossAvg;
 
       // Cálculo do Handicap Estimado
       const handicap = (mediaTimeAEmCasa - mediaTimeBEmFora) +
