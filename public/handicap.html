@@ -95,6 +95,11 @@ async function calcularHandicap() {
         handicap: handicap.toFixed(2)
       };
     }).filter(row => row !== null);
+    // Salvar os dados no localStorage
+    localStorage.setItem("handicapData", JSON.stringify(rows));
+
+    // Redirecionar para outra página
+    window.location.href = "odds.html"; // Altere para o nome correto da sua página
 
     // Atualizar a tabela com os dados
     const dadosElement = document.getElementById('dados');
