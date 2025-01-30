@@ -305,6 +305,7 @@
                         <th>% Vitórias Fora (2)</th>
                         <th>% (1)</th>
                         <th>% (2)</th>
+                        <th>Handicap</th>
                     </tr>
                 </thead>
                 <tbody id="confrontationTable"></tbody>
@@ -499,6 +500,28 @@
     fetchResults();
     fetchResults1();
 
+document.addEventListener("DOMContentLoaded", function () {
+    const tabela = document.getElementById('confrontationTable');
+    const handicapData = JSON.parse(localStorage.getItem("handicap"));
+
+    if (!handicapData || handicapData.length === 0) {
+        tabela.innerHTML = "<tr><td colspan='15'>Nenhum dado encontrado.</td></tr>";
+        return;
+    }
+
+    tabela.innerHTML = handicapData.map(row => `
+        <tr>
+            <td>${row.time_home}</td>
+            <td>${row.time_away}</td>
+            <td>${row.mediaTimeAEmCasa}</td>
+            <td>${row.mediaTimeBEmFora}</td>
+            <td>${row.diferencaTimeAEmCasa}</td>
+            <td>${row.diferencaTimeBEmFora}</td>
+            <td>${row.vantagemConfrontoDireto}</td>
+            <td>${row.handicap}</td> <!-- INSERINDO O HANDICAP -->
+        </tr>
+    `).join('');
+});
 
 
 
