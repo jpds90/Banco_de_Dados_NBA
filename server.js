@@ -1381,7 +1381,7 @@ app.get('/confrontations1', async (req, res) => {
 
 // Buscar IDs dos últimos 10 jogos do time da casa
 const homeIdsResult = await pool.query(`
-    SELECT id, datahora
+    SELECT datahora
     FROM ${homeTable}
     WHERE home_team = $1
 ORDER BY 
@@ -1408,7 +1408,7 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_home}:`, homeIds
 
 // Buscar IDs dos últimos 10 jogos do time visitante
 const awayIdsResult = await pool.query(`
-    SELECT id, datahora
+    SELECT datahora
     FROM ${awayTable}
     WHERE away_team = $1
 ORDER BY 
