@@ -1429,7 +1429,7 @@ const homeIdsResult = await pool.query(`
     SELECT id, datahora
     FROM ${homeTable}
     WHERE home_team = $1
-ORDER BY 
+    ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
@@ -1442,7 +1442,7 @@ ORDER BY
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
-            LIMIT 10
+    LIMIT 10
 `, [time_home]);
 
 const homeIds = homeIdsResult.rows.map(row => row.id);
@@ -1456,7 +1456,7 @@ const awayIdsResult = await pool.query(`
     SELECT id, datahora
     FROM ${awayTable}
     WHERE away_team = $1
-ORDER BY 
+    ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
@@ -1469,7 +1469,7 @@ ORDER BY
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
-            LIMIT 10
+    LIMIT 10
 `, [time_away]);
 
 const awayIds = awayIdsResult.rows.map(row => row.id);
@@ -1497,17 +1497,17 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
                     FROM ${homeTable}
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
-ORDER BY 
+                    ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
     END,
-    -- Ordena pela data/hora dentro de cada grupo de formatos
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
+        ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
                 `, [time_home, time_away]);
@@ -1631,6 +1631,7 @@ console.log(`Total de vitórias nos últimos 10 jogos fora: ${awayTotalAwayWins}
         res.status(500).json({ error: 'Erro ao processar os dados' });
     }
 });
+
 
 
 
