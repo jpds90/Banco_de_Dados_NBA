@@ -869,8 +869,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
                             const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
 
-                            const homeTotal = homeRankWeight + homeWinPercentage1 + homeWinWeight;
-                            const awayTotal = awayRankWeight + awayWinPercentage2 + awayWinWeight;
+                            const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
+                            const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
                             const totalSum = homeTotal + awayTotal;
                             const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
                             const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
