@@ -84,15 +84,19 @@ async function calcularHandicap() {
   
         
         // Buscar os últimos 10 jogos do time correspondente
-        const response4 = await fetch(`/ultimos-10-jogos?time=${timeParaConsulta}&location=${campoLocal}`);
-        const ultimosJogos = await response4.json();
+const response4 = await fetch(`/ultimos-10-jogos?time=${timeParaConsulta}&location=${campoLocal}`);
+const ultimosJogos = await response4.json();
 
-        // Contar quantas vezes perdeu por uma margem maior que o handicap estimado
-        const derrotasPorMaisQueHandicap = ultimosJogos.filter(jogo => {
-          const diferencaPontos = Math.abs(jogo.home_score - jogo.away_score); // Calculando a diferença de pontos
+// Contar derrotas por mais que o Handicap
+const derrotasPorMaisQueHandicap = ultimosJogos.filter(jogo => {
+    // Calcula a diferença de pontos conforme o campoLocal
+    const diferencaPontos = campoLocal === 'home' 
+        ? jogo.home_score - jogo.away_score // Se for 'home', calcula home - away
+        : jogo.away_score - jogo.home_score; // Se for 'away', calcula away - home
 
-          return jogo.winner !== campoLocal && diferencaPontos > handicapAbsoluto; // Verifica se o time perdeu e se a diferença de pontos foi maior que o handicap
-        }).length;
+    // Verifica se a diferença é negativa (time perdeu) e se o valor absoluto é maior que o handicap
+    return diferencaPontos < 0 && Math.abs(diferencaPontos) > handicapAbsoluto;
+}).length;
 
   
         return {
