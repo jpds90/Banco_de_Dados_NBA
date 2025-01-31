@@ -1050,6 +1050,70 @@ ORDER BY
     }
 });
 
+app.get('/ultimos-10-jogos', async (req, res) => {
+    try {
+        const { time, location } = req.query; // Recebe o nome do time e a localização (home/away)
+
+        if (!time || !location) {
+            return res.status(400).send('Time e localização (home/away) são obrigatórios.');
+        }
+
+        // Formatar o nome do time para o padrão do banco de dados
+        const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
+        console.log(`Time recebido: ${time}`);
+        console.log(`Nome da tabela formatada: ${timeFormatado}`);
+
+        // Verificar se a tabela do time existe no banco de dados
+        const tablesResult = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = $1
+        `, [timeFormatado]);
+
+        if (!tablesResult.rows.length) {
+            console.log('Tabela não encontrada para o time informado.');
+            return res.status(404).send('Tabela do time não encontrada');
+        }
+
+        // Definir a coluna correta com base na localização (home/away)
+        let colunaFiltro;
+        if (location === 'home') {
+            colunaFiltro = 'home_team';
+        } else if (location === 'away') {
+            colunaFiltro = 'away_team';
+        } else {
+            return res.status(400).send('Parâmetro location deve ser "home" ou "away".');
+        }
+
+        // Buscar os últimos 10 jogos do time na posição correta (casa ou fora)
+        const querySQL = `
+            SELECT home_team, away_team, home_score, away_score, datahora, id 
+            FROM ${timeFormatado} 
+            WHERE ${colunaFiltro} = $1
+            ORDER BY 
+                -- Converte corretamente os formatos de data antes de ordenar
+                CASE
+                    WHEN datahora ~ '^[0-9]{2}\\.[0-9]{2}\\.[0-9]{4} [0-9]{2}:[0-9]{2}$' THEN 
+                        TO_TIMESTAMP(datahora, 'DD.MM.YYYY HH24:MI')
+                    WHEN datahora ~ '^[0-9]{2}\\.[0-9]{2} [0-9]{2}:[0-9]{2}$' THEN 
+                        TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                    ELSE NULL
+                END DESC
+            LIMIT 10
+        `;
+
+        console.log(`Query SQL que será executada: ${querySQL}`);
+
+        const { rows } = await pool.query(querySQL, [time]);
+
+        res.json(rows); // Retorna os jogos encontrados
+
+    } catch (error) {
+        console.error("Erro ao buscar os últimos 10 jogos:", error);
+        res.status(500).json({ error: "Erro ao buscar os últimos 10 jogos." });
+    }
+});
+
 
 app.get('/gamestats', async (req, res) => {
     try {
