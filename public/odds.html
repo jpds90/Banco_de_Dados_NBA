@@ -306,6 +306,7 @@
                         <th>% (1)</th>
                         <th>% (2)</th>
                         <th>Handicap</th>
+                        <th>Cobrir Handicap</th>
                     </tr>
                 </thead>
                 <tbody id="confrontationTable"></tbody>
@@ -841,7 +842,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                 h.time_home === confrontation.time_home && h.time_away === confrontation.time_away
                             );
                             const handicapValue = handicapItem ? handicapItem.handicap : 'N/A';
-
+                            const jogosPerdidosHandicap = handicapItem ? handicapItem.jogos_perdidos_handicap : 'N/A';
+                            
                             const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
                             const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
 
@@ -892,6 +894,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                 <td>${homePercentage}%</td>
                                 <td>${awayPercentage}%</td>
                                 <td>${handicapValue}</td>
+                                <td>${jogosPerdidosHandicap}</td> <!-- Jogos Perdidos por Handicap -->
+
                             `;
                             tableBody.appendChild(row);
                         });
