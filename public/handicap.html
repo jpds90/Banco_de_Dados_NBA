@@ -89,11 +89,13 @@ const ultimosJogos = await response4.json();
 
 // Contar derrotas por mais que o Handicap
 const derrotasPorMaisQueHandicap = ultimosJogos.filter(jogo => {
+    // Calcula a diferença de pontos conforme o campoLocal
     const diferencaPontos = campoLocal === 'home' 
-        ? Math.abs(jogo.home_score - jogo.away_score) 
-        : Math.abs(jogo.away_score - jogo.home_score);
-    
-    return jogo.winner !== campoLocal && diferencaPontos > handicapAbsoluto;
+        ? jogo.home_score - jogo.away_score // Se for 'home', calcula home - away
+        : jogo.away_score - jogo.home_score; // Se for 'away', calcula away - home
+
+    // Verifica se a diferença é negativa (time perdeu) e se o valor absoluto é maior que o handicap
+    return diferencaPontos < 0 && Math.abs(diferencaPontos) > handicapAbsoluto;
 }).length;
 
             return {
