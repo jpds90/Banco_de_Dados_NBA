@@ -864,8 +864,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
                             const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
 
-                            const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.03) + homeRankWeight;
-                            const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.02) + awayRankWeight;
+                            const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage1 * 0.03) + homeRankWeight;
+                            const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage2 * 0.02) + awayRankWeight;
 
                             const homeTotal = homeRankWeight + homeWinPercentage + homeWinWeight;
                             const awayTotal = awayRankWeight + awayWinPercentage + awayWinWeight;
