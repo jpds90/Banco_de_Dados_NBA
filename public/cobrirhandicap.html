@@ -83,7 +83,7 @@ async function calcularHandicap() {
         const handicapAbsoluto = Math.abs(handicap);
   
         // Buscar os últimos 10 jogos do time correspondente
-        const response4 = await fetch(`/ultimos-10-jogos?team=${timeParaConsulta}&location=${campoLocal}`);
+        const response4 = await fetch(`/ultimos-10-jogos?time=${timeParaConsulta}&location=${campoLocal}`);
         const ultimosJogos = await response4.json();
   
         // Contar quantas vezes perdeu por uma margem maior que o handicap estimado
