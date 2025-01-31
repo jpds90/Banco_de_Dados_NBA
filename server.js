@@ -1059,7 +1059,7 @@ app.get('/ultimos-10-jogos', async (req, res) => {
         }
 
         // Formatar o nome do time para o padrão do banco de dados
-        const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
+        const timeFormatado = decodeURIComponent(time).toLowerCase().replace(/\s/g, '_');
         console.log(`Time recebido: ${time}`);
         console.log(`Nome da tabela formatada: ${timeFormatado}`);
 
