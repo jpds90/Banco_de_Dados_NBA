@@ -1588,9 +1588,9 @@ ORDER BY
     LIMIT 10
 `, [homeIds]);
 
-const homeIdsResult = homeWinsResult.rows.map(row => row.id);
+const homeIdsResult1 = homeWinsResult.rows.map(row => row.id);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time Casa:`, homeIdsResult);
+console.log(`Últimos 10 IDs (mais recentes) para o time Casa:`, homeIdsResult1);
 
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
     parseInt(row.home_score, 10) > parseInt(row.away_score, 10) // Condição para vitória do time da casa
@@ -1620,9 +1620,9 @@ ORDER BY
     LIMIT 10
 `, [awayIds]);
 
-const awayIdsResult = awayWinsResult.rows.map(row => row.id);
+const awayIdsResult2 = awayWinsResult.rows.map(row => row.id);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time Visitante:`, awayIdsResult);
+console.log(`Últimos 10 IDs (mais recentes) para o time Visitante:`, awayIdsResult2);
 
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
     parseInt(row.away_score, 10) > parseInt(row.home_score, 10) // Condição para vitória do time visitante
