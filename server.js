@@ -1356,19 +1356,20 @@ app.get('/totalvitorias', async (req, res) => {
             SELECT home_team, away_team, home_score, away_score, datahora, id 
             FROM ${timeFormatado} 
             WHERE home_team = $1 OR away_team = $1
-            ORDER BY 
-                -- Prioriza registros no formato DD.MM. HH:MI
-                CASE
-                    WHEN datahora LIKE '__.__. __:__' THEN 1
-                    ELSE 2
-                END,
-                -- Ordena pela data/hora dentro de cada grupo de formatos
-                CASE
-                    WHEN datahora LIKE '__.__. __:__' THEN 
-                        TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                    WHEN datahora LIKE '__.__.____ __:__' THEN 
-                        TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                END DESC
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+            LIMIT 10
         `;
         console.log(`Query SQL que será executada: ${querySQL}`);
 
