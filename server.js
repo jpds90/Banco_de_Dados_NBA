@@ -1588,10 +1588,10 @@ SELECT id, home_score, away_score, datahora
     LIMIT 10
 `, [homeIds]);
 
-console.log("Resultados dos últimos 10 jogos do time da casa:", homeWinsResult.rows);
+console.log("Resultados dos últimos 10 jogos do time da casa:", ${homeIds});
 
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
-    Number(row.home_score) > Number(row.away_score)
+    parseInt(row.home_score) > parseInt(row.away_score)
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWins}`);
@@ -1616,10 +1616,10 @@ SELECT id, home_score, away_score, datahora
     LIMIT 10
 `, [awayIds]);
 
-console.log("Resultados dos últimos 10 jogos do time visitante:", awayWinsResult.rows);
+console.log("Resultados dos últimos 10 jogos do time visitante:", ${awayIds});
 
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
-    Number(row.away_score) > Number(row.home_score)
+    parseInt(row.away_score) > parseInt(row.home_score)
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos fora: ${awayTotalAwayWins}`);
