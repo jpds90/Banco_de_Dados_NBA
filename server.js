@@ -1504,7 +1504,18 @@ app.get('confrontations1', async (req, res) => {
                     FROM ${homeTable}
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
-                    ORDER BY TO_TIMESTAMP(datahora, 'DD.MM.YYYY') DESC
+                                        ORDER BY 
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
+                    LIMIT 10
                 `, [time_home, time_away]);
 
                 let homeHomeWins = 0;
@@ -1546,8 +1557,18 @@ app.get('confrontations1', async (req, res) => {
                         SELECT home_team, away_team, home_score, away_score 
                         FROM ${teamTable} 
                         WHERE home_team = $1 OR away_team = $1
-                        ORDER BY TO_TIMESTAMP(datahora, 'DD.MM.YYYY') DESC
-                        LIMIT 10
+                    ORDER BY 
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
+                    LIMIT 10
                     `, [time]);
 
                     let totalVitorias = 0;
