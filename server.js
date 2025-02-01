@@ -1626,41 +1626,35 @@ const awayResults = await pool.query(`
 const awayWins = countWins(awayResults.rows, 'away');
 const totalAwayWins = awayWins.homeWins + awayWins.awayWins;
 
-// Resultados finais
-console.log(`Time Home - Total de vitórias: ${totalHomeWins}`);
-console.log(`Time Away - Total de vitórias: ${totalAwayWins}`);
+// Cálculo do homeWinPercentage e awayWinPercentage
+const homeWinPercentage = homeIds.length > 0
+    ? ((totalHomeWins / homeIds.length) * 100).toFixed(2) // Usando totalHomeWins
+    : 0;
 
+const awayWinPercentage = awayIds.length > 0
+    ? ((totalAwayWins / awayIds.length) * 100).toFixed(2) // Usando totalAwayWins
+    : 0;
 
-
-
-
-                const homeWinPercentage = homeIds.length > 0
-                    ? ((homeTotalHomeWins / homeIds.length) * 100).toFixed(2)
-                    : 0;
-
-                const awayWinPercentage = awayIds.length > 0
-                    ? ((awayTotalAwayWins / awayIds.length) * 100).toFixed(2)
-                    : 0;
-
-                confrontationData.push({
-                    time_home: time_home,
-                    time_away: time_away,
-                    home_home_wins: homeHomeWins,
-                    home_away_wins: homeAwayWins,
-                    away_home_wins: awayHomeWins,
-                    away_away_wins: awayAwayWins,    
-                    total_home_wins: homeHomeWins + homeAwayWins,
-                    total_away_wins: awayHomeWins + awayAwayWins,
-                    total_home_general_wins: totalHomeWins,
-                    total_away_general_wins: totalAwayWins,
-                    home_win_percentage: homeWinPercentage,
-                    away_win_percentage: awayWinPercentage,
-                    total_home_games: homeIds.length,
-                    total_away_games: awayIds.length,
-                    total_home_Average_Points: homeAveragePoints,
-                    total_away_Average_Points: awayAveragePoints,
-                    total_media_Average_Points: totalAveragePoints.toFixed(2),
-                });
+// Adicionando os dados ao confrontationData
+confrontationData.push({
+    time_home: time_home,
+    time_away: time_away,
+    home_home_wins: homeHomeWins,
+    home_away_wins: homeAwayWins,
+    away_home_wins: awayHomeWins,
+    away_away_wins: awayAwayWins,    
+    total_home_wins: homeHomeWins + homeAwayWins,
+    total_away_wins: awayHomeWins + awayAwayWins,
+    total_home_general_wins: totalHomeWins, // Total de vitórias do time_home
+    total_away_general_wins: totalAwayWins, // Total de vitórias do time_away
+    home_win_percentage: homeWinPercentage,
+    away_win_percentage: awayWinPercentage,
+    total_home_games: homeIds.length,
+    total_away_games: awayIds.length,
+    total_home_Average_Points: homeAveragePoints,
+    total_away_Average_Points: awayAveragePoints,
+    total_media_Average_Points: totalAveragePoints.toFixed(2),
+});
             } catch (innerError) {
                 console.error(`Erro ao processar os times ${time_home} e ${time_away}:`, innerError);
             }
