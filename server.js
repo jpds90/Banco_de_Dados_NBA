@@ -1506,17 +1506,15 @@ app.get('/confrontations1', async (req, res) => {
                     FROM ${homeTable}
                     WHERE home_team = $1
 ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
+        WHEN datahora LIKE '__.__. __:__%' THEN 1  -- Considera casos com "Após Prol." ou sem
+        ELSE 2  
     END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__. __:__%' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g')), 'YYYY.DD.MM HH24:MI')
         ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+            TO_TIMESTAMP(REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g'), 'DD.MM.YYYY')
     END DESC
             LIMIT 10
                 `, [time_home]);
@@ -1533,17 +1531,15 @@ ORDER BY
                     FROM ${awayTable}
                     WHERE away_team = $1
 ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
+        WHEN datahora LIKE '__.__. __:__%' THEN 1  -- Considera casos com "Após Prol." ou sem
+        ELSE 2  
     END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__. __:__%' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g')), 'YYYY.DD.MM HH24:MI')
         ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+            TO_TIMESTAMP(REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g'), 'DD.MM.YYYY')
     END DESC
             LIMIT 10
                 `, [time_away]);
@@ -1575,17 +1571,15 @@ ORDER BY
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
 ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
+        WHEN datahora LIKE '__.__. __:__%' THEN 1  -- Considera casos com "Após Prol." ou sem
+        ELSE 2  
     END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__. __:__%' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g')), 'YYYY.DD.MM HH24:MI')
         ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+            TO_TIMESTAMP(REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g'), 'DD.MM.YYYY')
     END DESC
                 `, [time_home, time_away]);
 
@@ -1652,23 +1646,19 @@ ORDER BY
                         FROM ${timeFormatado}
                         WHERE home_team = $1 OR away_team = $1
 ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
+        WHEN datahora LIKE '__.__. __:__%' THEN 1  -- Considera casos com "Após Prol." ou sem
+        ELSE 2  
     END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__. __:__%' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g')), 'YYYY.DD.MM HH24:MI')
         ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+            TO_TIMESTAMP(REGEXP_REPLACE(datahora, '[^0-9.: ]', '', 'g'), 'DD.MM.YYYY')
     END DESC
             LIMIT 10
                     `;
 
-
-                const homeIds1 = calcularTotalVitorias.rows.map(row => row.id);
 
                 // Verificação dos IDs do time_home
                 console.log(`Últimos 10 IDs (mais recentes):`, homeIds1);
