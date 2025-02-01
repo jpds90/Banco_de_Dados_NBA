@@ -1594,6 +1594,10 @@ app.get('/confrontations1', async (req, res) => {
                     LIMIT 10
                 `, [homeIds]);
 
+                const homeIds1 = homeResults.rows.map(row => row.id);
+
+                // Verificação dos IDs do time_home
+                console.log(`Últimos 10 IDs (mais recentes) para o time Casa:`, homeIds1);
                 // Contar vitórias do time_home
                 const homeWins = countWins(homeResults.rows, 'home');
                 const totalHomeWins = homeWins.homeWins + homeWins.awayWins;
@@ -1616,6 +1620,11 @@ app.get('/confrontations1', async (req, res) => {
                         END DESC
                     LIMIT 10
                 `, [awayIds]);
+
+                const homeIds2 = awayResults.rows.map(row => row.id);
+
+                // Verificação dos IDs do time_home
+                console.log(`Últimos 10 IDs (mais recentes) para o time Visitante:`, homeIds2);
 
                 // Contar vitórias do time_away
                 const awayWins = countWins(awayResults.rows, 'away');
