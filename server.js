@@ -1574,6 +1574,10 @@ const homeWinsResult = await pool.query(`
     WHERE id = ANY($1::int[])
 `, [homeIds]);
 
+const homeIdshome = homeWinsResult.rows.map(row => row.id);
+
+console.log(`Últimos 10 IDs (mais recentes) para o time Casa:`, homeIdshome);
+
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
     parseInt(row.home_score, 10) > parseInt(row.away_score, 10)
 ).length;
@@ -1586,6 +1590,10 @@ const awayWinsResult = await pool.query(`
     FROM ${awayTable}
     WHERE id = ANY($1::int[])
 `, [awayIds]);
+
+const homeIdsaway = awayWinsResult.rows.map(row => row.id);
+
+console.log(`Últimos 10 IDs (mais recentes) para o time Visitante:`, homeIdsaway);
 
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
     parseInt(row.away_score, 10) > parseInt(row.home_score, 10)
