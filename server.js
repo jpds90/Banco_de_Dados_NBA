@@ -1571,7 +1571,7 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
 const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
-    WHERE id = ANY($1::int[])
+    WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1585,24 +1585,25 @@ ORDER BY
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
-            LIMIT 10
+    LIMIT 10
 `, [homeIds]);
 
-const homeIdshome = homeWinsResult.rows.map(row => row.id);
+const homeIdsResult = homeWinsResult.rows.map(row => row.id);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time Casa:`, homeIdshome);
+console.log(`Últimos 10 IDs (mais recentes) para o time Casa:`, homeIdsResult);
 
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
-    parseInt(row.home_score, 10) > parseInt(row.away_score, 10)
+    parseInt(row.home_score, 10) > parseInt(row.away_score, 10) // Condição para vitória do time da casa
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWins}`);
+
 
 // Calcular vitórias fora para os últimos 10 jogos do time visitante
 const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
-    WHERE id = ANY($1::int[])
+    WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1616,18 +1617,19 @@ ORDER BY
         ELSE 
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
-            LIMIT 10
+    LIMIT 10
 `, [awayIds]);
 
-const homeIdsaway = awayWinsResult.rows.map(row => row.id);
+const awayIdsResult = awayWinsResult.rows.map(row => row.id);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time Visitante:`, homeIdsaway);
+console.log(`Últimos 10 IDs (mais recentes) para o time Visitante:`, awayIdsResult);
 
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
-    parseInt(row.away_score, 10) > parseInt(row.home_score, 10)
+    parseInt(row.away_score, 10) > parseInt(row.home_score, 10) // Condição para vitória do time visitante
 ).length;
 
-console.log(`Total de vitórias nos últimos 10 jogos fora: ${awayTotalAwayWins}`);
+console.log(`Total de vitórias nos últimos 10 jogos fora de casa: ${awayTotalAwayWins}`);
+
 
 
                 const homeWinPercentage = homeIds.length > 0
