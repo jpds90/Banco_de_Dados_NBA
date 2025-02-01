@@ -873,9 +873,6 @@ const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
 const homeWinsGeral = parseFloat(confrontation.total_home_general_wins) || 0;
 const awayWinsGeral = parseFloat(confrontation.total_away_general_wins) || 0;
 
-const homeRankWeight = parseFloat(confrontation.home_rank_weight) || 0;
-const awayRankWeight = parseFloat(confrontation.away_rank_weight) || 0;
-
 // Cálculo do peso das vitórias considerando todas as variáveis
 const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.3) + (homeWinPercentage1 * 0.10) + homeRankWeight;
 const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.2) + (awayWinPercentage2 * 0.15) + awayRankWeight;
