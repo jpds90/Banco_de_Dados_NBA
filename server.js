@@ -1572,8 +1572,7 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
 const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
-       WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
-    AND id = ANY($1::int[])  -- Filtro para os IDs passados
+       WHERE id = ANY($1::int[])  -- Filtro para os IDs passados
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1608,8 +1607,7 @@ console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWi
 const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
-        WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
-    AND id = ANY($1::int[])  -- Filtro para os IDs passados
+        WHERE id = ANY($1::int[])  -- Filtro para os IDs passados
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
