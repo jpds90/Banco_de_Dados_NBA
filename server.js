@@ -1660,8 +1660,6 @@ ORDER BY
                     `;
 
 
-                // Verificação dos IDs do time_home
-                console.log(`Últimos 10 IDs (mais recentes):`, homeIds1);
                     const jogosResult = await pool.query(querySQL, [time]);
                     let totalVitorias = 0;
 
