@@ -1406,12 +1406,13 @@ app.get('/confrontations1', async (req, res) => {
 
     // Adiciona o ano atual às datas
     const currentYear = new Date().getFullYear();
-    const formattedStartDate = `${start_date}.`;
-    const formattedEndDate = `${end_date}.`;
+    const formattedStartDate = `${start_date}.${currentYear}`;
+    const formattedEndDate = `${end_date}.${currentYear}`;
 
     // Log para verificar as datas enviadas
     console.log(`Data Início: ${formattedStartDate}`);
     console.log(`Data Fim: ${formattedEndDate}`);
+
     try {
         const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
         const oddsRows = oddsResult.rows;
@@ -1419,65 +1420,61 @@ app.get('/confrontations1', async (req, res) => {
         const confrontationData = [];
 
         for (const { time_home, time_away } of oddsRows) {
-            // Envolver todo o processamento em um bloco try-catch para capturar erros por iteração
             try {
                 const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
                 const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
 
-// Buscar IDs dos últimos 10 jogos do time da casa
-const homeIdsResult = await pool.query(`
-    SELECT id, datahora
-    FROM ${homeTable}
-    WHERE home_team = $1
-    ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
-    END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC
-    LIMIT 10
-`, [time_home]);
+                // Buscar IDs dos últimos 10 jogos do time da casa
+                const homeIdsResult = await pool.query(`
+                    SELECT id, datahora
+                    FROM ${homeTable}
+                    WHERE home_team = $1
+                    ORDER BY 
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
+                    LIMIT 10
+                `, [time_home]);
 
-const homeIds = homeIdsResult.rows.map(row => row.id);
+                const homeIds = homeIdsResult.rows.map(row => row.id);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time ${time_home}:`, homeIds);
-
+                // Verificação dos IDs do time_home
+                console.log(`Últimos 10 IDs (mais recentes) para o time ${time_home}:`, homeIds);
                 console.log(`Total de IDs para o time ${time_home}: ${homeIds.length}`);
 
-// Buscar IDs dos últimos 10 jogos do time visitante
-const awayIdsResult = await pool.query(`
-    SELECT id, datahora
-    FROM ${awayTable}
-    WHERE away_team = $1
-    ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
-    END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC
-    LIMIT 10
-`, [time_away]);
+                // Buscar IDs dos últimos 10 jogos do time visitante
+                const awayIdsResult = await pool.query(`
+                    SELECT id, datahora
+                    FROM ${awayTable}
+                    WHERE away_team = $1
+                    ORDER BY 
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
+                    LIMIT 10
+                `, [time_away]);
 
-const awayIds = awayIdsResult.rows.map(row => row.id);
+                const awayIds = awayIdsResult.rows.map(row => row.id);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds);
-
+                // Verificação dos IDs do time_away
+                console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds);
                 console.log(`Total de IDs para o time ${time_away}: ${awayIds.length}`);
 
+                // Verificar se as tabelas existem
                 const tablesResult = await pool.query(`
                     SELECT table_name 
                     FROM information_schema.tables 
@@ -1498,18 +1495,16 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
                     ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
-    END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
                 `, [time_home, time_away]);
 
                 let homeHomeWins = 0;
@@ -1567,94 +1562,98 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
                 const awayAveragePoints = awayGames > 0 ? (awayPointsMade / awayGames).toFixed(2) : 0;
                 const totalAveragePoints = parseFloat(homeAveragePoints) + parseFloat(awayAveragePoints);
 
-// Função para contar vitórias em casa e fora de casa
-const countWins = (rows, teamType) => {
-    const homeWins = rows.filter(row =>
-        parseInt(row.home_score, 10) > parseInt(row.away_score, 10) // Vitória em casa
-    ).length;
+                // Função para contar vitórias em casa e fora de casa
+                const countWins = (rows, teamType) => {
+                    const homeWins = rows.filter(row =>
+                        parseInt(row.home_score, 10) > parseInt(row.away_score, 10) // Vitória em casa
+                    ).length;
 
-    const awayWins = rows.filter(row =>
-        parseInt(row.away_score, 10) > parseInt(row.home_score, 10) // Vitória fora de casa
-    ).length;
+                    const awayWins = rows.filter(row =>
+                        parseInt(row.away_score, 10) > parseInt(row.home_score, 10) // Vitória fora de casa
+                    ).length;
 
-    return { homeWins, awayWins };
-};
+                    return { homeWins, awayWins };
+                };
 
-// Consulta para o time_home
-const homeResults = await pool.query(`
-    SELECT id, home_score, away_score, datahora 
-    FROM ${homeTable}
-    WHERE id = ANY($1::int[])
-    ORDER BY 
-        CASE
-            WHEN datahora LIKE '__.__. __:__' THEN 1
-            ELSE 2
-        END,
-        CASE
-            WHEN datahora LIKE '__.__. __:__' THEN 
-                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-            ELSE 
-                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-        END DESC
-    LIMIT 10
-`, [homeIds]);
+                // Consulta para o time_home
+                const homeResults = await pool.query(`
+                    SELECT id, home_score, away_score, datahora 
+                    FROM ${homeTable}
+                    WHERE id = ANY($1::int[])
+                    ORDER BY 
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
+                    LIMIT 10
+                `, [homeIds]);
 
-// Contar vitórias do time_home
-const homeWins = countWins(homeResults.rows, 'home');
-const totalHomeWins = homeWins.homeWins + homeWins.awayWins;
+                // Contar vitórias do time_home
+                const homeWins = countWins(homeResults.rows, 'home');
+                const totalHomeWins = homeWins.homeWins + homeWins.awayWins;
 
-// Consulta para o time_away
-const awayResults = await pool.query(`
-    SELECT id, home_score, away_score, datahora 
-    FROM ${awayTable}
-    WHERE id = ANY($1::int[])
-    ORDER BY 
-        CASE
-            WHEN datahora LIKE '__.__. __:__' THEN 1
-            ELSE 2
-        END,
-        CASE
-            WHEN datahora LIKE '__.__. __:__' THEN 
-                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-            ELSE 
-                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-        END DESC
-    LIMIT 10
-`, [awayIds]);
+                // Consulta para o time_away
+                const awayResults = await pool.query(`
+                    SELECT id, home_score, away_score, datahora 
+                    FROM ${awayTable}
+                    WHERE id = ANY($1::int[])
+                    ORDER BY 
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 1
+                            ELSE 2
+                        END,
+                        CASE
+                            WHEN datahora LIKE '__.__. __:__' THEN 
+                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                            ELSE 
+                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                        END DESC
+                    LIMIT 10
+                `, [awayIds]);
 
-// Contar vitórias do time_away
-const awayWins = countWins(awayResults.rows, 'away');
-const totalAwayWins = awayWins.homeWins + awayWins.awayWins;
+                // Contar vitórias do time_away
+                const awayWins = countWins(awayResults.rows, 'away');
+                const totalAwayWins = awayWins.homeWins + awayWins.awayWins;
 
-// Cálculo do homeWinPercentage e awayWinPercentage
-const homeWinPercentage = homeIds.length > 0
-    ? ((totalHomeWins / homeIds.length) * 100).toFixed(2) // Usando totalHomeWins
-    : 0;
+                // Cálculo do homeWinPercentage e awayWinPercentage
+                const homeWinPercentage = homeIds.length > 0
+                    ? ((totalHomeWins / homeIds.length) * 100).toFixed(2)
+                    : 0;
 
-const awayWinPercentage = awayIds.length > 0
-    ? ((totalAwayWins / awayIds.length) * 100).toFixed(2) // Usando totalAwayWins
-    : 0;
+                const awayWinPercentage = awayIds.length > 0
+                    ? ((totalAwayWins / awayIds.length) * 100).toFixed(2)
+                    : 0;
 
-// Adicionando os dados ao confrontationData
-confrontationData.push({
-    time_home: time_home,
-    time_away: time_away,
-    home_home_wins: homeHomeWins,
-    home_away_wins: homeAwayWins,
-    away_home_wins: awayHomeWins,
-    away_away_wins: awayAwayWins,    
-    total_home_wins: homeHomeWins + homeAwayWins,
-    total_away_wins: awayHomeWins + awayAwayWins,
-    total_home_general_wins: totalHomeWins, // Total de vitórias do time_home
-    total_away_general_wins: totalAwayWins, // Total de vitórias do time_away
-    home_win_percentage: homeWinPercentage,
-    away_win_percentage: awayWinPercentage,
-    total_home_games: homeIds.length,
-    total_away_games: awayIds.length,
-    total_home_Average_Points: homeAveragePoints,
-    total_away_Average_Points: awayAveragePoints,
-    total_media_Average_Points: totalAveragePoints.toFixed(2),
-});
+                // Adicionando os dados ao confrontationData
+                confrontationData.push({
+                    time_home: time_home,
+                    time_away: time_away,
+                    home_home_wins: homeHomeWins,
+                    home_away_wins: homeAwayWins,
+                    away_home_wins: awayHomeWins,
+                    away_away_wins: awayAwayWins,    
+                    total_home_wins: homeHomeWins + homeAwayWins,
+                    total_away_wins: awayHomeWins + awayAwayWins,
+                    total_home_general_wins: totalHomeWins,
+                    total_away_general_wins: totalAwayWins,
+                    home_win_percentage: homeWinPercentage,
+                    away_win_percentage: awayWinPercentage,
+                    total_home_games: homeIds.length,
+                    total_away_games: awayIds.length,
+                    total_home_Average_Points: homeAveragePoints,
+                    total_away_Average_Points: awayAveragePoints,
+                    total_media_Average_Points: totalAveragePoints.toFixed(2),
+                });
+
+                // Verificação dos totais de vitórias
+                console.log(`Total de vitórias do time ${time_home}: ${totalHomeWins}`);
+                console.log(`Total de vitórias do time ${time_away}: ${totalAwayWins}`);
             } catch (innerError) {
                 console.error(`Erro ao processar os times ${time_home} e ${time_away}:`, innerError);
             }
