@@ -1474,141 +1474,265 @@ app.get('/head-to-head-averages', async (req, res) => {
 });
 
 app.get('/confrontations1', async (req, res) => {
-    const { start_date, end_date } = req.query;
+    const { start_date, end_date, time } = req.query;
 
-    if (!start_date || !end_date) {
-        return res.status(400).json({ error: 'As datas de início e fim são necessárias.' });
-    }
+    if (time) {
+        // Lógica para o endpoint /totalvitorias
+        try {
+            const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
+            console.log(`Time recebido: ${time}`);
+            console.log(`Nome da tabela formatada: ${timeFormatado}`);
 
-    // Adiciona o ano atual às datas
-    const currentYear = new Date().getFullYear();
-    const formattedStartDate = `${start_date}.${currentYear}`;
-    const formattedEndDate = `${end_date}.${currentYear}`;
+            // Verificar se a tabela do time existe
+            const tablesResult = await pool.query(`
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_name = $1
+            `, [timeFormatado]);
 
-    console.log(`Data Início: ${formattedStartDate}`);
-    console.log(`Data Fim: ${formattedEndDate}`);
+            console.log(`Resultado da verificação da tabela:`, tablesResult.rows);
 
-    try {
-        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
-        const oddsRows = oddsResult.rows;
-        const confrontationData = [];
+            if (!tablesResult.rows.length) {
+                console.log('Tabela não encontrada para o time informado.');
+                return res.status(404).send('Tabela do time não encontrada');
+            }
 
-        for (const { time_home, time_away } of oddsRows) {
-            try {
-                const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
-                const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
+            // Buscar todos os jogos do time, seja como time da casa ou visitante
+            const querySQL = `
+                SELECT home_team, away_team, home_score, away_score, datahora, id 
+                FROM ${timeFormatado} 
+                WHERE home_team = $1 OR away_team = $1
+                ORDER BY 
+                    CASE
+                        WHEN datahora LIKE '__.__. __:__' THEN 1
+                        ELSE 2
+                    END,
+                    CASE
+                        WHEN datahora LIKE '__.__. __:__' THEN 
+                            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                        ELSE 
+                            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                    END DESC
+                LIMIT 10
+            `;
+            console.log(`Query SQL que será executada: ${querySQL}`);
 
-                // Buscar IDs dos últimos 10 jogos do time da casa
-                const homeIdsResult = await pool.query(`
-                    SELECT id FROM ${homeTable} 
-                    WHERE home_team = $1 OR away_team = $1 
-                    ORDER BY 
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE 
-                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC 
-                    LIMIT 10
-                `, [time_home]);
-                const homeIds = homeIdsResult.rows.map(row => row.id);
+            const jogosResult = await pool.query(querySQL, [time]);
+            console.log(`Jogos retornados pela query:`, jogosResult.rows);
 
-                // Buscar IDs dos últimos 10 jogos do time visitante
-                const awayIdsResult = await pool.query(`
-                    SELECT id FROM ${awayTable} 
-                    WHERE home_team = $1 OR away_team = $1 
-                    ORDER BY 
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE 
-                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC 
-                    LIMIT 10
-                `, [time_away]);
-                const awayIds = awayIdsResult.rows.map(row => row.id);
+            // Contar vitórias
+            let totalVitorias = 0;
 
-                // Buscar confrontos diretos
-                const confrontationResult = await pool.query(`
-                    SELECT home_score, away_score, home_team, away_team 
-                    FROM ${homeTable} 
-                    WHERE (home_team = $1 AND away_team = $2) 
-                       OR (home_team = $2 AND away_team = $1) 
-                    ORDER BY 
-                        CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                        CASE 
-                            WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC
-                `, [time_home, time_away]);
+            jogosResult.rows.forEach(row => {
+                const { home_team, away_team, home_score, away_score } = row;
 
-                let homeWins = 0, awayWins = 0, homePoints = 0, awayPoints = 0;
-                confrontationResult.rows.forEach(row => {
-                    const homeScore = parseInt(row.home_score, 10);
-                    const awayScore = parseInt(row.away_score, 10);
-
-                    homePoints += row.home_team === time_home ? homeScore : awayScore;
-                    awayPoints += row.away_team === time_away ? awayScore : homeScore;
-
-                    if (homeScore > awayScore) {
-                        row.home_team === time_home ? homeWins++ : awayWins++;
-                    } else if (awayScore > homeScore) {
-                        row.away_team === time_away ? awayWins++ : homeWins++;
+                if (home_team.toLowerCase() === time.toLowerCase()) {
+                    // Time é mandante
+                    if (parseInt(home_score, 10) > parseInt(away_score, 10)) {
+                        totalVitorias++; // Vitória em casa
                     }
-                });
+                } else if (away_team.toLowerCase() === time.toLowerCase()) {
+                    // Time é visitante
+                    if (parseInt(away_score, 10) > parseInt(home_score, 10)) {
+                        totalVitorias++; // Vitória fora de casa
+                    }
+                }
+            });
 
-                // Buscar total de vitórias dos times nos últimos 10 jogos
-                async function getTotalWins(team) {
-                    const teamFormatted = team.toLowerCase().replace(/\s/g, '_');
-                    const gamesResult = await pool.query(`
-                        SELECT home_team, away_team, home_score, away_score 
-                        FROM ${teamFormatted} 
-                        WHERE home_team = $1 OR away_team = $1 
+            console.log(`Total de vitórias do time ${time}: ${totalVitorias}`);
+
+            // Retornar o total de vitórias
+            res.json({ time, totalVitorias });
+        } catch (error) {
+            console.error('Erro ao processar os dados:', error);
+            res.status(500).send('Erro no servidor');
+        }
+    } else if (start_date && end_date) {
+        // Lógica para o endpoint /confrontations100
+        try {
+            const currentYear = new Date().getFullYear();
+            const formattedStartDate = `${start_date}.${currentYear}`;
+            const formattedEndDate = `${end_date}.${currentYear}`;
+
+            console.log(`Data Início: ${formattedStartDate}`);
+            console.log(`Data Fim: ${formattedEndDate}`);
+
+            const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+            const oddsRows = oddsResult.rows;
+
+            const confrontationData = [];
+
+            for (const { time_home, time_away } of oddsRows) {
+                try {
+                    const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+                    const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
+
+                    // Buscar IDs dos últimos 10 jogos do time da casa
+                    const homeIdsResult = await pool.query(`
+                        SELECT id, datahora
+                        FROM ${homeTable}
+                        WHERE home_team = $1
                         ORDER BY 
-                            CASE WHEN datahora LIKE '__.__. __:__' THEN 1 ELSE 2 END,
-                            CASE 
-                                WHEN datahora LIKE '__.__. __:__' THEN TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                                ELSE TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                            CASE
+                                WHEN datahora LIKE '__.__. __:__' THEN 1
+                                ELSE 2
+                            END,
+                            CASE
+                                WHEN datahora LIKE '__.__. __:__' THEN 
+                                    TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                                ELSE 
+                                    TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
                             END DESC
                         LIMIT 10
-                    `, [team]);
+                    `, [time_home]);
 
-                    let totalWins = 0;
-                    gamesResult.rows.forEach(row => {
-                        if ((row.home_team.toLowerCase() === team.toLowerCase() && parseInt(row.home_score, 10) > parseInt(row.away_score, 10)) ||
-                            (row.away_team.toLowerCase() === team.toLowerCase() && parseInt(row.away_score, 10) > parseInt(row.home_score, 10))) {
-                            totalWins++;
+                    const homeIds = homeIdsResult.rows.map(row => row.id);
+
+                    console.log(`Últimos 10 IDs (mais recentes) para o time ${time_home}:`, homeIds);
+                    console.log(`Total de IDs para o time ${time_home}: ${homeIds.length}`);
+
+                    // Buscar IDs dos últimos 10 jogos do time visitante
+                    const awayIdsResult = await pool.query(`
+                        SELECT id, datahora
+                        FROM ${awayTable}
+                        WHERE away_team = $1
+                        ORDER BY 
+                            CASE
+                                WHEN datahora LIKE '__.__. __:__' THEN 1
+                                ELSE 2
+                            END,
+                            CASE
+                                WHEN datahora LIKE '__.__. __:__' THEN 
+                                    TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                                ELSE 
+                                    TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                            END DESC
+                        LIMIT 10
+                    `, [time_away]);
+
+                    const awayIds = awayIdsResult.rows.map(row => row.id);
+
+                    console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds);
+                    console.log(`Total de IDs para o time ${time_away}: ${awayIds.length}`);
+
+                    // Verificar se as tabelas existem
+                    const tablesResult = await pool.query(`
+                        SELECT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_name = $1 OR table_name = $2
+                    `, [homeTable, awayTable]);
+
+                    const tableNames = tablesResult.rows.map(row => row.table_name);
+
+                    if (tableNames.length === 0) {
+                        console.log(`Nenhuma tabela encontrada para os times ${time_home} e ${time_away}`);
+                        continue;
+                    }
+
+                    // Consultar confrontos diretos
+                    const confrontationResult = await pool.query(`
+                        SELECT home_score, away_score, home_team, away_team
+                        FROM ${homeTable}
+                        WHERE (home_team = $1 AND away_team = $2)
+                           OR (home_team = $2 AND away_team = $1)
+                        ORDER BY 
+                            CASE
+                                WHEN datahora LIKE '__.__. __:__' THEN 1
+                                ELSE 2
+                            END,
+                            CASE
+                                WHEN datahora LIKE '__.__. __:__' THEN 
+                                    TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                                ELSE 
+                                    TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                            END DESC
+                    `, [time_home, time_away]);
+
+                    let homeHomeWins = 0;
+                    let homeAwayWins = 0;
+                    let awayHomeWins = 0;
+                    let awayAwayWins = 0;
+                    let homePointsMade = 0;
+                    let awayPointsMade = 0;
+                    let homeGames = 0;
+                    let awayGames = 0;
+
+                    confrontationResult.rows.forEach(row => {
+                        const homeScore = parseInt(row.home_score, 10);
+                        const awayScore = parseInt(row.away_score, 10);
+
+                        console.log(`Analisando jogo: ${row.home_team} vs ${row.away_team}`);
+                        console.log(`Pontuação: ${row.home_score} (Home) vs ${row.away_score} (Away)`);
+
+                        if (row.home_team === time_home) {
+                            homePointsMade += homeScore;
+                            homeGames++;
+                        } else if (row.away_team === time_home) {
+                            homePointsMade += awayScore;
+                            awayGames++;
+                        }
+
+                        if (row.home_team === time_away) {
+                            awayPointsMade += homeScore;
+                            homeGames++;
+                        } else if (row.away_team === time_away) {
+                            awayPointsMade += awayScore;
+                            awayGames++;
+                        }
+
+                        if (homeScore > awayScore) {
+                            if (row.home_team === time_home) {
+                                homeHomeWins++;
+                                console.log(`Vitória para ${time_home} em casa.`);
+                            } else if (row.home_team === time_away) {
+                                awayHomeWins++;
+                                console.log(`Vitória para ${time_away} em casa.`);
+                            }
+                        } else if (awayScore > homeScore) {
+                            if (row.away_team === time_home) {
+                                homeAwayWins++;
+                                console.log(`Vitória para ${time_home} fora de casa.`);
+                            } else if (row.away_team === time_away) {
+                                awayAwayWins++;
+                                console.log(`Vitória para ${time_away} fora de casa.`);
+                            }
                         }
                     });
 
-                    return totalWins;
+                    const homeAveragePoints = homeGames > 0 ? (homePointsMade / homeGames).toFixed(2) : 0;
+                    const awayAveragePoints = awayGames > 0 ? (awayPointsMade / awayGames).toFixed(2) : 0;
+                    const totalAveragePoints = parseFloat(homeAveragePoints) + parseFloat(awayAveragePoints);
+
+                    confrontationData.push({
+                        time_home: time_home,
+                        time_away: time_away,
+                        home_home_wins: homeHomeWins,
+                        home_away_wins: homeAwayWins,
+                        away_home_wins: awayHomeWins,
+                        away_away_wins: awayAwayWins,    
+                        total_home_wins: homeHomeWins + homeAwayWins,
+                        total_away_wins: awayHomeWins + awayAwayWins,
+                        total_home_games: homeIds.length,
+                        total_away_games: awayIds.length,
+                        total_home_Average_Points: homeAveragePoints,
+                        total_away_Average_Points: awayAveragePoints,
+                        total_media_Average_Points: totalAveragePoints.toFixed(2),
+                    });
+
+                    console.log(`Total de vitórias do time ${time_home}: ${homeHomeWins + homeAwayWins}`);
+                    console.log(`Total de vitórias do time ${time_away}: ${awayHomeWins + awayAwayWins}`);
+                } catch (innerError) {
+                    console.error(`Erro ao processar os times ${time_home} e ${time_away}:`, innerError);
                 }
-
-                const homeTotalWins = await getTotalWins(time_home);
-                const awayTotalWins = await getTotalWins(time_away);
-
-                // Adiciona os dados ao array final
-                confrontationData.push({
-                    time_home: time_home,
-                    time_away: time_away,
-                    home_wins: homeWins,
-                    away_wins: awayWins,
-                    home_games: homeIds.length,
-                    away_games: awayIds.length,
-                    home_average_points: (homePoints / homeIds.length).toFixed(2),
-                    away_average_points: (awayPoints / awayIds.length).toFixed(2),
-                    total_average_points: ((homePoints + awayPoints) / (homeIds.length + awayIds.length)).toFixed(2),
-                    total_home_wins: homeTotalWins,
-                    total_away_wins: awayTotalWins
-                });
-
-            } catch (innerError) {
-                console.error(`Erro ao processar ${time_home} vs ${time_away}:`, innerError);
             }
-        }
 
-        res.json(confrontationData);
-    } catch (error) {
-        console.error('Erro ao processar os dados:', error);
-        res.status(500).json({ error: 'Erro ao processar os dados' });
+            res.json(confrontationData);
+        } catch (error) {
+            console.error('Erro ao processar os dados:', error);
+            res.status(500).json({ error: 'Erro ao processar os dados' });
+        }
+    } else {
+        res.status(400).json({ error: 'Parâmetros inválidos. Forneça "start_date" e "end_date" ou "time".' });
     }
 });
 
