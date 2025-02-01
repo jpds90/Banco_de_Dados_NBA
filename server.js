@@ -1572,6 +1572,20 @@ const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
     WHERE id = ANY($1::int[])
+        ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+    LIMIT 10
 `, [homeIds]);
 
 const homeIdshome = homeWinsResult.rows.map(row => row.id);
@@ -1589,6 +1603,20 @@ const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
     WHERE id = ANY($1::int[])
+        ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+    LIMIT 10
 `, [awayIds]);
 
 const homeIdsaway = awayWinsResult.rows.map(row => row.id);
