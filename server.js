@@ -1590,8 +1590,6 @@ const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
     Number(row.home_score) > Number(row.away_score)
 ).length;
 
-console.log("homeTeamId:", homeTeamId);
-console.log("homeIds:", homeIds);
 
 console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWins}`);
 
@@ -1614,12 +1612,10 @@ const awayWinsResult = await pool.query(`
 `, [awayTeamId, awayIds]);
 
 
-const awayTotalHomeWins = awayWinsResult.rows.filter(row =>
+const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
     Number(row.away_score) > Number(row.home_score)
 ).length;
 
-console.log("awayTeamId:", awayTeamId);
-console.log("awayIds:", awayIds);
 console.log(`Total de vitórias nos últimos 10 jogos fora: ${awayTotalAwayWins}`);
 
 
