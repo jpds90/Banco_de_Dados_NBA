@@ -1326,7 +1326,83 @@ ORDER BY
 });
 
 
+app.get('/totalvitorias', async (req, res) => {
+    try {
+        const { time } = req.query; // O time vem pela query params, por exemplo: /totalvitorias?time=Oklahoma City Thunder
+        if (!time) {
+            return res.status(400).send('Time não informado');
+        }
 
+        const timeFormatado = time.toLowerCase().replace(/\s/g, '_');
+        console.log(`Time recebido: ${time}`);
+        console.log(`Nome da tabela formatada: ${timeFormatado}`);
+
+        // Verificar se a tabela do time existe
+        const tablesResult = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = $1
+        `, [timeFormatado]);
+
+        console.log(`Resultado da verificação da tabela:`, tablesResult.rows);
+
+        if (!tablesResult.rows.length) {
+            console.log('Tabela não encontrada para o time informado.');
+            return res.status(404).send('Tabela do time não encontrada');
+        }
+
+        // Buscar todos os jogos do time, seja como time da casa ou visitante
+        const querySQL = `
+            SELECT home_team, away_team, home_score, away_score, datahora, id 
+            FROM ${timeFormatado} 
+            WHERE home_team = $1 OR away_team = $1
+            ORDER BY 
+                -- Prioriza registros no formato DD.MM. HH:MI
+                CASE
+                    WHEN datahora LIKE '__.__. __:__' THEN 1
+                    ELSE 2
+                END,
+                -- Ordena pela data/hora dentro de cada grupo de formatos
+                CASE
+                    WHEN datahora LIKE '__.__. __:__' THEN 
+                        TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+                    WHEN datahora LIKE '__.__.____ __:__' THEN 
+                        TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+                END DESC
+        `;
+        console.log(`Query SQL que será executada: ${querySQL}`);
+
+        const jogosResult = await pool.query(querySQL, [time]);
+        console.log(`Jogos retornados pela query:`, jogosResult.rows);
+
+        // Contar vitórias
+        let totalVitorias = 0;
+
+        jogosResult.rows.forEach(row => {
+            const { home_team, away_team, home_score, away_score } = row;
+
+            if (home_team.toLowerCase() === time.toLowerCase()) {
+                // Time é mandante
+                if (parseInt(home_score, 10) > parseInt(away_score, 10)) {
+                    totalVitorias++; // Vitória em casa
+                }
+            } else if (away_team.toLowerCase() === time.toLowerCase()) {
+                // Time é visitante
+                if (parseInt(away_score, 10) > parseInt(home_score, 10)) {
+                    totalVitorias++; // Vitória fora de casa
+                }
+            }
+        });
+
+        console.log(`Total de vitórias do time ${time}: ${totalVitorias}`);
+
+        // Retornar o total de vitórias
+        res.json({ time, totalVitorias });
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
 
 
 
