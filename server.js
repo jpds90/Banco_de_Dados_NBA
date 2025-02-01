@@ -1571,25 +1571,12 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
 const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
-    WHERE home_team = $1 AND id = ANY($2::int[])
-    ORDER BY 
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
-    END,
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC
-`, [homeTeamId, homeIds]);
-
+    WHERE id = ANY($1::int[])
+`, [homeIds]);
 
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
-    Number(row.home_score) > Number(row.away_score)
+    parseInt(row.home_score, 10) > parseInt(row.away_score, 10)
 ).length;
-
 
 console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWins}`);
 
@@ -1597,23 +1584,11 @@ console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWi
 const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
-    WHERE away_team = $1 AND id = ANY($2::int[])
-    ORDER BY 
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
-        ELSE 2
-    END,
-    CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        ELSE 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-    END DESC
-`, [awayTeamId, awayIds]);
-
+    WHERE id = ANY($1::int[])
+`, [awayIds]);
 
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
-    Number(row.away_score) > Number(row.home_score)
+    parseInt(row.away_score, 10) > parseInt(row.home_score, 10)
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos fora: ${awayTotalAwayWins}`);
