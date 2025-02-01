@@ -1473,8 +1473,128 @@ app.get('/head-to-head-averages', async (req, res) => {
     }
 });
 
+app.get('confrontations1', async (req, res) => {
+    const { start_date, end_date } = req.query;
 
-app.get('/confrontations1', async (req, res) => {
+    if (!start_date || !end_date) {
+        return res.status(400).json({ error: 'As datas de início e fim são necessárias.' });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const formattedStartDate = `${start_date}.${currentYear}`;
+    const formattedEndDate = `${end_date}.${currentYear}`;
+
+    console.log(`Data Início: ${formattedStartDate}`);
+    console.log(`Data Fim: ${formattedEndDate}`);
+
+    try {
+        const oddsResult = await pool.query('SELECT time_home, time_away FROM odds');
+        const oddsRows = oddsResult.rows;
+
+        const confrontationData = [];
+
+        for (const { time_home, time_away } of oddsRows) {
+            try {
+                const homeTable = time_home.toLowerCase().replace(/\s/g, '_');
+                const awayTable = time_away.toLowerCase().replace(/\s/g, '_');
+
+                // Buscar confrontos diretos
+                const confrontationResult = await pool.query(`
+                    SELECT home_score, away_score, home_team, away_team
+                    FROM ${homeTable}
+                    WHERE (home_team = $1 AND away_team = $2)
+                       OR (home_team = $2 AND away_team = $1)
+                    ORDER BY TO_TIMESTAMP(datahora, 'DD.MM.YYYY') DESC
+                `, [time_home, time_away]);
+
+                let homeHomeWins = 0;
+                let homeAwayWins = 0;
+                let awayHomeWins = 0;
+                let awayAwayWins = 0;
+
+                confrontationResult.rows.forEach(row => {
+                    const homeScore = parseInt(row.home_score, 10);
+                    const awayScore = parseInt(row.away_score, 10);
+
+                    if (homeScore > awayScore) {
+                        if (row.home_team === time_home) homeHomeWins++;
+                        if (row.home_team === time_away) awayHomeWins++;
+                    } else if (awayScore > homeScore) {
+                        if (row.away_team === time_home) homeAwayWins++;
+                        if (row.away_team === time_away) awayAwayWins++;
+                    }
+                });
+
+                // Função para obter total de vitórias de um time
+                const getTotalVitorias = async (time) => {
+                    const teamTable = time.toLowerCase().replace(/\s/g, '_');
+
+                    // Verificar se a tabela existe
+                    const tablesResult = await pool.query(`
+                        SELECT table_name 
+                        FROM information_schema.tables 
+                        WHERE table_name = $1
+                    `, [teamTable]);
+
+                    if (!tablesResult.rows.length) {
+                        console.log(`Tabela não encontrada para ${time}`);
+                        return 0;
+                    }
+
+                    // Buscar os últimos 10 jogos
+                    const jogosResult = await pool.query(`
+                        SELECT home_team, away_team, home_score, away_score 
+                        FROM ${teamTable} 
+                        WHERE home_team = $1 OR away_team = $1
+                        ORDER BY TO_TIMESTAMP(datahora, 'DD.MM.YYYY') DESC
+                        LIMIT 10
+                    `, [time]);
+
+                    let totalVitorias = 0;
+                    jogosResult.rows.forEach(row => {
+                        const { home_team, away_team, home_score, away_score } = row;
+                        if (home_team.toLowerCase() === time.toLowerCase() && parseInt(home_score, 10) > parseInt(away_score, 10)) {
+                            totalVitorias++;
+                        } else if (away_team.toLowerCase() === time.toLowerCase() && parseInt(away_score, 10) > parseInt(home_score, 10)) {
+                            totalVitorias++;
+                        }
+                    });
+
+                    return totalVitorias;
+                };
+
+                // Obter total de vitórias de cada time
+                const totalHomeWins = await getTotalVitorias(time_home);
+                const totalAwayWins = await getTotalVitorias(time_away);
+
+                // Adicionar dados ao array de resposta
+                confrontationData.push({
+                    time_home: time_home,
+                    time_away: time_away,
+                    home_home_wins: homeHomeWins,
+                    home_away_wins: homeAwayWins,
+                    away_home_wins: awayHomeWins,
+                    away_away_wins: awayAwayWins,
+                    total_home_wins: homeHomeWins + homeAwayWins,
+                    total_away_wins: awayHomeWins + awayAwayWins,
+                    total_home_general_wins: totalHomeWins,
+                    total_away_general_wins: totalAwayWins
+                });
+
+            } catch (innerError) {
+                console.error(`Erro ao processar os times ${time_home} e ${time_away}:`, innerError);
+            }
+        }
+
+        res.json(confrontationData);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).json({ error: 'Erro ao processar os dados' });
+    }
+});
+
+
+app.get('/confrontations100', async (req, res) => {
     const { start_date, end_date } = req.query;
 
     if (!start_date || !end_date) {
