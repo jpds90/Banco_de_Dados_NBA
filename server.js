@@ -1569,16 +1569,17 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
 
 // Calcular vitórias em casa para os últimos 10 jogos do time da casa
 const homeWinsResult = await pool.query(`
-    SELECT id, home_score, away_score, datahora 
+    SELECT id, 
+           CAST(home_score AS INTEGER) AS home_score, 
+           CAST(away_score AS INTEGER) AS away_score, 
+           datahora 
     FROM ${homeTable}
-        WHERE home_team = $1
+    WHERE home_team = $1
     ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
     END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
@@ -1586,31 +1587,28 @@ const homeWinsResult = await pool.query(`
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
     LIMIT 10
-    
 `, [homeIds]);
 
-const homeIds1 = homeWinsResult.rows.map(row => row.id);
+console.log("Resultados dos últimos 10 jogos do time da casa:", homeWinsResult.rows);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time ${homeIds}:`, homeIds1);
-              
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
-    parseInt(row.home_score, 10) > parseInt(row.away_score, 10)
+    Number(row.home_score) > Number(row.away_score)
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWins}`);
 
-// Calcular vitórias fora para os últimos 10 jogos do time visitante
 const awayWinsResult = await pool.query(`
-    SELECT id, home_score, away_score, datahora 
+    SELECT id, 
+           CAST(home_score AS INTEGER) AS home_score, 
+           CAST(away_score AS INTEGER) AS away_score, 
+           datahora 
     FROM ${awayTable}
-        WHERE away_team = $1
+    WHERE away_team = $1
     ORDER BY 
-    -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
-        ELSE 2  -- Depois os registros apenas com data
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
     END,
-    -- Ordena dentro de cada grupo, garantindo que não haja NULL
     CASE
         WHEN datahora LIKE '__.__. __:__' THEN 
             TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
@@ -1620,15 +1618,14 @@ const awayWinsResult = await pool.query(`
     LIMIT 10
 `, [awayIds]);
 
-const homeIds2 = awayWinsResult.rows.map(row => row.id);
+console.log("Resultados dos últimos 10 jogos do time visitante:", awayWinsResult.rows);
 
-console.log(`Últimos 10 IDs (mais recentes) para o time ${awayIds}:`, homeIds2);
-              
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
-    parseInt(row.away_score, 10) > parseInt(row.home_score, 10)
+    Number(row.away_score) > Number(row.home_score)
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos fora: ${awayTotalAwayWins}`);
+
 
                 const homeWinPercentage = homeIds.length > 0
                     ? ((homeTotalHomeWins / homeIds.length) * 100).toFixed(2)
