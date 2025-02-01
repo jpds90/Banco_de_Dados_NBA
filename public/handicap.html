@@ -113,6 +113,8 @@ const derrotasPorMaisQueHandicap = ultimosJogos.filter(jogo => {
 
         // **Salvar os dados no LocalStorage**
         localStorage.setItem("handicapData", JSON.stringify(rows));
+       // Marcar que os dados foram atualizados
+        localStorage.setItem("handicapAtualizado", "true");
 
         window.location.href = "odds.html";
         // Atualizar a tabela na tela
