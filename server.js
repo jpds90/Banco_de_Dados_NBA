@@ -1505,18 +1505,20 @@ app.get('/confrontations1', async (req, res) => {
                     SELECT id, datahora
                     FROM ${homeTable}
                     WHERE home_team = $1
-                    ORDER BY 
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN 1
-                            ELSE 2
-                        END,
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN 
-                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE 
-                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC
-                    LIMIT 10
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+            LIMIT 10
                 `, [time_home]);
 
                 const homeIds = homeIdsResult.rows.map(row => row.id);
@@ -1530,18 +1532,20 @@ app.get('/confrontations1', async (req, res) => {
                     SELECT id, datahora
                     FROM ${awayTable}
                     WHERE away_team = $1
-                    ORDER BY 
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN 1
-                            ELSE 2
-                        END,
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN 
-                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE 
-                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC
-                    LIMIT 10
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+            LIMIT 10
                 `, [time_away]);
 
                 const awayIds = awayIdsResult.rows.map(row => row.id);
@@ -1570,17 +1574,19 @@ app.get('/confrontations1', async (req, res) => {
                     FROM ${homeTable}
                     WHERE (home_team = $1 AND away_team = $2)
                        OR (home_team = $2 AND away_team = $1)
-                    ORDER BY 
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN 1
-                            ELSE 2
-                        END,
-                        CASE
-                            WHEN datahora LIKE '__.__. __:__' THEN 
-                                TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                            ELSE 
-                                TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                        END DESC
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
                 `, [time_home, time_away]);
 
                 let homeHomeWins = 0;
@@ -1645,20 +1651,27 @@ app.get('/confrontations1', async (req, res) => {
                         SELECT home_team, away_team, home_score, away_score
                         FROM ${timeFormatado}
                         WHERE home_team = $1 OR away_team = $1
-                        ORDER BY 
-                            CASE
-                                WHEN datahora LIKE '__.__. __:__' THEN 1
-                                ELSE 2
-                            END,
-                            CASE
-                                WHEN datahora LIKE '__.__. __:__' THEN 
-                                    TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-                                ELSE 
-                                    TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-                            END DESC
-                        LIMIT 10
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+            LIMIT 10
                     `;
 
+
+                const homeIds1 = calcularTotalVitorias.rows.map(row => row.id);
+
+                // Verificação dos IDs do time_home
+                console.log(`Últimos 10 IDs (mais recentes):`, homeIds1);
                     const jogosResult = await pool.query(querySQL, [time]);
                     let totalVitorias = 0;
 
