@@ -1684,6 +1684,13 @@ ORDER BY
                 const totalVitoriasHome = await calcularTotalVitorias(time_home);
                 const totalVitoriasAway = await calcularTotalVitorias(time_away);
 
+                const homeWinPercentage = homeIds.length > 0
+                    ? ((totalVitoriasHome / homeIds.length) * 100).toFixed(2)
+                    : 0;
+
+                const awayWinPercentage = awayIds.length > 0
+                    ? ((totalVitoriasAway / awayIds.length) * 100).toFixed(2)
+                    : 0;
                 // Adicionando os dados ao confrontationData
                 confrontationData.push({
                     time_home: time_home,
@@ -1699,8 +1706,10 @@ ORDER BY
                     total_home_Average_Points: homeAveragePoints,
                     total_away_Average_Points: awayAveragePoints,
                     total_media_Average_Points: totalAveragePoints.toFixed(2),
-                    total_vitorias_home: totalVitoriasHome, // Total de vitórias do time_home
+                    total_away_general_wins: totalVitoriasHome, // Total de vitórias do time_home
                     total_vitorias_away: totalVitoriasAway, // Total de vitórias do time_away
+                    home_win_percentage: homeWinPercentage,
+                    away_win_percentage: awayWinPercentage,
                 });
 
             } catch (innerError) {
