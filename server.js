@@ -1572,6 +1572,7 @@ const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
     WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
+    AND id = ANY($2::int[])  -- Filtro para os IDs passados
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1586,7 +1587,7 @@ ORDER BY
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
     LIMIT 10
-`, [homeIds]);
+`, [homeTeamId, homeIds]);
 
 const homeIdsResult1 = homeWinsResult.rows.map(row => row.id);
 
@@ -1599,11 +1600,13 @@ const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
 console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWins}`);
 
 
+
 // Calcular vitórias fora para os últimos 10 jogos do time visitante
 const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
     WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
+    AND id = ANY($2::int[])  -- Filtro para os IDs passados
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1618,7 +1621,7 @@ ORDER BY
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
     LIMIT 10
-`, [awayIds]);
+`, [awayTeamId, awayIds]);
 
 const awayIdsResult2 = awayWinsResult.rows.map(row => row.id);
 
@@ -1629,6 +1632,7 @@ const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos fora de casa: ${awayTotalAwayWins}`);
+
 
 
 
