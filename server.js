@@ -1706,8 +1706,8 @@ ORDER BY
                     total_home_Average_Points: homeAveragePoints,
                     total_away_Average_Points: awayAveragePoints,
                     total_media_Average_Points: totalAveragePoints.toFixed(2),
-                    total_away_general_wins: totalVitoriasHome, // Total de vitórias do time_home
-                    total_vitorias_away: totalVitoriasAway, // Total de vitórias do time_away
+                    total_home_general_wins: totalVitoriasHome, // Total de vitórias do time_home
+                    total_away_general_wins: totalVitoriasAway, // Total de vitórias do time_away
                     home_win_percentage: homeWinPercentage,
                     away_win_percentage: awayWinPercentage,
                 });
