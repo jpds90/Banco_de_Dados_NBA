@@ -859,28 +859,45 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                             const homeUltimos = ultimosJogosData.find(jogo => jogo.time_home === confrontation.time_home);
                             const awayUltimos = ultimosJogosData.find(jogo => jogo.time_away === confrontation.time_away);
 
-                            const homeWins = homeUltimos ? homeUltimos.home_wins_last_10 : 0;
-                            const awayWins = awayUltimos ? awayUltimos.away_wins_last_10 : 0;
+ // Garantir que as variáveis existam e sejam numéricas antes do cálculo
+const homeWins = homeUltimos && !isNaN(homeUltimos.home_wins_last_10) ? homeUltimos.home_wins_last_10 : 0;
+const awayWins = awayUltimos && !isNaN(awayUltimos.away_wins_last_10) ? awayUltimos.away_wins_last_10 : 0;
 
-                            const homeWinPercentage1 = ((homeWins / 10) * 100).toFixed(0);
-                            const awayWinPercentage2 = ((awayWins / 10) * 100).toFixed(0);
+const homeWinPercentage1 = ((homeWins / 10) * 100) || 0;
+const awayWinPercentage2 = ((awayWins / 10) * 100) || 0;
 
-                            const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
-                            const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
-                            const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
-                            const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
-                            const homeWinsGeral = parseFloat(confrontation.total_home_general_wins) || 0;
-                            const awayWinsGeral = parseFloat(confrontation.total_away_general_wins) || 0;
+const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
+const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
+const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
+const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
+const homeWinsGeral = parseFloat(confrontation.total_home_general_wins) || 0;
+const awayWinsGeral = parseFloat(confrontation.total_away_general_wins) || 0;
 
+const homeRankWeight = parseFloat(confrontation.home_rank_weight) || 0;
+const awayRankWeight = parseFloat(confrontation.away_rank_weight) || 0;
 
-                            const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.3) + (homeWinPercentage1 * 0.10) + homeRankWeight;
-                            const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.2) + (awayWinPercentage2 * 0.15) + awayRankWeight;
+// Cálculo do peso das vitórias considerando todas as variáveis
+const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.3) + (homeWinPercentage1 * 0.10) + homeRankWeight;
+const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.2) + (awayWinPercentage2 * 0.15) + awayRankWeight;
 
-                            const homeTotal = homeRankWeight + homeWinPercentage + homeWinPercentage1 + homeWinWeight;
-                            const awayTotal = awayRankWeight + awayWinPercentage + awayWinPercentage2 + awayWinWeight;
-                            const totalSum = homeTotal + awayTotal;
-                            const homePercentage = ((homeTotal / totalSum) * 100).toFixed(0);
-                            const awayPercentage = ((awayTotal / totalSum) * 100).toFixed(0);
+// Soma total dos pesos para evitar NaN
+const homeTotal = homeRankWeight + homeWinPercentage + homeWinPercentage1 + homeWinWeight;
+const awayTotal = awayRankWeight + awayWinPercentage + awayWinPercentage2 + awayWinWeight;
+const totalSum = homeTotal + awayTotal;
+
+// Evita divisão por zero e garante valores numéricos válidos
+const homePercentage = totalSum !== 0 ? ((homeTotal / totalSum) * 100).toFixed(0) : 50;
+const awayPercentage = totalSum !== 0 ? ((awayTotal / totalSum) * 100).toFixed(0) : 50;
+
+// Exibir para debug
+console.log({
+    homeWins, awayWins, homeWinPercentage1, awayWinPercentage2,
+    homeHomeWins, homeWinPercentage, awayAwayWins, awayWinPercentage,
+    homeWinsGeral, awayWinsGeral, homeRankWeight, awayRankWeight,
+    homeWinWeight, awayWinWeight, homeTotal, awayTotal, totalSum,
+    homePercentage, awayPercentage
+});
+
 
                             let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
                             let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
