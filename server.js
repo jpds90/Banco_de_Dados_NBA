@@ -1571,9 +1571,28 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
 const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
-    WHERE id = ANY($1::int[])
+        WHERE home_team = $1
+    ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+    LIMIT 10
+    
 `, [homeIds]);
 
+const homeIds1 = homeWinsResult.rows.map(row => row.id);
+
+console.log(`Últimos 10 IDs (mais recentes) para o time ${homeIds}:`, homeIds1);
+              
 const homeTotalHomeWins = homeWinsResult.rows.filter(row =>
     parseInt(row.home_score, 10) > parseInt(row.away_score, 10)
 ).length;
@@ -1584,9 +1603,27 @@ console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWi
 const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
-    WHERE id = ANY($1::int[])
+        WHERE away_team = $1
+    ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1  -- Primeiro os registros com hora
+        ELSE 2  -- Depois os registros apenas com data
+    END,
+    -- Ordena dentro de cada grupo, garantindo que não haja NULL
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        ELSE 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
+    LIMIT 10
 `, [awayIds]);
 
+const homeIds2 = awayWinsResult.rows.map(row => row.id);
+
+console.log(`Últimos 10 IDs (mais recentes) para o time ${awayIds}:`, homeIds2);
+              
 const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
     parseInt(row.away_score, 10) > parseInt(row.home_score, 10)
 ).length;
