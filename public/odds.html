@@ -1095,6 +1095,31 @@ console.log({
         });
 
 
+document.addEventListener("DOMContentLoaded", async function() {
+    // Verifica se os dados já foram atualizados
+    const atualizado = localStorage.getItem("handicapAtualizado");
+
+    if (!atualizado) {
+        // Se os dados não estiverem atualizados, força a recarga de handicap.html antes de prosseguir
+        localStorage.setItem("recarregarHandicap", "true"); // Marca que precisa recarregar
+        window.location.href = "handicap.html"; // Redireciona para handicap.html
+        return;
+    }
+
+    // Caso contrário, segue normalmente e carrega os dados do handicap no odds.html
+    const handicapData = JSON.parse(localStorage.getItem("handicapData")) || [];
+    console.log("Dados do Handicap carregados:", handicapData);
+
+    // Adicione aqui a lógica para exibir os dados na tela, por exemplo:
+    const tabelaOdds = document.getElementById("tabelaOdds");
+    tabelaOdds.innerHTML = handicapData.map(row => `
+        <tr>
+            <td>${row.time_home}</td>
+            <td>${row.time_away}</td>
+            <td>${row.handicap}</td>
+        </tr>
+    `).join('');
+});
 
 
 
