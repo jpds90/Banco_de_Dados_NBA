@@ -1568,11 +1568,12 @@ console.log(`Últimos 10 IDs (mais recentes) para o time ${time_away}:`, awayIds
                 const totalAveragePoints = parseFloat(homeAveragePoints) + parseFloat(awayAveragePoints);
 
 // Calcular vitórias em casa para os últimos 10 jogos do time da casa
+// Calcular vitórias em casa para os últimos 10 jogos do time da casa
 const homeWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${homeTable}
-    WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
-    AND id = ANY($2::int[])  -- Filtro para os IDs passados
+       WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
+    AND id = ANY($1::int[])  -- Filtro para os IDs passados
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1587,7 +1588,7 @@ ORDER BY
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
     LIMIT 10
-`, [homeTeamId, homeIds]);
+`, [homeIds]);
 
 const homeIdsResult1 = homeWinsResult.rows.map(row => row.id);
 
@@ -1601,12 +1602,14 @@ console.log(`Total de vitórias nos últimos 10 jogos em casa: ${homeTotalHomeWi
 
 
 
+
+// Calcular vitórias fora para os últimos 10 jogos do time visitante
 // Calcular vitórias fora para os últimos 10 jogos do time visitante
 const awayWinsResult = await pool.query(`
     SELECT id, home_score, away_score, datahora 
     FROM ${awayTable}
-    WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
-    AND id = ANY($2::int[])  -- Filtro para os IDs passados
+        WHERE (home_team = $1 OR away_team = $1)  -- Filtro para o time em casa ou visitante
+    AND id = ANY($1::int[])  -- Filtro para os IDs passados
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
@@ -1621,7 +1624,7 @@ ORDER BY
             TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
     END DESC
     LIMIT 10
-`, [awayTeamId, awayIds]);
+`, [awayIds]);
 
 const awayIdsResult2 = awayWinsResult.rows.map(row => row.id);
 
@@ -1632,6 +1635,7 @@ const awayTotalAwayWins = awayWinsResult.rows.filter(row =>
 ).length;
 
 console.log(`Total de vitórias nos últimos 10 jogos fora de casa: ${awayTotalAwayWins}`);
+
 
 
 
