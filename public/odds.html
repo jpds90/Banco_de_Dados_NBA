@@ -1096,30 +1096,58 @@ console.log({
 
 
 document.addEventListener("DOMContentLoaded", async function() {
-    // Verifica se os dados já foram atualizados
-    const atualizado = localStorage.getItem("handicapAtualizado");
+    const handicapData = localStorage.getItem("handicapData");
+    const lastUpdate = localStorage.getItem("handicapAtualizado");
+    const tempoMaxAtualizacao = 5 * 60 * 1000; // 5 minutos
 
-    if (!atualizado) {
-        // Se os dados não estiverem atualizados, força a recarga de handicap.html antes de prosseguir
-        localStorage.setItem("recarregarHandicap", "true"); // Marca que precisa recarregar
-        window.location.href = "handicap.html"; // Redireciona para handicap.html
-        return;
+    // Se os dados não existirem ou forem antigos, buscar do handicap.html
+    if (!handicapData || (Date.now() - lastUpdate > tempoMaxAtualizacao)) {
+        console.log("Buscando dados do handicap.html...");
+
+        try {
+            // Fazer uma requisição para handicap.html e extrair os dados sem recarregar a página
+            const response = await fetch("handicap.html");
+            const text = await response.text();
+            
+            // Criar um DOM temporário para pegar os dados
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, "text/html");
+            
+            // Supondo que os dados estejam dentro de um <script> ou elemento específico no handicap.html
+            const scriptTag = doc.querySelector("script[data-handicap]");
+            if (scriptTag) {
+                const data = JSON.parse(scriptTag.textContent);
+                
+                // Salvar os dados no localStorage
+                localStorage.setItem("handicapData", JSON.stringify(data));
+                localStorage.setItem("handicapAtualizado", Date.now());
+
+                console.log("Dados do handicap salvos no localStorage.");
+                carregarTabelaOdds(data);
+            } else {
+                console.error("Não foi possível encontrar os dados do handicap.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar dados do handicap.html:", error);
+        }
+    } else {
+        console.log("Carregando dados do handicap do localStorage...");
+        carregarTabelaOdds(JSON.parse(handicapData));
     }
+});
 
-    // Caso contrário, segue normalmente e carrega os dados do handicap no odds.html
-    const handicapData = JSON.parse(localStorage.getItem("handicapData")) || [];
-    console.log("Dados do Handicap carregados:", handicapData);
-
-    // Adicione aqui a lógica para exibir os dados na tela, por exemplo:
+// Função para exibir os dados na tabela
+function carregarTabelaOdds(data) {
     const tabelaOdds = document.getElementById("tabelaOdds");
-    tabelaOdds.innerHTML = handicapData.map(row => `
+    tabelaOdds.innerHTML = data.map(row => `
         <tr>
             <td>${row.time_home}</td>
             <td>${row.time_away}</td>
             <td>${row.handicap}</td>
+            <td>${row.jogos_perdidos_handicap}</td>
         </tr>
     `).join('');
-});
+}
 
 
 
