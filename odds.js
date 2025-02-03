@@ -19,13 +19,13 @@ async function saveToDatabase(data) {
         console.log('Tabela odds limpa e ID reiniciado.');
 
         const queryText = `
-            INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds, handicap)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id
         `;
 
         for (const row of data) {
-            const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds } = row;
+            const { dataJogo, timeHome, timeAway, homeOdds, awayOdds, overDoisMeioOdds, overOdds, handicappontos } = row;
 
             await client.query(queryText, [
                 dataJogo,
@@ -35,6 +35,7 @@ async function saveToDatabase(data) {
                 awayOdds,
                 overDoisMeioOdds,
                 overOdds,
+                handicappontos,
             ]);
         }
 
@@ -157,7 +158,40 @@ for (let id of ids) {
                 console.error('Erro ao processar a página de odds 1x2:', error);
                 continue;
             }
+
+            const handicappontosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/handicap-asiatico/tr-incluindo-prol`;
+            console.log("Processando URL handicap:", handicappontosUrl);
+            await page2.goto(handicappontosUrl, { timeout: 180000 });
+            await sleep(10000);
+        
+            let handicappontos = '';
+
+            try {
+                const handicappontosTableWrapper = await page2.$('.oddsTab__tableWrapper');
+                const handicappontosTables = await oddsTableWrapper.$$('.ui-table.oddsCell__odds');
+        
+                if (oddsTables.length > 0) {
+                    const targetTable = oddsTables[0];
+                    
+                const handicappontosmaisMenosRows = await page2.$$('.ui-table__body .ui-table__row');
             
+                if (maisMenosRows.length > 0) {
+                    const handicappontosmaisMenosRow = maisMenosRows[0];
+                    const handicappontosCells = await maisMenosRow.$$('.oddsCell__noOddsCell');
+                        if (oddsCells.length > 0) {
+                            overOdds = await handicappontosCells[0].evaluate(element => element.textContent.trim());
+                            overOdds = parseInt(handicappontos); // Remove a parte decimal
+
+                         console.log(`Handicap ${handicappontos}`);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao processar a página Handicap:', error);
+                continue;
+            } 
+
+           
 
             const oddsmaisemenosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de`;
             console.log("Processando URL Pontos:", oddsmaisemenosUrl);
@@ -220,6 +254,7 @@ for (let id of ids) {
                 awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
                 overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
                 overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
+                handicappontos: isNaN(handicappontos) ? 0 : parseFloat(handicappontos),
             });
             
         }
