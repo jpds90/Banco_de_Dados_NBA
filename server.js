@@ -332,6 +332,17 @@ app.get('/odds', async (req, res) => {
     }
 });
 
+// Rota para buscar apenas os valores da coluna 'handicap' da tabela 'odds'
+app.get('/handicap', async (req, res) => {
+    try {
+        // Seleciona apenas a coluna handicap
+        const result = await pool.query('SELECT handicap FROM odds');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Erro ao buscar dados do banco:', error);
+        res.status(500).json({ error: 'Erro ao buscar dados do banco' });
+    }
+});
 
 
 // Endpoint para calcular as médias e retornar os dados
