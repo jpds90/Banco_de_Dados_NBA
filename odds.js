@@ -168,16 +168,16 @@ for (let id of ids) {
 
             try {
                 const handicappontosTableWrapper = await page2.$('.oddsTab__tableWrapper');
-                const handicappontosTables = await oddsTableWrapper.$$('.ui-table.oddsCell__odds');
+                const handicappontosTables = await handicappontosTableWrapper.$$('.ui-table.oddsCell__odds');
         
-                if (oddsTables.length > 0) {
-                    const targetTable = oddsTables[0];
+                if (handicappontosTables.length > 0) {
+                    const targetTable = handicappontosTables[0];
                     
                 const handicappontosmaisMenosRows = await page2.$$('.ui-table__body .ui-table__row');
             
-                if (maisMenosRows.length > 0) {
-                    const handicappontosmaisMenosRow = maisMenosRows[0];
-                    const handicappontosCells = await maisMenosRow.$$('.oddsCell__noOddsCell');
+                if (handicappontosmaisMenosRows.length > 0) {
+                    const handicappontosmaisMenosRow = handicappontosmaisMenosRows[0];
+                    const handicappontosCells = await handicappontosmaisMenosRows.$$('.oddsCell__noOddsCell');
                         if (handicappontosCells.length > 0) {
                             handicappontos = await handicappontosCells[0].evaluate(element => element.textContent.trim());
                             handicappontos = parseInt(handicappontos); // Remove a parte decimal
