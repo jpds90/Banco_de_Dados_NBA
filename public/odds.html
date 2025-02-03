@@ -198,6 +198,7 @@
                     <th>2</th>
                     <th>Odds Mais/Menos</th>
                     <th>Mais/Menos</th>
+                    <th>Handicap</th>
                 </tr>
             </thead>
             <tbody id="oddsTable">
@@ -311,6 +312,8 @@
                         <th>% (2)</th>
                         <th>Handicap</th>
                         <th>Cobrir Handicap</th>
+                        <th>Handicap Apost.</th>
+                        <th>Cobrir Handicap Apost.</th>
                     </tr>
                 </thead>
                 <tbody id="confrontationTable"></tbody>
@@ -730,6 +733,7 @@ Promise.all([
             <td>${odd.away_odds}</td>
             <td>${odd.over_dois_meio}</td>
             <td>${odd.over_odds}</td>
+            <td>${odd.handicap}</td>
         `;
         tableBody.appendChild(row);
     });
@@ -825,111 +829,134 @@ function getRankWeight(rank) {
     return 0;  // Se o rank não for de 1 a 15
 }
 
-// Recuperar os dados do Handicap do localStorage
-const handicapData = JSON.parse(localStorage.getItem("handicapData")) || [];
+// Recupera os dados do handicap antigo do localStorage
+const handicapOldData = JSON.parse(localStorage.getItem("handicapData")) || [];
 
+// Inicia a cadeia de requisições para buscar os demais dados
 fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
     .then(response => response.json())
     .then(confrontationData => {
+        console.log('Confrontation Data:', confrontationData);
         fetch('/odds-nba')
             .then(response => response.json())
             .then(oddsnbaData => {
+                console.log('Odds NBA Data:', oddsnbaData);
                 fetch('/ultimosjogos')
                     .then(response => response.json())
                     .then(ultimosJogosData => {
-                        const tableBody = document.getElementById('confrontationTable');
+                        console.log('Ultimos Jogos Data:', ultimosJogosData);
+                        // Busca os dados do novo handicap a partir do endpoint /odds
+                        fetch('/odds')
+                            .then(response => response.json())
+                            .then(handicapNewData => {
+                                console.log('Handicap New Data:', handicapNewData);
+                                const tableBody = document.getElementById('confrontationTable');
 
-                        confrontationData.forEach(confrontation => {
-                            const row = document.createElement('tr');
+                                confrontationData.forEach(confrontation => {
+                                    const row = document.createElement('tr');
 
-                            const handicapItem = handicapData.find(h =>
-                                h.time_home === confrontation.time_home && h.time_away === confrontation.time_away
-                            );
-                            const handicapValue = handicapItem ? handicapItem.handicap : 'N/A';
-                            const jogosPerdidosHandicap = handicapItem ? handicapItem.jogos_perdidos_handicap : 'N/A';
-                            
-                            const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
-                            const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
+                                    // Buscar os dados de handicap antigo a partir do localStorage
+                                    const oldItem = handicapOldData.find(h =>
+                                        h.time_home === confrontation.time_home &&
+                                        h.time_away === confrontation.time_away
+                                    );
+                                    const handicapValueOld = oldItem ? oldItem.handicap : 'N/A';
+                                    const jogosPerdidosHandicapOld = oldItem ? oldItem.jogos_perdidos_handicap : 'N/A';
 
-                            const homeRank = parseInt(homeClassification);
-                            const awayRank = parseInt(awayClassification);
-                            const homeRankWeight = getRankWeight(homeRank);
-                            const awayRankWeight = getRankWeight(awayRank);
+                                    // Buscar os dados do novo handicap a partir do endpoint /odds
+                                    const newItem = handicapNewData.find(h =>
+                                        h.time_home === confrontation.time_home &&
+                                        h.time_away === confrontation.time_away
+                                    );
+                                    const handicapValueNew = newItem ? newItem.handicap : 'N/A';
+                                    const jogosPerdidosHandicapNew = newItem ? newItem.jogos_perdidos_handicap : 'N/A';
 
-                            const homeUltimos = ultimosJogosData.find(jogo => jogo.time_home === confrontation.time_home);
-                            const awayUltimos = ultimosJogosData.find(jogo => jogo.time_away === confrontation.time_away);
+                                    // Busca as classificações e outros dados (como no seu código)
+                                    const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
+                                    const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
 
- // Garantir que as variáveis existam e sejam numéricas antes do cálculo
-const homeWins = homeUltimos && !isNaN(homeUltimos.home_wins_last_10) ? homeUltimos.home_wins_last_10 : 0;
-const awayWins = awayUltimos && !isNaN(awayUltimos.away_wins_last_10) ? awayUltimos.away_wins_last_10 : 0;
+                                    const homeRank = parseInt(homeClassification);
+                                    const awayRank = parseInt(awayClassification);
+                                    const homeRankWeight = getRankWeight(homeRank);
+                                    const awayRankWeight = getRankWeight(awayRank);
 
-const homeWinPercentage1 = ((homeWins / 10) * 100) || 0;
-const awayWinPercentage2 = ((awayWins / 10) * 100) || 0;
+                                    const homeUltimos = ultimosJogosData.find(jogo => jogo.time_home === confrontation.time_home);
+                                    const awayUltimos = ultimosJogosData.find(jogo => jogo.time_away === confrontation.time_away);
 
-const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
-const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
-const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
-const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
-const homeWinsGeral = parseFloat(confrontation.total_home_general_wins) || 0;
-const awayWinsGeral = parseFloat(confrontation.total_away_general_wins) || 0;
+                                    const homeWins = homeUltimos && !isNaN(homeUltimos.home_wins_last_10) ? homeUltimos.home_wins_last_10 : 0;
+                                    const awayWins = awayUltimos && !isNaN(awayUltimos.away_wins_last_10) ? awayUltimos.away_wins_last_10 : 0;
 
-// Cálculo do peso das vitórias considerando todas as variáveis
-const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.3) + (homeWinPercentage1 * 0.10) + homeRankWeight;
-const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.2) + (awayWinPercentage2 * 0.15) + awayRankWeight;
+                                    const homeWinPercentage1 = ((homeWins / 10) * 100) || 0;
+                                    const awayWinPercentage2 = ((awayWins / 10) * 100) || 0;
 
-// Soma total dos pesos para evitar NaN
-const homeTotal = homeRankWeight + homeWinPercentage + homeWinPercentage1 + homeWinWeight;
-const awayTotal = awayRankWeight + awayWinPercentage + awayWinPercentage2 + awayWinWeight;
-const totalSum = homeTotal + awayTotal;
+                                    const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
+                                    const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
+                                    const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
+                                    const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
+                                    const homeWinsGeral = parseFloat(confrontation.total_home_general_wins) || 0;
+                                    const awayWinsGeral = parseFloat(confrontation.total_away_general_wins) || 0;
 
-// Evita divisão por zero e garante valores numéricos válidos
-const homePercentage = totalSum !== 0 ? ((homeTotal / totalSum) * 100).toFixed(0) : 50;
-const awayPercentage = totalSum !== 0 ? ((awayTotal / totalSum) * 100).toFixed(0) : 50;
+                                    const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.3) + (homeWinPercentage1 * 0.10) + homeRankWeight;
+                                    const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.2) + (awayWinPercentage2 * 0.15) + awayRankWeight;
 
-// Exibir para debug
-console.log({
-    homeWins, awayWins, homeWinPercentage1, awayWinPercentage2,
-    homeHomeWins, homeWinPercentage, awayAwayWins, awayWinPercentage,
-    homeWinsGeral, awayWinsGeral, homeRankWeight, awayRankWeight,
-    homeWinWeight, awayWinWeight, homeTotal, awayTotal, totalSum,
-    homePercentage, awayPercentage
-});
+                                    const homeTotal = homeRankWeight + homeWinPercentage + homeWinPercentage1 + homeWinWeight;
+                                    const awayTotal = awayRankWeight + awayWinPercentage + awayWinPercentage2 + awayWinWeight;
+                                    const totalSum = homeTotal + awayTotal;
 
+                                    const homePercentage = totalSum !== 0 ? ((homeTotal / totalSum) * 100).toFixed(0) : 50;
+                                    const awayPercentage = totalSum !== 0 ? ((awayTotal / totalSum) * 100).toFixed(0) : 50;
 
-                            let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
-                            let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
+                                    // Debug: verificar os valores carregados
+                                    console.log({
+                                        homeWins, awayWins, homeWinPercentage1, awayWinPercentage2,
+                                        homeHomeWins, homeWinPercentage, awayAwayWins, awayWinPercentage,
+                                        homeWinsGeral, awayWinsGeral, homeRankWeight, awayRankWeight,
+                                        homeWinWeight, awayWinWeight, homeTotal, awayTotal, totalSum,
+                                        homePercentage, awayPercentage,
+                                        handicapValueOld, jogosPerdidosHandicapOld,
+                                        handicapValueNew, jogosPerdidosHandicapNew
+                                    });
 
-                            row.innerHTML = `
-                                <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
-                                <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
-                                <td>${homeHomeWins}</td>
-                                <td>${confrontation.home_away_wins}</td>
-                                <td>${confrontation.away_home_wins}</td>
-                                <td>${awayAwayWins}</td>
-                                <td>${confrontation.total_home_wins}</td>
-                                <td>${confrontation.total_away_wins}</td>
-                                <td>${homeWins} (10)</td>
-                                <td>${homeWinPercentage1}%</td>
-                                <td>${homeWinsGeral} (10)</td>
-                                <td>${homeWinPercentage}%</td>
-                                <td>${awayWins} (10)</td>
-                                <td>${awayWinPercentage2}%</td>
-                                <td>${awayWinsGeral} (10)</td>
-                                <td>${awayWinPercentage}%</td>
-                                <td>${homePercentage}%</td>
-                                <td>${awayPercentage}%</td>
-                                <td>${handicapValue}</td>
-                                <td>${jogosPerdidosHandicap}</td> <!-- Jogos Perdidos por Handicap -->
+                                    let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
+                                    let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
 
-                            `;
-                            tableBody.appendChild(row);
-                        });
+                                    row.innerHTML = `
+                                        <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
+                                        <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
+                                        <td>${confrontation.home_home_wins}</td>
+                                        <td>${confrontation.home_away_wins}</td>
+                                        <td>${confrontation.away_home_wins}</td>
+                                        <td>${awayAwayWins}</td>
+                                        <td>${confrontation.total_home_wins}</td>
+                                        <td>${confrontation.total_away_wins}</td>
+                                        <td>${homeWins} (10)</td>
+                                        <td>${homeWinPercentage1}%</td>
+                                        <td>${homeWinsGeral} (10)</td>
+                                        <td>${homeWinPercentage}%</td>
+                                        <td>${awayWins} (10)</td>
+                                        <td>${awayWinPercentage2}%</td>
+                                        <td>${awayWinsGeral} (10)</td>
+                                        <td>${awayWinPercentage}%</td>
+                                        <td>${homePercentage}%</td>
+                                        <td>${awayPercentage}%</td>
+                                        <!-- Handicap antigo -->
+                                        <td>${handicapValueOld}</td>
+                                        <td>${jogosPerdidosHandicapOld}</td>
+                                        <!-- Novo handicap -->
+                                        <td>${handicapValueNew}</td>
+                                        <td>${jogosPerdidosHandicapNew}</td>
+                                    `;
+                                    tableBody.appendChild(row);
+                                });
+                            })
+                            .catch(error => console.error('Erro ao carregar dados de novo handicap:', error));
                     })
                     .catch(error => console.error('Erro ao carregar ultimosjogos:', error));
             })
             .catch(error => console.error('Erro ao carregar odds-nba:', error));
     })
     .catch(error => console.error('Erro ao carregar confrontos:', error));
+
 
 
 
