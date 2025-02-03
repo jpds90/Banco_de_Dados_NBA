@@ -178,9 +178,9 @@ for (let id of ids) {
                 if (maisMenosRows.length > 0) {
                     const handicappontosmaisMenosRow = maisMenosRows[0];
                     const handicappontosCells = await maisMenosRow.$$('.oddsCell__noOddsCell');
-                        if (oddsCells.length > 0) {
-                            overOdds = await handicappontosCells[0].evaluate(element => element.textContent.trim());
-                            overOdds = parseInt(handicappontos); // Remove a parte decimal
+                        if (handicappontosCells.length > 0) {
+                            handicappontos = await handicappontosCells[0].evaluate(element => element.textContent.trim());
+                            handicappontos = parseInt(handicappontos); // Remove a parte decimal
 
                          console.log(`Handicap ${handicappontos}`);
                         }
