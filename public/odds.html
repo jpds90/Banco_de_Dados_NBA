@@ -863,6 +863,15 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                     const handicapValueOld = oldItem ? oldItem.handicap : 'N/A';
                                     const jogosPerdidosHandicapOld = oldItem ? oldItem.jogos_perdidos_handicap : 'N/A';
 
+                                    // Busca os dados do novo handicap a partir do endpoint /handicap (já carregados em handicapNewData)
+                                    const newItem = handicapNewData.find(h =>
+                                        h.time_home === confrontation.time_home &&
+                                        h.time_away === confrontation.time_away
+                                    );
+                                    // Caso não encontre, usamos valor vazio para o input
+                                    const handicapValueNew = newItem ? newItem.handicap : '';
+                                    const jogosPerdidosHandicapNew = newItem ? newItem.jogos_perdidos_handicap : 'N/A';
+
                                     // Buscar os dados do novo handicap a partir do endpoint /handicap
                                     const newItem = handicapNewData.find(h =>
                                         h.time_home === confrontation.time_home &&
@@ -943,10 +952,43 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                         <td>${handicapValueOld}</td>
                                         <td>${jogosPerdidosHandicapOld}</td>
                                         <!-- Novo handicap -->
-                                        <td>${handicapValueNew}</td>
-                                        <td>${jogosPerdidosHandicapNew}</td>
+                                        <!-- Novo handicap: input para edição e célula para resultado -->
+                                        <td>
+                                            <input type="number" class="new-handicap-input" value="${handicapValueNew}" />
+                                        </td>
+                                        <td class="new-handicap-result">${jogosPerdidosHandicapNew}</td>
                                     `;
                                     tableBody.appendChild(row);
+
+                                    // Adiciona o listener para atualizar dinamicamente o resultado do novo handicap
+// Após inserir a linha na tabela...
+const newHandicapInput = row.querySelector('.new-handicap-input');
+const newHandicapResultCell = row.querySelector('.new-handicap-result');
+
+// Adiciona o listener com função assíncrona
+newHandicapInput.addEventListener('input', async function() {
+    const novoValor = parseFloat(this.value);
+    if (isNaN(novoValor)) {
+        newHandicapResultCell.textContent = 'N/A';
+        return;
+    }
+    
+    // Cria o objeto "avg" com base nos dados do confronto atual
+    const avg = {
+        time_home: confrontation.time_home,
+        time_away: confrontation.time_away
+    };
+
+    try {
+        // Chama a função assíncrona para calcular os jogos perdidos com base no novo handicap
+        const jogosCalculados = await calcularDerrotasPorMaisQueHandicap(novoValor, avg);
+        newHandicapResultCell.textContent = jogosCalculados;
+    } catch (error) {
+        console.error('Erro ao calcular derrotas:', error);
+        newHandicapResultCell.textContent = 'Erro';
+    }
+});
+
                                 });
                             })
                             .catch(error => console.error('Erro ao carregar dados de novo handicap:', error));
@@ -957,6 +999,23 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
     })
     .catch(error => console.error('Erro ao carregar confrontos:', error));
 
+async function calcularDerrotasPorMaisQueHandicap(handicap, avg) {
+    const timeParaConsulta = handicap < 0 ? avg.time_home : avg.time_away;
+    const campoLocal = handicap < 0 ? 'home' : 'away';
+    const handicapAbsoluto = Math.abs(handicap);
+
+    const response = await fetch(`/ultimos-10-jogos?time=${encodeURIComponent(timeParaConsulta)}&location=${campoLocal}`);
+    const ultimosJogos = await response.json();
+
+    const derrotas = ultimosJogos.filter(jogo => {
+        const diferencaPontos = campoLocal === 'home' 
+            ? jogo.home_score - jogo.away_score 
+            : jogo.away_score - jogo.home_score;
+        return diferencaPontos < 0 && Math.abs(diferencaPontos) > handicapAbsoluto;
+    }).length;
+
+    return derrotas;
+}
 
 
 
