@@ -872,14 +872,6 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                     const handicapValueNew = newItem ? newItem.handicap : '';
                                     const jogosPerdidosHandicapNew = newItem ? newItem.jogos_perdidos_handicap : 'N/A';
 
-                                    // Buscar os dados do novo handicap a partir do endpoint /handicap
-                                    const newItem = handicapNewData.find(h =>
-                                        h.time_home === confrontation.time_home &&
-                                        h.time_away === confrontation.time_away
-                                    );
-                                    const handicapValueNew = newItem ? newItem.handicap : 'N/A';
-                                    const jogosPerdidosHandicapNew = newItem ? newItem.jogos_perdidos_handicap : 'N/A';
-
                                     // Busca as classificações e outros dados (como no seu código)
                                     const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
                                     const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
