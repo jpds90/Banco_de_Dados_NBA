@@ -159,37 +159,33 @@ for (let id of ids) {
                 continue;
             }
 
-            const handicappontosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/handicap-asiatico/tr-incluindo-prol`;
-            console.log("Processando URL handicap:", handicappontosUrl);
-            await page2.goto(handicappontosUrl, { timeout: 180000 });
+
+            const handicapUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/handicap-asiatico/tr-incluindo-prol`;
+            console.log("Processando URL Pontos:", handicapUrl);
+            await page2.goto(handicapUrl, { timeout: 180000 });
             await sleep(10000);
-        
+
+            
+
             let handicappontos = '';
 
             try {
-                const handicappontosTableWrapper = await page2.$('.oddsTab__tableWrapper');
-                const handicappontosTables = await handicappontosTableWrapper.$$('.ui-table.oddsCell__odds');
-        
-                if (handicappontosTables.length > 0) {
-                    const targetTable = handicappontosTables[0];
-                    
-                const handicappontosmaisMenosRows = await page2.$$('.ui-table__body .ui-table__row');
+                const maisMenosRows = await page2.$$('.ui-table__body .ui-table__row');
             
-                if (handicappontosmaisMenosRows.length > 0) {
-                    const handicappontosmaisMenosRow = handicappontosmaisMenosRows[0];
-                    const handicappontosCells = await handicappontosmaisMenosRows.$$('.oddsCell__noOddsCell');
-                        if (handicappontosCells.length > 0) {
-                            handicappontos = await handicappontosCells[0].evaluate(element => element.textContent.trim());
-                            handicappontos = parseInt(handicappontos); // Remove a parte decimal
-
-                         console.log(`Handicap ${handicappontos}`);
-                        }
+                if (maisMenosRows.length > 0) {
+                    const maisMenosRow = maisMenosRows[0];
+                    const oddsCells = await maisMenosRow.$$('.oddsCell__noOddsCell');
+            
+                    if (oddsCells.length >= 0) {
+                        handicappontos = await oddsCells[0].evaluate(element => element.textContent.trim());
+                        handicappontos = parseInt(handicappontos); // Remove a parte decimal
                     }
+                    console.log(`Handicap: ${handicappontos}`);
                 }
             } catch (error) {
-                console.error('Erro ao processar a página Handicap:', error);
+                console.error('Erro ao processar a página de odds mais de/menos de:', error);
                 continue;
-            } 
+            }
 
            
 
