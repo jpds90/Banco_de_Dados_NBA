@@ -335,12 +335,16 @@ app.get('/odds', async (req, res) => {
 // Rota para buscar apenas os valores da coluna 'handicap' da tabela 'odds'
 app.get('/handicap', async (req, res) => {
     try {
-        // Seleciona apenas a coluna handicap
-        const result = await pool.query('SELECT handicap FROM odds');
+        // Seleciona os dados que você precisa para o novo handicap
+        // Por exemplo, time_home, time_away e handicap.
+        const result = await pool.query(`
+            SELECT time_home, time_away, handicap
+            FROM odds
+        `);
         res.json(result.rows);
     } catch (error) {
-        console.error('Erro ao buscar dados do banco:', error);
-        res.status(500).json({ error: 'Erro ao buscar dados do banco' });
+        console.error('Erro ao buscar dados do novo handicap:', error);
+        res.status(500).json({ error: 'Erro ao buscar dados do novo handicap' });
     }
 });
 
