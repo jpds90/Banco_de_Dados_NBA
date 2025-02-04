@@ -845,8 +845,8 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                     .then(response => response.json())
                     .then(ultimosJogosData => {
                         console.log('Ultimos Jogos Data:', ultimosJogosData);
-                        // Busca os dados do novo handicap a partir do endpoint /odds
-                        fetch('/odds')
+                        // Busca os dados do novo handicap a partir do endpoint /handicap
+                        fetch('/handicap')
                             .then(response => response.json())
                             .then(handicapNewData => {
                                 console.log('Handicap New Data:', handicapNewData);
@@ -863,7 +863,7 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                     const handicapValueOld = oldItem ? oldItem.handicap : 'N/A';
                                     const jogosPerdidosHandicapOld = oldItem ? oldItem.jogos_perdidos_handicap : 'N/A';
 
-                                    // Buscar os dados do novo handicap a partir do endpoint /odds
+                                    // Buscar os dados do novo handicap a partir do endpoint /handicap
                                     const newItem = handicapNewData.find(h =>
                                         h.time_home === confrontation.time_home &&
                                         h.time_away === confrontation.time_away
