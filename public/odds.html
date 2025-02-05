@@ -952,12 +952,9 @@ fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
                                     `;
                                     tableBody.appendChild(row);
 
-                                    // Adiciona o listener para atualizar dinamicamente o resultado do novo handicap
-// Após inserir a linha na tabela...
 const newHandicapInput = row.querySelector('.new-handicap-input');
 const newHandicapResultCell = row.querySelector('.new-handicap-result');
 
-// Adiciona o listener com função assíncrona
 newHandicapInput.addEventListener('input', async function() {
     const novoValor = parseFloat(this.value);
     if (isNaN(novoValor)) {
@@ -972,8 +969,8 @@ newHandicapInput.addEventListener('input', async function() {
     };
 
     try {
-        // Chama a função assíncrona para calcular os jogos perdidos com base no novo handicap
-        const jogosCalculados = await calcularDerrotasPorMaisQueHandicap(novoValor, avg);
+        // Usa o novo valor e o handicap antigo para calcular as derrotas
+        const jogosCalculados = await calcularDerrotasPorMaisQueHandicap(novoValor, handicapValueOld, avg);
         newHandicapResultCell.textContent = jogosCalculados;
     } catch (error) {
         console.error('Erro ao calcular derrotas:', error);
@@ -991,23 +988,29 @@ newHandicapInput.addEventListener('input', async function() {
     })
     .catch(error => console.error('Erro ao carregar confrontos:', error));
 
-async function calcularDerrotasPorMaisQueHandicap(handicapValueOld, avg) {
+async function calcularDerrotasPorMaisQueHandicap(novoHandicap, handicapValueOld, avg) {
+    // Usa o handicapValueOld para determinar qual time consultar e a localização
     const timeParaConsulta = handicapValueOld < 0 ? avg.time_home : avg.time_away;
     const campoLocal = handicapValueOld < 0 ? 'home' : 'away';
-    const handicapAbsoluto = Math.abs(handicapValueOld);
+    
+    // Para o cálculo, usa o novo valor digitado
+    const handicapAbsoluto = Math.abs(novoHandicap);
 
+    // Busca os últimos 10 jogos do time na localização determinada
     const response = await fetch(`/ultimos-10-jogos?time=${encodeURIComponent(timeParaConsulta)}&location=${campoLocal}`);
     const ultimosJogos = await response.json();
 
+    // Filtra os jogos onde o time perdeu e a diferença de pontos (em valor absoluto) é maior que o novo handicap
     const derrotas = ultimosJogos.filter(jogo => {
-        const diferencaPontos = campoLocal === 'home' 
-            ? jogo.home_score - jogo.away_score 
+        const diferencaPontos = campoLocal === 'home'
+            ? jogo.home_score - jogo.away_score
             : jogo.away_score - jogo.home_score;
         return diferencaPontos < 0 && Math.abs(diferencaPontos) > handicapAbsoluto;
     }).length;
 
     return derrotas;
 }
+
 
 
 
