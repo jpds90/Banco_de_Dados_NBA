@@ -992,9 +992,9 @@ newHandicapInput.addEventListener('input', async function() {
     .catch(error => console.error('Erro ao carregar confrontos:', error));
 
 async function calcularDerrotasPorMaisQueHandicap(handicap, avg) {
-    const timeParaConsulta = handicap < 0 ? avg.time_home : avg.time_away;
-    const campoLocal = handicap < 0 ? 'home' : 'away';
-    const handicapAbsoluto = Math.abs(handicap);
+    const timeParaConsulta = handicapValueOld < 0 ? avg.time_home : avg.time_away;
+    const campoLocal = handicapValueOld < 0 ? 'home' : 'away';
+    const handicapAbsoluto = Math.abs(handicapValueOld);
 
     const response = await fetch(`/ultimos-10-jogos?time=${encodeURIComponent(timeParaConsulta)}&location=${campoLocal}`);
     const ultimosJogos = await response.json();
