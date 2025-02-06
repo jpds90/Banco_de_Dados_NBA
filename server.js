@@ -70,10 +70,18 @@ app.get('/table/:name', async (req, res) => {
         res.status(500).send('Erro ao buscar dados da tabela');
     }
 });
-app.post('/save-url', (req, res) => {
+// Endpoint para receber a URL do frontend
+app.post('/salvar-url', (req, res) => {
     const { url } = req.body;
-    fs.writeFileSync('url.txt', url, 'utf8'); // Salva a URL em um arquivo local
-    res.send({ message: 'URL salva com sucesso!' });
+    if (!url) {
+        return res.status(400).json({ error: "URL inválida" });
+    }
+
+    // Salva a URL em um arquivo
+    fs.writeFileSync('url.txt', url, 'utf8');
+    console.log(`URL salva: ${url}`);
+    
+    res.json({ success: true, message: "URL salva com sucesso!" });
 });
 
 // Rota para exibir links únicos
