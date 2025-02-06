@@ -232,7 +232,22 @@ app.post('/execute-script', (req, res) => {
         res.send('Script.js executado com sucesso.');
     });
 });
-
+// Rota para executar o script saveLinks.js
+app.post('/futebollink', (req, res) => {
+    const saveLinksPath = path.join(__dirname, 'public', 'futebollink.js');
+    exec(`node ${saveLinksPath}`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Erro ao executar o Link Futebol: ${error.message}`);
+            return res.status(500).send('Erro ao executar o Link Futebol.');
+        }
+        if (stderr) {
+            console.error(`Erro no script: ${stderr}`);
+            return res.status(500).send('Erro ao executar o Link Futebol.');
+        }
+        console.log(`Resultado do script: ${stdout}`);
+        res.send('Link Futebol executado com sucesso.');
+    });
+});
 // Rota para executar a atualização de jogadores
 app.post('/execute-Jogadores', async (req, res) => {
     const { links } = req.body; // Links das equipes selecionadas
