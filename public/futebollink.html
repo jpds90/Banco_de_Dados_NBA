@@ -69,9 +69,15 @@
         }
 
 function sendUrlToScript(url) {
-    localStorage.setItem("football_url", url);
-    console.log("URL salva no Local Storage:", url);
+    fetch('/save-url', {  // Criamos um endpoint no backend
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+    })
+    .then(response => console.log("URL enviada:", url))
+    .catch(error => console.error("Erro ao enviar URL", error));
 }
+
 
     </script>
 </body>
