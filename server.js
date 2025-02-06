@@ -70,6 +70,11 @@ app.get('/table/:name', async (req, res) => {
         res.status(500).send('Erro ao buscar dados da tabela');
     }
 });
+app.post('/save-url', (req, res) => {
+    const { url } = req.body;
+    fs.writeFileSync('url.txt', url, 'utf8'); // Salva a URL em um arquivo local
+    res.send({ message: 'URL salva com sucesso!' });
+});
 
 // Rota para exibir links únicos
 app.get('/links', async (req, res) => {
