@@ -27,14 +27,15 @@
     <div id="countries"></div>
     
     <script>
-function formatString(str) {
-    return str
-        .normalize("NFD") // Separa acentos das letras
-        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+function formatText(text) {
+    return text
+        .normalize("NFD") // Remove acentos
+        .replace(/[\u0300-\u036f]/g, "") // Remove caracteres diacríticos
         .toLowerCase()
-        .replace(/[^a-z0-9-]/g, '') // Remove caracteres especiais, mantendo apenas letras, números e hífens
-        .replace(/\s+/g, '-'); // Substitui espaços por hífen
+        .replace(/[^a-z0-9]+/g, "-") // Substitui espaços e caracteres inválidos por "-"
+        .replace(/^-+|-+$/g, ""); // Remove "-" extras no começo e no final
 }
+
 
         const countries = {
             "Brasil": ["Série A", "Série B", "Série C", "Série D"],
