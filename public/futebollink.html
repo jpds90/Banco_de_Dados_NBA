@@ -61,9 +61,10 @@ function formatText(text) {
                 leagueElement.style.cursor = "pointer";
                 leagueElement.addEventListener("click", (event) => {
                     event.stopPropagation(); // Impede que o clique no país feche a lista
-                    let formattedCountry = formatString(country);
-                    let formattedLeague = formatString(league);
-                    let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
+let formattedCountry = formatText(country);
+let formattedLeague = formatText(league);
+let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
+
 
                     
                     sendUrlToScript(url);
