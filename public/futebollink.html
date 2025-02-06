@@ -15,6 +15,12 @@
             display: none;
             margin-left: 20px;
         }
+        .league {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -43,7 +49,9 @@
                 let leagueElement = document.createElement("div");
                 leagueElement.textContent = league;
                 leagueElement.classList.add("league");
-                leagueElement.addEventListener("click", () => {
+                leagueElement.style.cursor = "pointer";
+                leagueElement.addEventListener("click", (event) => {
+                    event.stopPropagation(); // Impede que o clique no país feche a lista
                     let formattedCountry = country.toLowerCase().replace(/ /g, '-');
                     let formattedLeague = league.toLowerCase().replace(/ /g, '-');
                     let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
