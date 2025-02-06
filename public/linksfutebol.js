@@ -71,8 +71,8 @@ async function scrapeAndSaveLinks() {
 
             for (const row of rows) {
                 try {
-                    const homeSelector = '#detail > div.duelParticipant > div.duelParticipant__home a';
-                    const awaySelector = '#detail > div.duelParticipant > div.duelParticipant__away a';
+                    const homeSelector = '#detail > div.duelParticipant > div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a';
+                    const awaySelector = '#detail > div.duelParticipant > div.duelParticipant__away > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a';
 
                     const homeElement = await row.$(homeSelector);
                     const awayElement = await row.$(awaySelector);
