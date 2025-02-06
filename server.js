@@ -234,7 +234,7 @@ app.post('/execute-script', (req, res) => {
 });
 // Rota para executar o script saveLinks.js
 app.post('/futebollink', (req, res) => {
-    const saveLinksPath = path.join(__dirname, 'public', 'futebollink.js');
+    const saveLinksPath = path.join(__dirname, 'public', 'linksfutebol.js');
     exec(`node ${saveLinksPath}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Erro ao executar o Link Futebol: ${error.message}`);
