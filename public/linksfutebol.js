@@ -2,6 +2,16 @@ const puppeteer = require('puppeteer');
 const sleep = require('sleep-promise');
 const { Client } = require('pg');
 
+try {
+    const url = localStorage.getItem("football_url") || 'https://www.flashscore.pt/basquetebol/eua/nba/lista/';
+    await page.goto(url, { timeout: 120000 });
+    await sleep(10000);
+    await page.waitForSelector('.container', { timeout: 90000 });
+} catch (error) {
+    console.error("Erro ao carregar a página:", error);
+}
+
+
 // Configuração do banco de dados
 const dbConfig = {
  connectionString: process.env.DATABASE_URL, // Usando a URL completa
