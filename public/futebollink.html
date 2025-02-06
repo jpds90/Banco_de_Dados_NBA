@@ -68,12 +68,11 @@
             countryContainer.appendChild(leaguesDiv);
         }
 
-        function sendUrlToScript(url) {
-            fetch("linksfutebol.js", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ url })
-            })
+function sendUrlToScript(url) {
+    localStorage.setItem("football_url", url);
+    console.log("URL salva no Local Storage:", url);
+}
+
             .then(response => console.log("URL enviada: ", url))
             .catch(error => console.error("Erro ao enviar URL", error));
         }
