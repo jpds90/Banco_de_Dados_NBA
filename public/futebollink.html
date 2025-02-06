@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Países e Ligas</title>
+    <script defer src="linksfutebol.js"></script>
+    <style>
+        .country {
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .leagues {
+            display: none;
+            margin-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Selecione um País</h1>
+    <div id="countries"></div>
+    
+    <script>
+        const countries = {
+            "Brasil": ["Série A", "Série B", "Série C", "Série D"],
+            "Portugal": ["Primeira Liga", "Segunda Liga"],
+            "Espanha": ["La Liga", "Segunda División"],
+        };
+
+        const countryContainer = document.getElementById("countries");
+
+        for (let country in countries) {
+            let countryElement = document.createElement("div");
+            countryElement.classList.add("country");
+            countryElement.textContent = country;
+            countryContainer.appendChild(countryElement);
+            
+            let leaguesDiv = document.createElement("div");
+            leaguesDiv.classList.add("leagues");
+            
+            countries[country].forEach(league => {
+                let leagueElement = document.createElement("div");
+                leagueElement.textContent = league;
+                leagueElement.classList.add("league");
+                leagueElement.addEventListener("click", () => {
+                    let formattedCountry = country.toLowerCase().replace(/ /g, '-');
+                    let formattedLeague = league.toLowerCase().replace(/ /g, '-');
+                    let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
+                    
+                    sendUrlToScript(url);
+                });
+                leaguesDiv.appendChild(leagueElement);
+            });
+            
+            countryElement.addEventListener("click", () => {
+                leaguesDiv.style.display = leaguesDiv.style.display === "block" ? "none" : "block";
+            });
+            
+            countryContainer.appendChild(leaguesDiv);
+        }
+
+        function sendUrlToScript(url) {
+            fetch("linksfutebol.js", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url })
+            })
+            .then(response => console.log("URL enviada: ", url))
+            .catch(error => console.error("Erro ao enviar URL", error));
+        }
+    </script>
+</body>
+</html>
