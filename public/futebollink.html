@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Países e Ligas</title>
-    <script defer src="linksfutebol.js"></script>
     <style>
         .country {
             cursor: pointer;
@@ -28,6 +27,15 @@
     <div id="countries"></div>
     
     <script>
+function formatString(str) {
+    return str
+        .normalize("NFD") // Separa acentos das letras
+        .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .toLowerCase()
+        .replace(/[^a-z0-9-]/g, '') // Remove caracteres especiais, mantendo apenas letras, números e hífens
+        .replace(/\s+/g, '-'); // Substitui espaços por hífen
+}
+
         const countries = {
             "Brasil": ["Série A", "Série B", "Série C", "Série D"],
             "Portugal": ["Primeira Liga", "Segunda Liga"],
@@ -52,9 +60,10 @@
                 leagueElement.style.cursor = "pointer";
                 leagueElement.addEventListener("click", (event) => {
                     event.stopPropagation(); // Impede que o clique no país feche a lista
-                    let formattedCountry = country.toLowerCase().replace(/ /g, '-');
-                    let formattedLeague = league.toLowerCase().replace(/ /g, '-');
+                    let formattedCountry = formatString(country);
+                    let formattedLeague = formatString(league);
                     let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
+
                     
                     sendUrlToScript(url);
                 });
@@ -69,14 +78,16 @@
         }
 
 function sendUrlToScript(url) {
-    fetch('/save-url', {  // Criamos um endpoint no backend
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    fetch("http://localhost:3000/salvar-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
     })
-    .then(response => console.log("URL enviada:", url))
+    .then(response => response.json())
+    .then(data => console.log("URL enviada com sucesso!", data))
     .catch(error => console.error("Erro ao enviar URL", error));
 }
+
 
 
     </script>
