@@ -78,7 +78,7 @@ function formatString(str) {
         }
 
 function sendUrlToScript(url) {
-    fetch("http://localhost:3000/salvar-url", {
+    fetch("https://analise-jpnba.onrender.com/salvar-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url })
