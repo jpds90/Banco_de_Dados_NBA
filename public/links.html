@@ -40,6 +40,7 @@
 <body>
     <h1>Links NBA</h1>
     <button id="executeScript">Atualizar Links</button>
+    <button id="executeScript1">Atualizar Links Futebol</button>
     <button id="executeAll" aria-label="Atualizar Jogadores e Jogos">Atualizar</button>
     <button id="executeAll1" aria-label="Atualizar Jogadores">Atualizar Jogadores</button>
     <button id="executeAll2" aria-label="Atualizar Jogadores Lesoes">Atualizar Jogadores Lesões</button>
@@ -218,7 +219,28 @@
                     showLoadingMessage(false); // Ocultar "Carregando"
                 });
         });
+        // Adicionar evento ao botão "Atualizar Links Futebol"
+        const executeScriptButton1 = document.getElementById('executeScript1');
+        executeScriptButton1.addEventListener('click', () => {
+            showLoadingMessage(true); // Mostrar "Carregando"
 
+            fetch('/futebollink', { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Links de Futebol atualizados com sucesso!');
+                        window.location.reload(); // Recarregar a página
+                    } else {
+                        alert('Erro ao atualizar os links.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao chamar a API:', error);
+                    alert('Erro ao atualizar os links.');
+                })
+                .finally(() => {
+                    showLoadingMessage(false); // Ocultar "Carregando"
+                });
+        });
         // Atualizar jogadores e depois jogos em sequência
 // Atualizar jogadores e depois jogos em sequência
 async function executeBothActions() {
