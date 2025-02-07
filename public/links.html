@@ -39,6 +39,9 @@
 </head>
 <body>
     <h1>Links NBA</h1>
+<button id="loadNBA">NBA</button>
+<button id="loadFutebol">Futebol</button>
+
     <button id="executeScript">Atualizar Links</button>
     <button id="executeScript1">Atualizar Links Futebol</button>
     <button id="executeAll" aria-label="Atualizar Jogadores e Jogos">Atualizar</button>
@@ -114,7 +117,36 @@
                 sortTable(column, newOrder);
             });
         });
+    function loadLinks(endpoint) {
+        fetch(endpoint)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('linksTable');
+                tableBody.innerHTML = ''; // Limpar conteúdo existente para evitar duplicação
+                data.forEach((link, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><input type="checkbox" class="teamCheckbox" data-link="${link.link}"></td>
+                        <td>${link.team_name}</td>
+                        <td><a href="${link.link}" target="_blank">${link.link}</a></td>
+                        <td>${link.event_time}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Erro ao carregar os links:', error);
+                alert('Erro ao carregar os links.');
+            });
+    }
 
+    document.getElementById('loadNBA').addEventListener('click', () => {
+        loadLinks('/links');
+    });
+    
+    document.getElementById('loadFutebol').addEventListener('click', () => {
+        loadLinks('/linksfut');
+    });
         // Carregar os links no carregamento da página
         fetch('/links')
             .then(response => response.json())
