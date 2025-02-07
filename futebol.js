@@ -303,7 +303,7 @@ const scrapeResults10 = async (link) => {
             const sportName = document.querySelector('.sportName.soccer');
             if (!sportName) throw new Error('SportName não encontrado');
 
-            return [...sportName.querySelectorAll('[id]')].map(element => element.id).slice(0, 4);
+            return [...sportName.querySelectorAll('[id]')].map(element => element.id).slice(0, 60);
         });
 
         const page2 = await browser.newPage();
@@ -494,7 +494,8 @@ if (teamID10) {
                         });
 
                         teamData += rowData + '\n';
-                    
+                    console.log("🟢 Dados a serem salvos:", rowData);
+
 
                     // Salvar dados no banco antes de fechar a página
                     if (teamID10 && teamData.length > 0) {
