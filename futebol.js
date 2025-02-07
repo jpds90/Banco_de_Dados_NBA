@@ -191,7 +191,7 @@ const saveDataToPlayersTable = async (teamName, rowData) => {
 
         await fixSequence(client, tableName);
 
-        for (const item of data) {
+        for (const item of rowData) {
             const { rows: existingRows } = await client.query(
                 `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
                 [item.playerName, item.data_hora]
