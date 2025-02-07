@@ -321,9 +321,9 @@ const scrapeResults10 = async (link) => {
                 console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
                 // Extrair a data da página
-                const statisticElement = await playerPage.$eval('#detail > div.duelParticipant > div.duelParticipant__startTime');
+                const statisticElement = await page2.$eval('#detail > div.duelParticipant > div.duelParticipant__startTime');
                 if (statisticElement) {
-                    const statisticData = await playerPage.evaluate(el => el.textContent.trim(), statisticElement);
+                    const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElement);
                     console.log(`Data ${statisticData} encontrada!`);
 
                     // Verificar se a data extraída já existe na tabela
@@ -332,7 +332,7 @@ const scrapeResults10 = async (link) => {
 
                     if (dateExists) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                        await playerPage.close();
+                        await page2.close();
                     
                         // Fechar o navegador e encerrar o scraping com sucesso
                         await browser.close();
@@ -492,7 +492,7 @@ const scrapeResults10 = async (link) => {
                         console.log(`Dados salvos para o time ${teamID10}`);
                     }
                 // Fechar a página de cada jogador
-                await playerPage.close();
+                await page2.close();
             } catch (error) {
                 console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
                 console.log('Pulando para o próximo jogador...');
