@@ -321,13 +321,14 @@ const scrapeResults10 = async (link) => {
                 console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
                 // Extrair a data da página
-                const statisticElement = await playerPage.$eval('div.duelParticipant > div.duelParticipant__startTime');
+                const statisticElement = await playerPage.$eval('#detail > div.duelParticipant > div.duelParticipant__startTime');
                 if (statisticElement) {
                     const statisticData = await playerPage.evaluate(el => el.textContent.trim(), statisticElement);
-                    console.log(Data ${statisticData} encontrada!);
+                    console.log(`Data ${statisticData} encontrada!`);
 
                     // Verificar se a data extraída já existe na tabela
                     const dateExists = await checkDateInDatabase(teamID10, statisticData);
+
 
                     if (dateExists) {
                         console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
