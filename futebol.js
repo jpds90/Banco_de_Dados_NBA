@@ -514,20 +514,22 @@ if (teamID10) {
                                 }
                         }
 
-                        // Adicionar estatísticas à linha de dados
-                        estatisticasEsperadas.forEach(stat => {
-                            rowData += `${estatisticasJogo[stat]}, `;
-                        });
+// Adicionar estatísticas à linha de dados, substituindo valores undefined por 0
+estatisticasEsperadas.forEach(stat => {
+    rowData += `${estatisticasJogo[stat] ?? 0}, `;
+});
 
-                        teamData += rowData + '\n';
-                    console.log("🟢 Dados a serem salvos:", rowData);
+teamData += rowData.trim() + '\n'; // Removendo espaço extra no final
+console.log("🟢 Dados a serem salvos:", rowData);
 
+// Salvar dados no banco antes de fechar a página
+if (teamID10 && teamData.trim().length > 0) {
+    await saveDataToPlayersTable(teamID10, teamData); // Função de salvamento
+    console.log(`✅ Dados salvos para o time ${teamID10}`);
+} else {
+    console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
+}
 
-                    // Salvar dados no banco antes de fechar a página
-                    if (teamID10 && teamData.length > 0) {
-                        await saveDataToPlayersTable(teamID10, teamData); // Função de salvamento
-                        console.log(`Dados salvos para o time ${teamID10}`);
-                    }
                 // Fechar a página de cada jogador
                 await page2.close();
             } catch (error) {
