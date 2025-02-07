@@ -123,7 +123,6 @@ const createPlayersTable = async (teamName) => {
         const query = `
             CREATE TABLE IF NOT EXISTS "${tableName}" (
                 id SERIAL PRIMARY KEY,
-                datajogo DATE NOT NULL,
                 data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 timehome VARCHAR(255) NOT NULL,
                 resultadohome INT NOT NULL,
@@ -168,8 +167,8 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
         for (const item of data) {
             const { rows: existingRows } = await client.query(
-                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND datajogo = $2`,
-                [item.playerName, item.datajogo]
+                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND datahora = $2`,
+                [item.playerName, item.datahora]
             );
 
             if (existingRows.length > 0) {
@@ -187,9 +186,9 @@ const saveDataToPlayersTable = async (teamName, data) => {
                 "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
             ];
 
-            const columns = ["datajogo", "data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
+            const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
             const values = [
-                item.datajogo, item.datahora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                item.datahora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
                 ...estatisticasKeys.map(stat => item[stat] || 0)
             ];
 
