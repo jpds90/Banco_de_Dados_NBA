@@ -315,34 +315,45 @@ const scrapeResults10 = async (link) => {
             console.log("Processando URL:", url);
             await page2.goto(url, { timeout: 120000 });
             await sleep(10000);
-            // Processar estatísticas apenas se o teamID10 for válido
-            if (teamID10) {
-                const lastDate = await getLastDateFromDatabase(teamID10);
-                console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+// Processar estatísticas apenas se o teamID10 for válido
+if (teamID10) {
+    const lastDate = await getLastDateFromDatabase(teamID10);
+    console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
-                // Extrair a data da página
-                const statisticElement = await page2.$eval('div.duelParticipant > div.duelParticipant__startTime');
-                if (statisticElement) {
-                    const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElement);
-                    console.log(`Data ${statisticData} encontrada!`);
+    try {
+        // Espera o elemento carregar por até 10 segundos
+        await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
 
-                    // Verificar se a data extraída já existe na tabela
-                    const dateExists = await checkDateInDatabase(teamID10, statisticData);
+        // Tenta encontrar o elemento na página
+        const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
+        if (statisticElementHandle) {
+            // Extrai o texto do elemento encontrado
+            const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
+            console.log(`Data ${statisticData} encontrada!`);
 
-                    if (dateExists) {
-                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                        await page2.close();
-                    
-                        // Fechar o navegador e encerrar o scraping com sucesso
-                        await browser.close();
-                        console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
-                        return; // Encerra toda a função scrapeResults1
-                    } else {
-                        console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
-                    }
-                }
+            // Verifica se a data extraída já existe no banco de dados
+            const dateExists = await checkDateInDatabase(teamID10, statisticData);
+
+            if (dateExists) {
+                console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
+                await page2.close();
+
+                // Fecha o navegador e encerra o scraping com sucesso
+                await browser.close();
+                console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
+                return; // Encerra toda a função scrapeResults1
+            } else {
+                console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
             }
+        } else {
+            console.log("❌ Elemento de data do jogo não encontrado!");
+        }
+    } catch (error) {
+        console.error("Erro ao extrair a data do jogo:", error);
+    }
+}
+
             try {
                 const rows = await page2.$$(`#detail`);
                 for (const row of rows) {
