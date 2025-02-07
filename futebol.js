@@ -182,16 +182,8 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
-console.log("🔎 Verificando valores antes de salvar:");
-console.log("Time Casa (timehome):", timehome);
-console.log("Time Visitante (timeaway):", timeaway);
-console.log("Resultado Casa:", resultadohome);
-console.log("Resultado Visitante:", resultadoaway);
-console.log("Estatísticas:", estatisticasJogo);
-
-
 // Função para salvar os dados dos Time de Futebol no banco
-const saveDataToPlayersTable = async (teamName, data) => {
+const saveDataToPlayersTable = async (teamName, rowData) => {
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
