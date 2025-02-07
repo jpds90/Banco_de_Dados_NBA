@@ -11,26 +11,56 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Função para obter a última data do banco de dados
+// Função para verificar se a tabela existe no banco de dados
+const checkIfTableExists = async (teamTable) => {
+    const client = await pool.connect();
+    try {
+        console.log(`🔍 Verificando se a tabela "${teamTable}" existe...`);
+        const result = await client.query(
+            `SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = $1
+            )`, 
+            [teamTable]
+        );
+        return result.rows[0].exists;
+    } catch (error) {
+        console.error(`❌ Erro ao verificar existência da tabela "${teamTable}":`, error);
+        return false;
+    } finally {
+        client.release();
+    }
+};
+
+// Função para obter a última data do banco de dados, criando a tabela se necessário
 const getLastDateFromDatabase = async (teamTable) => {
     const client = await pool.connect();
     try {
-        console.log(`Buscando a última data na tabela ${teamTable}...`);
+        // Verifica se a tabela existe
+        const tableExists = await checkIfTableExists(teamTable);
+        if (!tableExists) {
+            console.log(`⚠️ A tabela "${teamTable}" não existe. Criando agora...`);
+            await createPlayersTable(teamTable); // Cria a tabela antes de buscar a última data
+        }
+
+        console.log(`📅 Buscando a última data na tabela "${teamTable}"...`);
         const result = await client.query(`SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1`);
+
         if (result.rows.length > 0) {
-            console.log(`Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora}`);
+            console.log(`✅ Última data encontrada para a tabela "${teamTable}": ${result.rows[0].data_hora}`);
             return result.rows[0].data_hora;
         } else {
-            console.log(`Nenhuma data encontrada na tabela ${teamTable}`);
+            console.log(`⚠️ Nenhuma data encontrada na tabela "${teamTable}"`);
             return null;
         }
     } catch (error) {
-        console.error(`Erro ao buscar a última data na tabela ${teamTable}:`, error);
+        console.error(`❌ Erro ao buscar a última data na tabela "${teamTable}":`, error);
         return null;
     } finally {
         client.release();
     }
 };
+
 
 // Função para verificar se a data já existe na tabela
 const checkDateInDatabase = async (teamTable, specificDate) => {
@@ -72,116 +102,143 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
         }
     }
 };
-// Função para salvar os dados no banco
+// Função para criar uma tabela de estatísticas para um time
 const createPlayersTable = async (teamName) => {
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+        console.log(`🔍 Verificando a criação da tabela "${tableName}" para o time: "${teamName}"...`);
 
-        console.log(`Verificando a criação da tabela "jogadores" para o time: "${teamName}"...`);
+        // Lista das estatísticas como colunas na tabela
+        const estatisticas = [
+    timehome, resultadohome, playerName, resultadoaway,
+    estatisticasJogo["golos esperados (xg)"] || 0,
+    estatisticasJogo["posse de bola"] || 0,
+    estatisticasJogo["tentativas de golo"] || 0,
+    estatisticasJogo["remates à baliza"] || 0,
+    estatisticasJogo["remates fora"] || 0,
+    estatisticasJogo["remates bloqueados"] || 0,
+    estatisticasJogo["grandes oportunidades"] || 0,
+    estatisticasJogo["cantos"] || 0,
+    estatisticasJogo["remates dentro da área"] || 0,
+    estatisticasJogo["remates fora da área"] || 0,
+    estatisticasJogo["acertou na trave"] || 0,
+    estatisticasJogo["defesas de guarda-redes"] || 0,
+    estatisticasJogo["livres"] || 0,
+    estatisticasJogo["foras de jogo"] || 0,
+    estatisticasJogo["faltas"] || 0,
+    estatisticasJogo["cartões amarelos"] || 0,
+    estatisticasJogo["lançamentos"] || 0,
+    estatisticasJogo["toques na área adversária"] || 0,
+    estatisticasJogo["passes"] || 0,
+    estatisticasJogo["passes no último terço"] || 0,
+    estatisticasJogo["cruzamentos"] || 0,
+    estatisticasJogo["desarmes"] || 0,
+    estatisticasJogo["intercepções"] || 0
+];
 
-        // Remove o DROP TABLE e mantém a verificação apenas para criar caso não exista
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS "${tableName}" (
-                data_hora VARCHAR(50) NOT NULL,
-                id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                player_name VARCHAR(255) NOT NULL,
-                team VARCHAR(255),
-                points INT,
-                total_rebounds INT,
-                assists INT,
-                minutes_played INT,
-                field_goals_made INT,
-                field_goals_attempted INT,
-                two_point_made INT,
-                two_point_attempted INT,
-                three_point_made INT,
-                three_point_attempted INT,
-                free_throws_made INT,
-                free_throws_attempted INT,
-                plus_minus INT,
-                offensive_rebounds INT,
-                defensive_rebounds INT,
-                personal_fouls INT,
-                steals INT,
-                turnovers INT,
-                shots_blocked INT,
-                blocks_against INT,
-                technical_fouls INT
-            )
-        `);
-        console.log(`Tabela "jogadores" criada ou já existente para o time: "${teamName}".`);
+        // Criar tabela com colunas de informações adicionais + estatísticas
+        const query = `
+    INSERT INTO agua_santa_futebol (
+        timehome, resultadohome, player_name, resultadoaway, 
+        golos_esperados_xg, posse_de_bola, tentativas_de_golo, 
+        remates_a_baliza, remates_fora, remates_bloqueados, 
+        grandes_oportunidades, cantos, remates_dentro_da_area, 
+        remates_fora_da_area, acertou_na_trave, defesas_de_guarda_redes, 
+        livres, foras_de_jogo, faltas, cartoes_amarelos, 
+        lancamentos, toques_na_area_adversaria, passes, 
+        passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
+    ) VALUES (
+        $1, $2, $3, $4, 
+        $5, $6, $7, $8, 
+        $9, $10, $11, $12, 
+        $13, $14, $15, $16, 
+        $17, $18, $19, $20, 
+        $21, $22, $23, $24, 
+        $25, $26, $27
+    )`;
+
+        await client.query(query);
+        console.log(`✅ Tabela "${tableName}" criada ou já existente para o time: "${teamName}".`);
     } catch (error) {
-        console.error(`Erro ao criar tabela para o time "${teamName}":`, error);
+        console.error(`❌ Erro ao criar tabela para o time "${teamName}":`, error);
     } finally {
         client.release();
     }
 };
 
-
-
-
+// Função para corrigir a sequência do ID na tabela
 const fixSequence = async (client, tableName) => {
     try {
-        console.log(`Corrigindo a sequência da tabela "${tableName}"...`);
+        console.log(`🔄 Corrigindo a sequência da tabela "${tableName}"...`);
         const sequenceQuery = `
             SELECT setval(pg_get_serial_sequence('${tableName}', 'id'), (SELECT COALESCE(MAX(id), 1) FROM "${tableName}"))
         `;
         await client.query(sequenceQuery);
-        console.log(`Sequência da tabela "${tableName}" corrigida com sucesso.`);
+        console.log(`✅ Sequência da tabela "${tableName}" corrigida.`);
     } catch (error) {
-        console.error(`Erro ao corrigir a sequência da tabela "${tableName}":`, error);
-        throw error; // Re-lança o erro para ser tratado externamente
+        console.error(`❌ Erro ao corrigir a sequência da tabela "${tableName}":`, error);
+        throw error;
     }
 };
-// Função para salvar os dados dos jogadores
+
+console.log("🔎 Verificando valores antes de salvar:");
+console.log("Time Casa (timehome):", timehome);
+console.log("Time Visitante (timeaway):", timeaway);
+console.log("Resultado Casa:", resultadohome);
+console.log("Resultado Visitante:", resultadoaway);
+console.log("Estatísticas:", estatisticasJogo);
+
+
+// Função para salvar os dados dos Time de Futebol no banco
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-        console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
+        console.log(`💾 Salvando dados na tabela "${tableName}"...`);
 
-        // Corrigir a sequência antes de salvar os dados
         await fixSequence(client, tableName);
 
         for (const item of data) {
-            // Verificar se o jogador já está registrado
             const { rows: existingRows } = await client.query(
                 `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
-                [item.playerName, item.datahora]
+                [item.playerName, item.data_hora]
             );
 
             if (existingRows.length > 0) {
-                console.log(`Jogador ${item.playerName} já registrado com esta data. Pulando...`);
-                continue;  // Pula para o próximo jogador
+                console.log(`⚠️ Jogador ${item.playerName} já registrado nesta data. Pulando...`);
+                continue;
             }
 
-            // Inserir os dados do jogador
-            await client.query(
-                `INSERT INTO "${tableName}" (
-                    data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
-                    field_goals_made, field_goals_attempted, two_point_made, two_point_attempted,
-                    three_point_made, three_point_attempted, free_throws_made, free_throws_attempted,
-                    plus_minus, offensive_rebounds, defensive_rebounds, personal_fouls,
-                    steals, turnovers, shots_blocked, blocks_against, technical_fouls
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
-                [
-                    item.datahora, item.team, item.playerName, item.points, item.totalRebounds, item.assists,
-                    item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
-                    item.twoPointMade, item.twoPointAttempted, item.threePointMade,
-                    item.threePointAttempted, item.freeThrowsMade, item.freeThrowsAttempted,
-                    item.plusMinus, item.offensiveRebounds, item.defensiveRebounds,
-                    item.personalFouls, item.steals, item.turnovers, item.shotsBlocked,
-                    item.blocksAgainst, item.technicalFouls,
-                ]
-            );
+            // Inserção dinâmica das estatísticas
+            const estatisticasKeys = [
+                "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
+                "remates_fora", "remates_bloqueados", "grandes_oportunidades", "cantos",
+                "remates_dentro_da_area", "remates_fora_da_area", "acertou_na_trave",
+                "defesas_de_guarda_redes", "livres", "foras_de_jogo", "faltas",
+                "cartoes_amarelos", "lancamentos", "toques_na_area_adversaria", "passes",
+                "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
+            ];
 
-            console.log(`Dados salvos para o jogador: ${item.playerName}`);
+            const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
+            const values = [
+                item.data_hora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                ...estatisticasKeys.map(stat => item[stat] || 0)
+            ];
+
+            const query = `
+                INSERT INTO "${tableName}" (${columns.join(", ")})
+                VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})
+            `;
+
+            await client.query(query, values);
+
+            console.log(`✅ Dados salvos para o jogador: ${item.playerName}`);
         }
 
-        console.log(`Dados salvos para o time ${teamName}`);
+        console.log(`✅ Todos os dados foram salvos para o time ${teamName}`);
     } catch (error) {
-        console.error(`Erro ao salvar dados na tabela "${teamName}":`, error);
+        console.error(`❌ Erro ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
     }
@@ -215,8 +272,8 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
 const fetchLinksFromDatabase = async () => {
     const client = await pool.connect();
     try {
-        console.log('Buscando todos os links da tabela "links"...');
-        const result = await client.query('SELECT link FROM links');
+        console.log('Buscando todos os links da tabela "links Futebol"...');
+        const result = await client.query('SELECT link FROM linksfutebol');
         if (result.rows.length > 0) {
             console.log(`${result.rows.length} links encontrados no banco de dados.`);
             return result.rows.map(row => row.link);
@@ -231,8 +288,18 @@ const fetchLinksFromDatabase = async () => {
         client.release();
     }
 };
+// Função para remover caracteres especiais e normalizar as strings
+function normalizeString(str) {
+    return str
+        .toLowerCase()
+        .normalize("NFD") // Decomposição de acentos
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
+        .replace(/[\s\-]/g, ''); // Remove espaços e hífens
+  }
+  
 // Scraping do site
-const scrapeResults1 = async (link) => {
+const scrapeResults10 = async (link) => {
     const data = [];
     console.log(`Iniciando o scraping para o link: ${link}`);
 
@@ -250,335 +317,285 @@ const scrapeResults1 = async (link) => {
     const url = await page.evaluate(() => window.location.href);
 
     console.log('URL capturada:', url);
-
-    // Definir os índices para extrair o nome do time
-    const startIndex = url.indexOf("/equipa/") + "/equipa/".length;
-    const endIndex = url.indexOf("/", startIndex);
-    console.log('startIndex:', startIndex);
-    console.log('endIndex:', endIndex);
-
+        const start_index = url.indexOf("/equipa/") + "/equipa/".length;
+        const end_index = url.indexOf("/", start_index);
+        const teamId = url.substring(start_index, end_index).replace(/-/g, ' ');
     // Extrair e formatar o nome do time para utilizar como ID da tabela
     let teamID10 = null;
 
-    if (startIndex !== -1 && endIndex !== -1) {
-        teamID10 = `${url.substring(startIndex, endIndex).replace(/-/g, '_').toLowerCase()}_jogadores`;
+    if (start_index !== -1 && end_index !== -1) {
+        teamID10 = `${url.substring(start_index, end_index).replace(/-/g, '_').toLowerCase()}_futebol`;
         console.log(`ID do time processado: ${teamID10}`);
     } else {
         console.log('Erro ao extrair o ID da equipe.');
     }
-
-    // Extrai o ID da equipe da URL
-    const start_index = url.indexOf("/equipa/") + "/equipa/".length;
-    const end_index = url.indexOf("/", start_index);
-    const teamId = url.substring(start_index, end_index).replace(/-/g, ' ');
-    console.log(teamId);
-    
-    // Extrai o ID da equipe da URL
-    const start_index1 = url.indexOf("/equipa/") + "/equipa/".length;
-    const end_index1 = url.indexOf("/", start_index1);
-    const teamId1 = url.substring(start_index1, start_index1 + 3);
-    console.log(teamId1);
-    
-    
-    const start_index2 = url.indexOf("/equipa/") + "/equipa/".length;
-    const equipa = url.substring(start_index2);
-    const equipeId = equipa.substring(0, 2); // Obtém os dois primeiros caracteres
-    const lac1 = equipa.substring(equipa.indexOf("-") + 1).charAt(0); // Obtém o primeiro caractere após o primeiro "-"
-    const equipeSigla = equipeId + lac1;
-    console.log(equipeSigla);
-    
-    
-    const start_index3 = url.indexOf("/equipa/") + "/equipa/".length;
-    const equipa1 = url.substring(start_index3);
-    const equipeId3 = equipa1.charAt(0);
-    const lac3 = equipa1.substring(equipa1.indexOf("-") + 1).charAt(0);
-    const lac4 = equipa1.substring(equipa1.indexOf("-", equipa1.indexOf("-") + 1) + 1).charAt(0);
-    const equipeSigla1 = equipeId3 + lac3 + lac4;
-    console.log(equipeSigla1);
-    
-
-   // Wait for the classification table to load
-   await sleep(5000);
-        // Esperar o seletor principal com lógica de tentativas
+        await sleep(10000);
         await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
 
+        // Obtendo os IDs dos jogos
+        const ids = await page.evaluate(() => {
+            const sportName = document.querySelector('.sportName.soccer');
+            if (!sportName) throw new Error('SportName não encontrado');
 
-const ids = await page.evaluate(async () => {
-    const waitForElement = (selector, timeout = 10000) => {
-        return new Promise((resolve, reject) => {
-            const startTime = Date.now();
-            const interval = setInterval(() => {
-                const element = document.querySelector(selector);
-                if (element) {
-                    clearInterval(interval);
-                    resolve(element);
-                }
-                if (Date.now() - startTime > timeout) {
-                    clearInterval(interval);
-                    reject(new Error(`Tempo limite excedido: Elemento "${selector}" não encontrado.`));
-                }
-            }, 500); // Verifica a cada 500ms
+            return [...sportName.querySelectorAll('[id]')].map(element => element.id).slice(0, 60);
         });
-    };
+
+        const page2 = await browser.newPage();
+        let teamData = '';
+
+        for (let id of ids) {
+            const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
+            console.log("Processando URL:", url);
+            await page2.goto(url, { timeout: 120000 });
+            await sleep(10000);
+// Processar estatísticas apenas se o teamID10 for válido
+if (teamID10) {
+    const lastDate = await getLastDateFromDatabase(teamID10);
+    console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
     try {
-        const container = await waitForElement('.container');
-        const containerContent = await waitForElement('.container__content.content');
-        const containerMain = await waitForElement('.container__main');
-        const containerMainInner = await waitForElement('.container__mainInner');
-        const containerLiveTable = await waitForElement('.container__livetable');
-        const containerFsbody = await waitForElement('.container__fsbody');
-        const teamPage = await waitForElement('.teamPage');
-        const leaguesLive = await waitForElement('.ui-section.event.ui-section--noIndent');
-        const sportName = await waitForElement('.sportName.basketball');
+        // Espera o elemento carregar por até 10 segundos
+        await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
 
-        const ids = [];
-        sportName.querySelectorAll('[id]').forEach(element => {
-            ids.push(element.id);
-        });
+        // Tenta encontrar o elemento na página
+        const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
-        return ids.slice(0, 12);
+        if (statisticElementHandle) {
+            // Extrai o texto do elemento encontrado
+            const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
+            console.log(`Data ${statisticData} encontrada!`);
+
+            // Verifica se a data extraída já existe no banco de dados
+            const dateExists = await checkDateInDatabase(teamID10, statisticData);
+
+            if (dateExists) {
+                console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
+                await page2.close();
+
+                // Fecha o navegador e encerra o scraping com sucesso
+                await browser.close();
+                console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
+                return; // Encerra toda a função scrapeResults1
+            } else {
+                console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
+            }
+        } else {
+            console.log("❌ Elemento de data do jogo não encontrado!");
+        }
     } catch (error) {
-        console.error(error.message);
-        return [];
+        console.error("Erro ao extrair a data do jogo:", error);
     }
+}
+
+            try {
+                const rows = await page2.$$(`#detail`);
+                for (const row of rows) {
+                    try {
+                        let rowData = '';
+
+                        // Extração dos times
+                        let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
+                        let playerName = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
+                        
+                        let normalizedTeamId = normalizeString(teamId);
+                        let normalizedTimeHome = normalizeString(timehome);
+                        let normalizedTimeAway = normalizeString(playerName);
+                        
+                        console.log(`Time: ${normalizedTeamId}`);
+                        console.log(`Time Casa: ${normalizedTimeHome}`);
+                        console.log(`Time Visitante: ${normalizedTimeAway}`);
+
+                        // Identifica se o time pesquisado joga em casa ou fora
+                        let isHome = normalizedTeamId === normalizedTimeHome;
+                        let isAway = normalizedTeamId === normalizedTimeAway;
+
+                        console.log(`Time Casa: ${isHome}`);
+                        console.log(`Time Visitante: ${isAway}`);
+                        
+                        rowData += `${timehome || '0'}, `;
+                        rowData += `${playerName || '0'}, `;
+
+                        // Extração do placar
+                        let Resultadohome = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(1)`, el => el.textContent.trim()).catch(() => '0');
+                        let Resultadoaway = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(3)`, el => el.textContent.trim()).catch(() => '0');
+
+                        rowData += `${Resultadohome}, ${Resultadoaway}, `;
+                        console.log("Resultado Casa:", Resultadohome);
+                        console.log("Resultado Visitante:", Resultadoaway);
+                        
+                        // Extração da data do jogo
+                        let datajogo = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
+                        rowData += `${datajogo}, `;
+                        
+                        console.log("Data:", datajogo);
+                        console.log(`Time Casa: ${timehome}`);
+                        console.log("Resultado Casa:", Resultadohome);
+                        console.log(`Time Visitante: ${playerName}`);
+                        console.log("Resultado Visitante:", Resultadoaway);
+                        // Lista de estatísticas esperadas
+                        const estatisticasEsperadas = [
+                            "golos esperados (xg)", "posse de bola", "tentativas de golo", "remates à baliza",
+                            "remates fora", "remates bloqueados", "grandes oportunidades", "cantos",
+                            "remates dentro da área", "remates fora da área", "acertou na trave",
+                            "defesas de guarda-redes", "livres", "foras de jogo", "faltas",
+                            "cartões amarelos", "lançamentos", "toques na área adversária", "passes",
+                            "passes no último terço", "cruzamentos", "desarmes", "intercepções"
+                        ];
+
+                        let estatisticasJogo = {};
+                        estatisticasEsperadas.forEach(stat => {
+                            estatisticasJogo[stat] = '0';
+                        });
+
+                        try {
+                            const section = await row.$('.section');
+                            if (!section) throw new Error('Elemento .section não encontrado.');
+
+                            const subsections = await section.$$('div[class*="row"]');
+                            if (subsections.length === 0) throw new Error('Nenhuma subseção encontrada.');
+
+                            console.log(`Encontradas ${subsections.length} subseções.`);
+
+                            // Normalizar todas as estatísticas esperadas para facilitar a comparação
+                            let normalizedEstatisticasEsperadas = estatisticasEsperadas.map(stat => normalizeString(stat));
+
+                            for (let i = 0; i < estatisticasEsperadas.length && i < subsections.length; i++) {
+                              try {
+                                  const subsection = subsections[i];
+                          
+                                  let statisticName = await subsection.$eval(`div[class*="category"]`, el => {
+                                      return el.textContent
+                                          .replace(/[0-9%()\/]/g, '') // Remove números, %, parênteses e barras
+                                          .trim()
+                                          .normalize("NFD").replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                                          .toLowerCase();
+                                  });
+                          
+                                  let normalizedCategory = normalizeString(statisticName);
+                          
+                                  // Verifica se a estatística extraída corresponde a alguma da lista esperada
+                                  let estatisticaCorreta = estatisticasEsperadas.find((stat, index) => {
+                                      return normalizedCategory === normalizeString(stat);
+                                  });
+                          
+                                  if (estatisticaCorreta) {
+                                      let valueSelector = isHome ? 'div[class*="homeValue"]' :
+                                          isAway ? 'div[class*="awayValue"]' : '';
+                          
+                                      if (valueSelector) {
+                                          let extractedValue = await subsection.$eval(valueSelector, el => el.textContent.trim()).catch(() => '0');
+                          
+                                          // Se for "passes", extrair o percentual e fração
+                                          if (estatisticaCorreta === "passes") {
+                                              let percentageMatch = extractedValue.match(/(\d+)%/); // Captura "84%"
+                                              let fractionMatch = extractedValue.match(/\((\d+\/\d+)\)/); // Captura "(330/392)"
+                          
+                                              if (percentageMatch && fractionMatch) {
+                                                  extractedValue = `${percentageMatch[1]}% (${fractionMatch[1]})`;
+                                              } else if (percentageMatch) {
+                                                  extractedValue = `${percentageMatch[1]}%`;
+                                              } else if (fractionMatch) {
+                                                  extractedValue = `(${fractionMatch[1]})`;
+                                              }
+                                          }
+                          
+                                          estatisticasJogo[estatisticaCorreta] = extractedValue;
+                                          console.log(`Estatística coletada: ${estatisticaCorreta} -> ${extractedValue}`);
+                                      }
+                                  } else {
+                                      console.warn(`Estatística inesperada encontrada: ${statisticName}`);
+                                  }
+                          
+                              } catch (error) {
+                                  console.error(`Erro ao extrair estatísticas da subseção ${i + 1}:`, error);
+                              }
+                          }
+                          
+                        } catch (error) {
+                            console.error('Erro ao extrair as subseções:', error);
+                                // Se o erro for "Nenhuma subseção encontrada", define todas as estatísticas como "0"
+                                if (error.message.includes("Nenhuma subseção encontrada")) {
+                                  estatisticasEsperadas.forEach(stat => {
+                                    estatisticasJogo[stat] = "0";
+                                  });
+                                  console.warn("Nenhuma estatística encontrada. Todas as estatísticas foram definidas como 0.");
+                                }
+                        }
+
+// Adicionar estatísticas à linha de dados, substituindo valores undefined por 0
+estatisticasEsperadas.forEach(stat => {
+    rowData += `${estatisticasJogo[stat] ?? 0}, `;
 });
 
+teamData += rowData.trim() + '\n'; // Removendo espaço extra no final
+console.log("🟢 Dados a serem salvos:", rowData);
 
-try {
-    console.log(ids);
+// Salvar dados no banco antes de fechar a página
+if (teamID10 && teamData.trim().length > 0) {
+    await saveDataToPlayersTable(teamID10, teamData); // Função de salvamento
+    console.log(`✅ Dados salvos para o time ${teamID10}`);
+} else {
+    console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
+}
 
-    // Loop para processar os IDs
-    for (let i = 0; i < ids.length; i++) {
-        try {
-            const id = ids[i]; // Cada ID extraído
-            const playerLink = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/`;
-            console.log(`Processando o link do jogador com ID: ${id}`);
-
-            // Abrir uma nova aba para cada jogador
-            const playerPage = await browser.newPage();
-            await playerPage.goto(playerLink, { timeout: 120000 });
-            await sleep(5000); // Atraso para garantir que a página carregue
-
-            // Processar estatísticas apenas se o teamID10 for válido
-            if (teamID10) {
-                const lastDate = await getLastDateFromDatabase(teamID10);
-                console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
-
-                // Extrair a data da página
-                const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-                if (statisticElement) {
-                    const statisticData = await playerPage.evaluate(el => el.textContent.trim(), statisticElement);
-                    console.log(`Data ${statisticData} encontrada!`);
-
-                    // Verificar se a data extraída já existe na tabela
-                    const dateExists = await checkDateInDatabase(teamID10, statisticData);
-
-                    if (dateExists) {
-                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                        await playerPage.close();
-                    
-                        // Fechar o navegador e encerrar o scraping com sucesso
-                        await browser.close();
-                        console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
-                        return; // Encerra toda a função scrapeResults1
-                    } else {
-                        console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
-                    }
-                }
+                // Fechar a página de cada jogador
+                await page2.close();
+            } catch (error) {
+                console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
+                console.log('Pulando para o próximo jogador...');
+                continue; // Pula para o próximo jogador no loop
             }
-        // Espera os seletores problemáticos com lógica de repetição
-        await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button', { timeout: 5000 });
-        await waitForSelectorWithRetries(playerPage, '#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button', { timeout: 5000 });
-
-
-       // Processamento do botão 1
-       const element1 = await playerPage.$('#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(2) > button');
-       const boundingBox1 = await element1.boundingBox();
-       const textContent1 = await playerPage.evaluate(el => el.textContent.toLowerCase(), element1);
-
-       // Processamento do botão 2
-       const element2 = await playerPage.$('#detail > div.subFilterOver.subFilterOver--indent > div > a:nth-child(3) > button');
-       const boundingBox2 = await element2.boundingBox();
-       const textContent2 = await playerPage.evaluate(el => el.textContent.toLowerCase(), element2);
-
-       // Lógica para clicar nos botões
-       if (teamId.toLowerCase() === textContent1) {
-           if (boundingBox1) {
-               await playerPage.mouse.click(boundingBox1.x + boundingBox1.width / 2, boundingBox1.y + boundingBox1.height / 2);
-               console.log(`Cliquei no botão correspondente ao teamId: ${teamId}`);
-
-               // Gerar o link para o botão 1
-               const link1 = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/1`;
-               console.log(`Link gerado para o botão 1: ${link1}`);
-               await playerPage.goto(link1, { waitUntil: 'load', timeout: 60000 });
-           }
-       } else if (teamId.toLowerCase() === textContent2) {
-           if (boundingBox2) {
-               await playerPage.mouse.click(boundingBox2.x + boundingBox2.width / 2, boundingBox2.y + boundingBox2.height / 2);
-               console.log(`Cliquei no botão correspondente ao teamId: ${teamId}`);
-
-               // Gerar o link para o botão 2
-               const link2 = `https://www.flashscore.pt/jogo/${ids[i].substring(4)}/#/sumario-do-jogo/player-statistics/2`;
-               console.log(`Link gerado para o botão 2: ${link2}`);
-               await playerPage.goto(link2, { waitUntil: 'load', timeout: 60000 });
-           }
-       } else {
-           console.log(`Nenhum botão corresponde ao teamId: ${teamId}`);
-       }
-
-       // Esperar os dados da tabela de estatísticas
-       await playerPage.waitForSelector('#detail > div.section.psc__section > div > div.ui-table.playerStatsTable > div.ui-table__body > div');
-       const rows = await playerPage.$$(`#detail > div.section.psc__section > div > div.ui-table.playerStatsTable > div.ui-table__body > div`);
-       await sleep(10000); // Atraso para garantir o carregamento dos dados
-
-
-       // Função para converter o formato "MM:SS" para total de segundos
-function convertMinutesToSeconds(timeString) {
-    if (!timeString) return 0; // Valor padrão caso esteja vazio ou indefinido
-    const [minutes, seconds] = timeString.split(':').map(Number); // Quebra o texto em minutos e segundos
-    if (isNaN(minutes) || isNaN(seconds)) {
-        console.error(`Erro ao converter o tempo "${timeString}" para segundos.`);
-        return 0; // Retorna 0 caso não seja possível converter para número
-    }
-    return (minutes * 60) + seconds; // Converte para total de segundos
-}
-
-       // Função para processar as estatísticas dos jogadores
-
-       for (const row of rows) {
-        try {
-            const team = await row.$eval(
-                `div.playerStatsTable__cell.playerStatsTable__teamCell`,
-                element => element.textContent.trim()
-            );
-            const playerName = await row.$eval(`a > div`, element => element.textContent.trim());
-            const points = parseInt(await row.$eval(`div.playerStatsTable__cell.playerStatsTable__cell--sortingColumn`, element => element.textContent.trim())) || 0;
-            const totalRebounds = parseInt(await row.$eval(`div:nth-child(4)`, element => element.textContent.trim())) || 0;
-            const assists = parseInt(await row.$eval(`div:nth-child(5)`, element => element.textContent.trim())) || 0;
-    
-            const minutesPlayedRaw = await row.$eval(`div:nth-child(6)`, element => element.textContent.trim());
-            const minutesPlayed = convertMinutesToSeconds(minutesPlayedRaw);
-    
-            const fieldGoalsMade = parseInt(await row.$eval(`div:nth-child(7)`, element => element.textContent.trim())) || 0;
-            const fieldGoalsAttempted = parseInt(await row.$eval(`div:nth-child(8)`, element => element.textContent.trim())) || 0;
-            const twoPointMade = parseInt(await row.$eval(`div:nth-child(9)`, element => element.textContent.trim())) || 0;
-            const twoPointAttempted = parseInt(await row.$eval(`div:nth-child(10)`, element => element.textContent.trim())) || 0;
-            const threePointMade = parseInt(await row.$eval(`div:nth-child(11)`, element => element.textContent.trim())) || 0;
-            const threePointAttempted = parseInt(await row.$eval(`div:nth-child(12)`, element => element.textContent.trim())) || 0;
-            const freeThrowsMade = parseInt(await row.$eval(`div:nth-child(13)`, element => element.textContent.trim())) || 0;
-            const freeThrowsAttempted = parseInt(await row.$eval(`div:nth-child(14)`, element => element.textContent.trim())) || 0;
-            const plusMinus = parseInt(await row.$eval(`div:nth-child(15)`, element => element.textContent.trim())) || 0;
-            const offensiveRebounds = parseInt(await row.$eval(`div:nth-child(16)`, element => element.textContent.trim())) || 0;
-            const defensiveRebounds = parseInt(await row.$eval(`div:nth-child(17)`, element => element.textContent.trim())) || 0;
-            const personalFouls = parseInt(await row.$eval(`div:nth-child(18)`, element => element.textContent.trim())) || 0;
-            const steals = parseInt(await row.$eval(`div:nth-child(19)`, element => element.textContent.trim())) || 0;
-            const turnovers = parseInt(await row.$eval(`div:nth-child(20)`, element => element.textContent.trim())) || 0;
-            const shotsBlocked = parseInt(await row.$eval(`div:nth-child(21)`, element => element.textContent.trim())) || 0;
-            const blocksAgainst = parseInt(await row.$eval(`div:nth-child(22)`, element => element.textContent.trim())) || 0;
-            const technicalFouls = parseInt(await row.$eval(`div:nth-child(23)`, element => element.textContent.trim())) || 0;
-    
-            // Verifica se há data e define valor 0 se não houver
-            const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
-            const statisticData = statisticElement
-                ? await playerPage.evaluate(element => element.textContent.trim(), statisticElement)
-                : "0"; // Valor 0 caso não encontre a data
-    
-            const playerStats = {
-                datahora: statisticData,
-                team,
-                playerName,
-                points,
-                totalRebounds,
-                assists,
-                minutesPlayed,
-                fieldGoalsMade,
-                fieldGoalsAttempted,
-                twoPointMade,
-                twoPointAttempted,
-                threePointMade,
-                threePointAttempted,
-                freeThrowsMade,
-                freeThrowsAttempted,
-                plusMinus,
-                offensiveRebounds,
-                defensiveRebounds,
-                personalFouls,
-                steals,
-                turnovers,
-                shotsBlocked,
-                blocksAgainst,
-                technicalFouls,
-            };
-    
-            data.push(playerStats);
-            console.log(`Dados salvos para o jogador: ${playerName}`);
-        } catch (error) {
-            console.error("Erro ao processar jogador:", error);
         }
+    } catch (error) {
+        console.error("Erro geral no processamento:", error);
     }
-                    // Salvar dados no banco antes de fechar a página
-                if (teamID10 && data.length > 0) {
-                    await saveDataToPlayersTable(teamID10, data); // Função de salvamento
-                    console.log(`Dados salvos para o time ${teamID10}`);
-                }
-            // Fechar a página de cada jogador
-            await playerPage.close();
-        } catch (error) {
-            console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
-            console.log('Pulando para o próximo jogador...');
-            continue; // Pula para o próximo jogador no loop
-        }
-    }
-} catch (error) {
-    console.error("Erro geral no processamento:", error);
-}
-// Extrai o nome do time do link
-const rawTeamName = link.split('/').slice(-3, -2)[0]; // Obtém o nome bruto do time
-const teamName = rawTeamName.replace('-', ' '); // Formata para exibição (ex.: "los angeles-lakers" -> "los angeles lakers")
-const normalizedTeamName = rawTeamName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_jogadores'; // Normaliza para uso no banco (ex.: "los angeles-lakers" -> "los_angeles_lakers")
-
-console.log(`Time identificado a partir do link: ${teamName}`);
-
-// Cria a tabela apenas para o time do link
-await createPlayersTable(normalizedTeamName); // Cria a tabela para os jogadores
-await saveDataToPlayersTable(normalizedTeamName, data); // Salva os dados dos jogadores
-
-console.log(`Scraping finalizado para o link: ${link}`);
-await browser.close();
-
+    // Extrai o nome do time do link
+    const rawTeamName = link.split('/').slice(-3, -2)[0]; // Obtém o nome bruto do time
+    const teamName = rawTeamName.replace('-', ' '); // Formata para exibição (ex.: "los angeles-lakers" -> "los angeles lakers")
+    const normalizedTeamName = rawTeamName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_futebol'; // Normaliza para uso no banco (ex.: "los angeles-lakers" -> "los_angeles_lakers")
+    
+    console.log(`Time identificado a partir do link: ${teamName}`);
+    
+    // Cria a tabela apenas para o time do link
+    await createPlayersTable(normalizedTeamName); // Cria a tabela para os Time de Futebol
+    await saveDataToPlayersTable(normalizedTeamName, data); // Salva os dados dos Time de Futebol
+    
+    console.log(`Scraping finalizado para o link: ${link}`);
+    await browser.close();
+    
+    };
 };
-// Função principal
-if (require.main === module) {
-    (async () => {
-        try {
-            console.log("Executando script.js...");
-
-            const links = await fetchLinksFromDatabase();
-
-            // Log dos links no console
-            console.log('Links obtidos do banco de dados:', links);
-
-            if (links.length === 0) {
-                console.log('Nenhum link encontrado para processamento.');
-                process.exit(0); // Nada a fazer, mas encerra com sucesso
+    // Função principal
+    if (require.main === module) {
+        (async () => {
+            try {
+                console.log("Executando script.js...");
+    
+                const links = await fetchLinksFromDatabase();
+    
+                // Log dos links no console
+                console.log('Links obtidos do banco de dados:', linksfutebol);
+    
+                if (links.length === 0) {
+                    console.log('Nenhum link encontrado para processamento.');
+                    process.exit(0); // Nada a fazer, mas encerra com sucesso
+                }
+    
+                for (const link of linksfutebol) {
+                    console.log(`Iniciando o scraping para o link: ${link}`);
+                    await scrapeResults(link);
+                }
+    
+                console.log('Processo de scraping completo!');
+                process.exit(0); // Indicar sucesso
+            } catch (error) {
+                console.error("Erro em script.js:", error);
+                process.exit(1); // Indicar falha
             }
-
-            for (const link of links) {
-                console.log(`Iniciando o scraping para o link: ${link}`);
-                await scrapeResults(link);
-            }
-
-            console.log('Processo de scraping completo!');
-            process.exit(0); // Indicar sucesso
-        } catch (error) {
-            console.error("Erro em script.js:", error);
-            process.exit(1); // Indicar falha
-        }
-    })();
-}
-
-
-
-// script.js
-module.exports = { scrapeResults1 };
+        })();
+    }
+    
+    
+    
+    // script.js
+    module.exports = { scrapeResults10 };
