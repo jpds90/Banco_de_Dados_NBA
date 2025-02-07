@@ -76,9 +76,7 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
 const createPlayersTable = async (teamName) => {
     const client = await pool.connect();
     try {
-        // Formata o nome da tabela removendo caracteres inválidos
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-
         console.log(`🔍 Verificando a criação da tabela "${tableName}" para o time: "${teamName}"...`);
 
         // Lista das estatísticas como colunas na tabela
@@ -91,11 +89,16 @@ const createPlayersTable = async (teamName) => {
             "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
         ];
 
-        // Criação dinâmica da tabela com as estatísticas como colunas
+        // Criar tabela com colunas de informações adicionais + estatísticas
         const query = `
             CREATE TABLE IF NOT EXISTS "${tableName}" (
                 id SERIAL PRIMARY KEY,
+                datajogo DATE NOT NULL,
                 data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                timehome VARCHAR(255) NOT NULL,
+                resultadohome INT NOT NULL,
+                player_name VARCHAR(255) NOT NULL,
+                resultadoaway INT NOT NULL,
                 ${estatisticas.map(stat => `"${stat}" INT DEFAULT 0`).join(",\n")}
             )
         `;
@@ -109,70 +112,70 @@ const createPlayersTable = async (teamName) => {
     }
 };
 
-
-
-
+// Função para corrigir a sequência do ID na tabela
 const fixSequence = async (client, tableName) => {
     try {
-        console.log(`Corrigindo a sequência da tabela "${tableName}"...`);
+        console.log(`🔄 Corrigindo a sequência da tabela "${tableName}"...`);
         const sequenceQuery = `
             SELECT setval(pg_get_serial_sequence('${tableName}', 'id'), (SELECT COALESCE(MAX(id), 1) FROM "${tableName}"))
         `;
         await client.query(sequenceQuery);
-        console.log(`Sequência da tabela "${tableName}" corrigida com sucesso.`);
+        console.log(`✅ Sequência da tabela "${tableName}" corrigida.`);
     } catch (error) {
-        console.error(`Erro ao corrigir a sequência da tabela "${tableName}":`, error);
-        throw error; // Re-lança o erro para ser tratado externamente
+        console.error(`❌ Erro ao corrigir a sequência da tabela "${tableName}":`, error);
+        throw error;
     }
 };
-// Função para salvar os dados dos jogadores
+
+// Função para salvar os dados dos jogadores no banco
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-        console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
+        console.log(`💾 Salvando dados na tabela "${tableName}"...`);
 
-        // Corrigir a sequência antes de salvar os dados
         await fixSequence(client, tableName);
 
         for (const item of data) {
-            // Verificar se o jogador já está registrado
             const { rows: existingRows } = await client.query(
-                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
-                [item.playerName, item.datahora]
+                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND datajogo = $2`,
+                [item.playerName, item.datajogo]
             );
 
             if (existingRows.length > 0) {
-                console.log(`Jogador ${item.playerName} já registrado com esta data. Pulando...`);
-                continue;  // Pula para o próximo jogador
+                console.log(`⚠️ Jogador ${item.playerName} já registrado nesta data. Pulando...`);
+                continue;
             }
 
-            // Inserir os dados do jogador
-            await client.query(
-                `INSERT INTO "${tableName}" (
-                    data_hora, team, player_name, points, total_rebounds, assists, minutes_played,
-                    field_goals_made, field_goals_attempted, two_point_made, two_point_attempted,
-                    three_point_made, three_point_attempted, free_throws_made, free_throws_attempted,
-                    plus_minus, offensive_rebounds, defensive_rebounds, personal_fouls,
-                    steals, turnovers, shots_blocked, blocks_against, technical_fouls
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
-                [
-                    item.datahora, item.team, item.playerName, item.points, item.totalRebounds, item.assists,
-                    item.minutesPlayed, item.fieldGoalsMade, item.fieldGoalsAttempted,
-                    item.twoPointMade, item.twoPointAttempted, item.threePointMade,
-                    item.threePointAttempted, item.freeThrowsMade, item.freeThrowsAttempted,
-                    item.plusMinus, item.offensiveRebounds, item.defensiveRebounds,
-                    item.personalFouls, item.steals, item.turnovers, item.shotsBlocked,
-                    item.blocksAgainst, item.technicalFouls,
-                ]
-            );
+            // Inserção dinâmica das estatísticas
+            const estatisticasKeys = [
+                "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
+                "remates_fora", "remates_bloqueados", "grandes_oportunidades", "cantos",
+                "remates_dentro_da_area", "remates_fora_da_area", "acertou_na_trave",
+                "defesas_de_guarda_redes", "livres", "foras_de_jogo", "faltas",
+                "cartoes_amarelos", "lancamentos", "toques_na_area_adversaria", "passes",
+                "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
+            ];
 
-            console.log(`Dados salvos para o jogador: ${item.playerName}`);
+            const columns = ["datajogo", "data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
+            const values = [
+                item.datajogo, item.datahora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                ...estatisticasKeys.map(stat => item[stat] || 0)
+            ];
+
+            const query = `
+                INSERT INTO "${tableName}" (${columns.join(", ")})
+                VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})
+            `;
+
+            await client.query(query, values);
+
+            console.log(`✅ Dados salvos para o jogador: ${item.playerName}`);
         }
 
-        console.log(`Dados salvos para o time ${teamName}`);
+        console.log(`✅ Todos os dados foram salvos para o time ${teamName}`);
     } catch (error) {
-        console.error(`Erro ao salvar dados na tabela "${teamName}":`, error);
+        console.error(`❌ Erro ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
     }
@@ -206,8 +209,8 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
 const fetchLinksFromDatabase = async () => {
     const client = await pool.connect();
     try {
-        console.log('Buscando todos os links da tabela "links"...');
-        const result = await client.query('SELECT link FROM links');
+        console.log('Buscando todos os links da tabela "links Futebol"...');
+        const result = await client.query('SELECT link FROM linksfutebol');
         if (result.rows.length > 0) {
             console.log(`${result.rows.length} links encontrados no banco de dados.`);
             return result.rows.map(row => row.link);
@@ -233,7 +236,7 @@ function normalizeString(str) {
   }
   
 // Scraping do site
-const scrapeResults1 = async (link) => {
+const scrapeResults10 = async (link) => {
     const data = [];
     console.log(`Iniciando o scraping para o link: ${link}`);
 
