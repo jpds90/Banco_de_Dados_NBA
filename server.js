@@ -290,9 +290,11 @@ app.post('/execute-Jogadores', async (req, res) => {
 });
 // Rota para executar a atualização de jogadores
 app.post('/execute-futebol', async (req, res) => {
-    const { linksfutebol } = req.body; // Links das equipes selecionadas
+    console.log('Recebendo requisição:', req.body); // Debug para verificar os dados recebidos
 
-    if (!Array.isArray(linksfutebol) || links.length === 0) {
+    const { linksfutebol } = req.body;
+
+    if (!Array.isArray(linksfutebol) || linksfutebol.length === 0) {
         return res.status(400).send('Nenhum link selecionado para Futebol.');
     }
 
@@ -300,7 +302,7 @@ app.post('/execute-futebol', async (req, res) => {
         console.log('Links selecionados para Time:', linksfutebol);
 
         for (const link of linksfutebol) {
-            await scrapeResults10(linkfutebol); // Certifique-se de que a função foi importada
+            await scrapeResults10(link);
         }
 
         res.status(200).send('Jogadores atualizados com sucesso!');
@@ -309,6 +311,7 @@ app.post('/execute-futebol', async (req, res) => {
         res.status(500).send('Erro ao atualizar Jogadores.');
     }
 });
+
 // Rota para executar a atualização de jogadores
 app.post('/execute-lesoes', async (req, res) => {
     const { links } = req.body; // Links das equipes selecionadas
