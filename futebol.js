@@ -321,7 +321,7 @@ const scrapeResults10 = async (link) => {
                 console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
                 // Extrair a data da página
-                const statisticElement = await playerPage.$('#detail > div.duelParticipant > div.duelParticipant__startTime');
+                const statisticElement = await playerPage.$('div.duelParticipant > div.duelParticipant__startTime');
                 if (statisticElement) {
                     const statisticData = await playerPage.evaluate(el => el.textContent.trim(), statisticElement);
                     console.log(`Data ${statisticData} encontrada!`);
