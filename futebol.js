@@ -184,6 +184,7 @@ const fixSequence = async (client, tableName) => {
 
 // Função para salvar os dados dos Time de Futebol no banco
 const saveDataToPlayersTable = async (teamName, rowData) => {
+
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
@@ -424,6 +425,8 @@ const scrapeResults10 = async (link) => {
             // Salvando os dados no banco
             if (teamID10 && rowData.trim().length > 0) {
                 await saveDataToPlayersTable(teamID10, rowData);
+                console.log("🟢 Salvando dados no banco:", teamID10, rowData);
+
                 console.log(`✅ Dados salvos para o time ${teamID10}`);
             } else {
                 console.warn("⚠️ Nenhum dado foi salvo. Verifique os valores extraídos.");
