@@ -42,6 +42,7 @@
 
     <button id="loadNBA">NBA</button>
     <button id="loadFutebol">Futebol</button>
+    <button id="executeAll10">Atualizar Time Futebol</button>
     <button id="executeScript">Atualizar Links</button>
     <button id="executeScript1">Atualizar Links Futebol</button>
     <button id="executeAll">Atualizar Tudo</button>
@@ -215,6 +216,7 @@
             }
         }
 
+        document.getElementById('executeAll10').addEventListener('click', () => executeAction('/execute-futebol', 'Jogadores atualizados com sucesso!'));
         document.getElementById('executeAll1').addEventListener('click', () => executeAction('/execute-jogadores', 'Jogadores atualizados com sucesso!'));
         document.getElementById('executeAll2').addEventListener('click', () => executeAction('/execute-lesoes', 'Lesões atualizadas com sucesso!'));
     </script>
