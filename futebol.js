@@ -496,14 +496,14 @@ const scrapeResults10 = async (link) => {
                 const links = await fetchLinksFromDatabase();
     
                 // Log dos links no console
-                console.log('Links obtidos do banco de dados:', links);
+                console.log('Links obtidos do banco de dados:', linksfutebol);
     
                 if (links.length === 0) {
                     console.log('Nenhum link encontrado para processamento.');
                     process.exit(0); // Nada a fazer, mas encerra com sucesso
                 }
     
-                for (const link of links) {
+                for (const link of linksfutebol) {
                     console.log(`Iniciando o scraping para o link: ${link}`);
                     await scrapeResults(link);
                 }
@@ -520,4 +520,4 @@ const scrapeResults10 = async (link) => {
     
     
     // script.js
-    module.exports = { scrapeResults1 };
+    module.exports = { scrapeResults10 };
