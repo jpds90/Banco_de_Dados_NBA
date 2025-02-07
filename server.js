@@ -5,6 +5,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const { scrapeResults } = require('./script');
 const { scrapeResults1 } = require('./jogadores');
+const { scrapeResults10 } = require('./futebol');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
@@ -287,7 +288,27 @@ app.post('/execute-Jogadores', async (req, res) => {
         res.status(500).send('Erro ao atualizar Jogadores.');
     }
 });
+// Rota para executar a atualização de jogadores
+app.post('/execute-futebol', async (req, res) => {
+    const { linksfutebol } = req.body; // Links das equipes selecionadas
 
+    if (!Array.isArray(linksfutebol) || links.length === 0) {
+        return res.status(400).send('Nenhum link selecionado para Futebol.');
+    }
+
+    try {
+        console.log('Links selecionados para Time:', linksfutebol);
+
+        for (const link of linksfutebol) {
+            await scrapeResults10(linkfutebol); // Certifique-se de que a função foi importada
+        }
+
+        res.status(200).send('Jogadores atualizados com sucesso!');
+    } catch (error) {
+        console.error('Erro ao atualizar Jogadores:', error);
+        res.status(500).send('Erro ao atualizar Jogadores.');
+    }
+});
 // Rota para executar a atualização de jogadores
 app.post('/execute-lesoes', async (req, res) => {
     const { links } = req.body; // Links das equipes selecionadas
