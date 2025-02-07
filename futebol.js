@@ -11,26 +11,56 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// Função para obter a última data do banco de dados
+// Função para verificar se a tabela existe no banco de dados
+const checkIfTableExists = async (teamTable) => {
+    const client = await pool.connect();
+    try {
+        console.log(`🔍 Verificando se a tabela "${teamTable}" existe...`);
+        const result = await client.query(
+            `SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = $1
+            )`, 
+            [teamTable]
+        );
+        return result.rows[0].exists;
+    } catch (error) {
+        console.error(`❌ Erro ao verificar existência da tabela "${teamTable}":`, error);
+        return false;
+    } finally {
+        client.release();
+    }
+};
+
+// Função para obter a última data do banco de dados, criando a tabela se necessário
 const getLastDateFromDatabase = async (teamTable) => {
     const client = await pool.connect();
     try {
-        console.log(`Buscando a última data na tabela ${teamTable}...`);
+        // Verifica se a tabela existe
+        const tableExists = await checkIfTableExists(teamTable);
+        if (!tableExists) {
+            console.log(`⚠️ A tabela "${teamTable}" não existe. Criando agora...`);
+            await createPlayersTable(teamTable); // Cria a tabela antes de buscar a última data
+        }
+
+        console.log(`📅 Buscando a última data na tabela "${teamTable}"...`);
         const result = await client.query(`SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1`);
+
         if (result.rows.length > 0) {
-            console.log(`Última data encontrada para a tabela ${teamTable}: ${result.rows[0].data_hora}`);
+            console.log(`✅ Última data encontrada para a tabela "${teamTable}": ${result.rows[0].data_hora}`);
             return result.rows[0].data_hora;
         } else {
-            console.log(`Nenhuma data encontrada na tabela ${teamTable}`);
+            console.log(`⚠️ Nenhuma data encontrada na tabela "${teamTable}"`);
             return null;
         }
     } catch (error) {
-        console.error(`Erro ao buscar a última data na tabela ${teamTable}:`, error);
+        console.error(`❌ Erro ao buscar a última data na tabela "${teamTable}":`, error);
         return null;
     } finally {
         client.release();
     }
 };
+
 
 // Função para verificar se a data já existe na tabela
 const checkDateInDatabase = async (teamTable, specificDate) => {
@@ -127,7 +157,7 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
-// Função para salvar os dados dos jogadores no banco
+// Função para salvar os dados dos Time de Futebol no banco
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
@@ -261,7 +291,7 @@ const scrapeResults10 = async (link) => {
     let teamID10 = null;
 
     if (start_index !== -1 && end_index !== -1) {
-        teamID10 = `${url.substring(start_index, end_index).replace(/-/g, '_').toLowerCase()}_jogadores`;
+        teamID10 = `${url.substring(start_index, end_index).replace(/-/g, '_').toLowerCase()}_futebol`;
         console.log(`ID do time processado: ${teamID10}`);
     } else {
         console.log('Erro ao extrair o ID da equipe.');
@@ -479,8 +509,8 @@ const scrapeResults10 = async (link) => {
     console.log(`Time identificado a partir do link: ${teamName}`);
     
     // Cria a tabela apenas para o time do link
-    await createPlayersTable(normalizedTeamName); // Cria a tabela para os jogadores
-    await saveDataToPlayersTable(normalizedTeamName, data); // Salva os dados dos jogadores
+    await createPlayersTable(normalizedTeamName); // Cria a tabela para os Time de Futebol
+    await saveDataToPlayersTable(normalizedTeamName, data); // Salva os dados dos Time de Futebol
     
     console.log(`Scraping finalizado para o link: ${link}`);
     await browser.close();
