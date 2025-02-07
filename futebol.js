@@ -111,26 +111,52 @@ const createPlayersTable = async (teamName) => {
 
         // Lista das estatísticas como colunas na tabela
         const estatisticas = [
-            "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
-            "remates_fora", "remates_bloqueados", "grandes_oportunidades", "cantos",
-            "remates_dentro_da_area", "remates_fora_da_area", "acertou_na_trave",
-            "defesas_de_guarda_redes", "livres", "foras_de_jogo", "faltas",
-            "cartoes_amarelos", "lancamentos", "toques_na_area_adversaria", "passes",
-            "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
-        ];
+    timehome, resultadohome, playerName, resultadoaway,
+    estatisticasJogo["golos esperados (xg)"] || 0,
+    estatisticasJogo["posse de bola"] || 0,
+    estatisticasJogo["tentativas de golo"] || 0,
+    estatisticasJogo["remates à baliza"] || 0,
+    estatisticasJogo["remates fora"] || 0,
+    estatisticasJogo["remates bloqueados"] || 0,
+    estatisticasJogo["grandes oportunidades"] || 0,
+    estatisticasJogo["cantos"] || 0,
+    estatisticasJogo["remates dentro da área"] || 0,
+    estatisticasJogo["remates fora da área"] || 0,
+    estatisticasJogo["acertou na trave"] || 0,
+    estatisticasJogo["defesas de guarda-redes"] || 0,
+    estatisticasJogo["livres"] || 0,
+    estatisticasJogo["foras de jogo"] || 0,
+    estatisticasJogo["faltas"] || 0,
+    estatisticasJogo["cartões amarelos"] || 0,
+    estatisticasJogo["lançamentos"] || 0,
+    estatisticasJogo["toques na área adversária"] || 0,
+    estatisticasJogo["passes"] || 0,
+    estatisticasJogo["passes no último terço"] || 0,
+    estatisticasJogo["cruzamentos"] || 0,
+    estatisticasJogo["desarmes"] || 0,
+    estatisticasJogo["intercepções"] || 0
+];
 
         // Criar tabela com colunas de informações adicionais + estatísticas
         const query = `
-            CREATE TABLE IF NOT EXISTS "${tableName}" (
-                id SERIAL PRIMARY KEY,
-                data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                timehome VARCHAR(255) NOT NULL,
-                resultadohome INT NOT NULL,
-                player_name VARCHAR(255) NOT NULL,
-                resultadoaway INT NOT NULL,
-                ${estatisticas.map(stat => `"${stat}" INT DEFAULT 0`).join(",\n")}
-            )
-        `;
+    INSERT INTO agua_santa_futebol (
+        timehome, resultadohome, player_name, resultadoaway, 
+        golos_esperados_xg, posse_de_bola, tentativas_de_golo, 
+        remates_a_baliza, remates_fora, remates_bloqueados, 
+        grandes_oportunidades, cantos, remates_dentro_da_area, 
+        remates_fora_da_area, acertou_na_trave, defesas_de_guarda_redes, 
+        livres, foras_de_jogo, faltas, cartoes_amarelos, 
+        lancamentos, toques_na_area_adversaria, passes, 
+        passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
+    ) VALUES (
+        $1, $2, $3, $4, 
+        $5, $6, $7, $8, 
+        $9, $10, $11, $12, 
+        $13, $14, $15, $16, 
+        $17, $18, $19, $20, 
+        $21, $22, $23, $24, 
+        $25, $26, $27
+    )`;
 
         await client.query(query);
         console.log(`✅ Tabela "${tableName}" criada ou já existente para o time: "${teamName}".`);
