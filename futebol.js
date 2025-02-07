@@ -167,8 +167,8 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
         for (const item of data) {
             const { rows: existingRows } = await client.query(
-                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND datahora = $2`,
-                [item.playerName, item.datahora]
+                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
+                [item.playerName, item.data_hora]
             );
 
             if (existingRows.length > 0) {
@@ -188,7 +188,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
             const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
             const values = [
-                item.datahora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                item.data_hora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
                 ...estatisticasKeys.map(stat => item[stat] || 0)
             ];
 
