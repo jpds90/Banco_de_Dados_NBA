@@ -195,7 +195,7 @@ const saveDataToPlayersTable = async (tableName, data) => {
                 cartoes_amarelos, lancamentos, toques_na_area_adversaria, passes,
                 passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
             )`,
             [
                 data.data_hora, data.timehome, data.resultadohome, data.player_name, data.resultadoaway,
