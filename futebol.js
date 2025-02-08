@@ -145,21 +145,14 @@ const createPlayersTable = async (teamName) => {
                 intercepcoes INT
             )
         `);
-        console.log("Query SQL:", query); // Log da query para depuração
-
-        await client.query(query);
-        console.log(`✅ Tabela "${tableName}" criada ou já existente.`);
+        console.log(`Tabela "jogadores" criada ou já existente para o time: "${teamName}".`);
     } catch (error) {
-        if (error.code === '42P07') { // Código de erro para "tabela já existe"
-            console.log(`⚠️ A tabela "${tableName}" já existe.`);
-        } else {
-            console.error(`❌ Erro ao criar tabela "${tableName}":`, error);
-            throw error;
-        }
+        console.error(`Erro ao criar tabela para o time "${teamName}":`, error);
     } finally {
         client.release();
     }
 };
+
 
 // Função para corrigir a sequência do ID na tabela
 const fixSequence = async (client, tableName) => {
