@@ -115,10 +115,10 @@ const createPlayersTable = async (teamName) => {
         await client.query(`
             CREATE TABLE IF NOT EXISTS "${tableName}" (
                 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                data_hora VARCHAR(50) NOT NULL,
+                data_hora TIMESTAMP NOT NULL,
                 timehome VARCHAR(255) NOT NULL,
                 resultadohome INT,
-                player_name VARCHAR(255) NOT NULL),
+                timeaway VARCHAR(255) NOT NULL),
                 resultadoaway INT,
                 golos_esperados_xg INT,
                 posse_de_bola INT,
@@ -173,6 +173,11 @@ const saveDataToPlayersTable = async (tableName, data) => {
     try {
         console.log(`💾 Salvando dados na tabela "${tableName}"...`);
 
+        // Validação: Verifica se data_hora está presente e não é null
+        if (!data.data_hora) {
+            throw new Error('A propriedade "data_hora" é obrigatória e não pode ser null.');
+        }
+
         // Verifica se o jogador já foi registrado nesta data
         const { rows: existingRows } = await client.query(
             `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
@@ -180,14 +185,14 @@ const saveDataToPlayersTable = async (tableName, data) => {
         );
 
         if (existingRows.length > 0) {
-            console.log(`⚠️ Jogador ${data.player_name} já registrado nesta data. Pulando...`);
+            console.log(`⚠️ Time ${data.timehome} já registrado nesta data. Pulando...`);
             return;
         }
 
         // Inserir os dados do jogador
         await client.query(
             `INSERT INTO "${tableName}" (
-                data_hora, timehome, resultadohome, player_name, resultadoaway,
+                data_hora, timehome, resultadohome, timeaway, resultadoaway,
                 golos_esperados_xg, posse_de_bola, tentativas_de_golo, remates_a_baliza,
                 remates_fora, remates_bloqueados, grandes_oportunidades, cantos,
                 remates_dentro_da_area, remates_fora_da_area, acertou_na_trave,
@@ -195,28 +200,27 @@ const saveDataToPlayersTable = async (tableName, data) => {
                 cartoes_amarelos, lancamentos, toques_na_area_adversaria, passes,
                 passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
             )`,
             [
-                data.data_hora, data.timehome, data.resultadohome, data.player_name, data.resultadoaway,
-                data.golos_esperados_xg || 0, data.posse_de_bola || 0, data.tentativas_de_golo || 0,
-                data.remates_a_baliza || 0, data.remates_fora || 0, data.remates_bloqueados || 0,
-                data.grandes_oportunidades || 0, data.cantos || 0, data.remates_dentro_da_area || 0,
-                data.remates_fora_da_area || 0, data.acertou_na_trave || 0, data.defesas_de_guarda_redes || 0,
-                data.livres || 0, data.foras_de_jogo || 0, data.faltas || 0, data.cartoes_amarelos || 0,
-                data.lancamentos || 0, data.toques_na_area_adversaria || 0, data.passes || 0,
-                data.passes_no_ultimo_terco || 0, data.cruzamentos || 0, data.desarmes || 0, data.intercepcoes || 0
+                data.data_hora, data.timehome, data.resultadohome, data.timeaway, data.resultadoaway,
+                data.golos_esperados_xg || '0', data.posse_de_bola || '0', data.tentativas_de_golo || '0',
+                data.remates_a_baliza || '0', data.remates_fora || '0', data.remates_bloqueados || '0',
+                data.grandes_oportunidades || '0', data.cantos || '0', data.remates_dentro_da_area || '0',
+                data.remates_fora_da_area || '0', data.acertou_na_trave || '0', data.defesas_de_guarda_redes || '0',
+                data.livres || '0', data.foras_de_jogo || '0', data.faltas || '0', data.cartoes_amarelos || '0',
+                data.lancamentos || '0', data.toques_na_area_adversaria || '0', data.passes || '0',
+                data.passes_no_ultimo_terco || '0', data.cruzamentos || '0', data.desarmes || '0', data.intercepcoes || '0'
             ]
         );
 
-        console.log(`✅ Dados salvos para o jogador: ${data.player_name}`);
+        console.log(`✅ Dados salvos para o jogador: ${data.timeaway}`);
     } catch (error) {
         console.error(`❌ Erro ao salvar dados na tabela "${tableName}":`, error);
     } finally {
         client.release();
     }
 };
-
 
 
 
@@ -373,11 +377,11 @@ if (teamID10) {
 
                         // Extração dos times
                         let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
-                        let playerName = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
+                        let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
 
                         let normalizedTeamId = normalizeString(teamId);
                         let normalizedTimeHome = normalizeString(timehome);
-                        let normalizedTimeAway = normalizeString(playerName);
+                        let normalizedTimeAway = normalizeString(timeaway);
 
                         console.log(`Time: ${normalizedTeamId}`);
                         console.log(`Time Casa: ${normalizedTimeHome}`);
@@ -391,7 +395,7 @@ if (teamID10) {
                         console.log(`Time Visitante: ${isAway}`);
 
                         rowData += `${timehome || '0'}, `;
-                        rowData += `${playerName || '0'}, `;
+                        rowData += `${timeaway || '0'}, `;
 
                         // Extração do placar
                         let Resultadohome = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(1)`, el => el.textContent.trim()).catch(() => '0');
@@ -405,7 +409,7 @@ if (teamID10) {
                         console.log("Data:", datahora);
                         console.log(`Time Casa: ${timehome}`);
                         console.log("Resultado Casa:", Resultadohome);
-                        console.log(`Time Visitante: ${playerName}`);
+                        console.log(`Time Visitante: ${timeaway}`);
                         console.log("Resultado Visitante:", Resultadoaway);
                         // Lista de estatísticas esperadas
                         const estatisticasEsperadas = [
