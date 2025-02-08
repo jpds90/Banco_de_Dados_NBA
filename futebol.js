@@ -175,30 +175,28 @@ const formatDate = (data) => {
     return new Date(`${ano}-${mes}-${dia}T${horaParte}:00`);
 };
 
+// Função para salvar os dados dos jogadores
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-        console.log(`💾 Salvando dados na tabela "${tableName}"...`);
+        console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
 
+        // Corrigir a sequência antes de salvar os dados
         await fixSequence(client, tableName);
 
         for (const item of data) {
-            console.log("🔍 Verificando data_hora:", item.data_hora);
+            // Verificar se o jogador já está registrado
+            const { rows: existingRows } = await client.query(
+                `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
+                [item.timehome, item.datahora]
+            );
 
-            let dataFormatada;
-            try {
-                // Verifica se a data está no formato correto e converte
-                if (!item.data_hora || isNaN(new Date(item.data_hora))) {
-                    // Converte para o formato correto
-                    dataFormatada = formatDate(item.data_hora).toISOString().slice(0, 19).replace("T", " ");
-                } else {
-                    dataFormatada = new Date(item.data_hora).toISOString().slice(0, 19).replace("T", " ");
-                }
-            } catch (error) {
-                console.error(`🚨 Erro ao processar data: ${error.message}`);
-                continue; // Pula esse registro inválido
+            if (existingRows.length > 0) {
+                console.log(`Jogador ${item.playerName} já registrado com esta data. Pulando...`);
+                continue;  // Pula para o próximo jogador
             }
+
 
             const estatisticasKeys = [
                 "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
@@ -211,7 +209,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
             const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
             const values = [
-                dataFormatada, item.timehome, item.resultadohome, playerName, item.resultadoaway,
+                item.datahora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
                 ...estatisticasKeys.map(stat => item[stat] || 0)
             ];
 
