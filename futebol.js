@@ -374,8 +374,8 @@ if (teamID10) {
                         let rowData = '';
 
                         // Extração da data do jogo
-                        let datahora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
-                        rowData += `${datahora}, `;
+                        let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
+                        rowData += `${data_hora}, `;
 
                         // Extração dos times
                         let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
@@ -408,7 +408,7 @@ if (teamID10) {
                         console.log("Resultado Visitante:", Resultadoaway);
 
 
-                        console.log("Data:", datahora);
+                        console.log("Data:", data_hora);
                         console.log(`Time Casa: ${timehome}`);
                         console.log("Resultado Casa:", Resultadohome);
                         console.log(`Time Visitante: ${timeaway}`);
