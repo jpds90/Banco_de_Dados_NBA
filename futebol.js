@@ -139,9 +139,9 @@ const createPlayersTable = async (teamName) => {
                 lancamentos INT,
                 toques_na_area_adversaria INT,
                 passes INT,
-                passes_no_ultimo_terco INT
-                cruzamentos INT
-                desarmes INT
+                passes_no_ultimo_terco INT,
+                cruzamentos INT,
+                desarmes INT,
                 intercepcoes INT
             )
         `);
