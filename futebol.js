@@ -506,18 +506,44 @@ if (teamID10) {
                                 }
                         }
 
-// Adicionar estatísticas à linha de dados, substituindo valores undefined por 0
-estatisticasEsperadas.forEach(stat => {
-    rowData += `${estatisticasJogo[stat] ?? 0}, `;
-});
+let teamData = {
+    data_hora: estatisticasJogo.data_hora || null,
+    timehome: estatisticasJogo.timehome || null,
+    resultadohome: estatisticasJogo.resultadohome || 0,
+    timeaway: estatisticasJogo.timeaway || null,
+    resultadoaway: estatisticasJogo.resultadoaway || 0,
+    golos_esperados_xg: estatisticasJogo.golos_esperados_xg || 0,
+    posse_de_bola: estatisticasJogo.posse_de_bola || 0,
+    tentativas_de_golo: estatisticasJogo.tentativas_de_golo || 0,
+    remates_a_baliza: estatisticasJogo.remates_a_baliza || 0,
+    remates_fora: estatisticasJogo.remates_fora || 0,
+    remates_bloqueados: estatisticasJogo.remates_bloqueados || 0,
+    grandes_oportunidades: estatisticasJogo.grandes_oportunidades || 0,
+    cantos: estatisticasJogo.cantos || 0,
+    remates_dentro_da_area: estatisticasJogo.remates_dentro_da_area || 0,
+    remates_fora_da_area: estatisticasJogo.remates_fora_da_area || 0,
+    acertou_na_trave: estatisticasJogo.acertou_na_trave || 0,
+    defesas_de_guarda_redes: estatisticasJogo.defesas_de_guarda_redes || 0,
+    livres: estatisticasJogo.livres || 0,
+    foras_de_jogo: estatisticasJogo.foras_de_jogo || 0,
+    faltas: estatisticasJogo.faltas || 0,
+    cartoes_amarelos: estatisticasJogo.cartoes_amarelos || 0,
+    lancamentos: estatisticasJogo.lancamentos || 0,
+    toques_na_area_adversaria: estatisticasJogo.toques_na_area_adversaria || 0,
+    passes: estatisticasJogo.passes || 0,
+    passes_no_ultimo_terco: estatisticasJogo.passes_no_ultimo_terco || 0,
+    cruzamentos: estatisticasJogo.cruzamentos || 0,
+    desarmes: estatisticasJogo.desarmes || 0,
+    intercepcoes: estatisticasJogo.intercepcoes || 0
+};
 
-teamData += rowData.trim() + '\n'; // Removendo espaço extra no final
-console.log("🟢 Dados a serem salvos:", rowData);
+// Verificando se a data está correta antes de salvar
+console.log("🟢 Dados estruturados para salvar:", JSON.stringify(teamData, null, 2));
 
 // Salvar dados no banco antes de fechar a página
-if (teamID10 && teamData.trim().length > 0) {
+if (teamID10 && teamData.data_hora) {
     await saveDataToPlayersTable(teamID10, teamData); // Função de salvamento
-    console.log(`✅ Dados salvos para o time ${teamID10} , ${teamData}`);
+    console.log(`✅ Dados salvos para o time ${teamID10}`);
 } else {
     console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
 }
