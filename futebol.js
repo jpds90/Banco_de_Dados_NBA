@@ -114,8 +114,8 @@ const createPlayersTable = async (teamName) => {
         // Remove o DROP TABLE e mantém a verificação apenas para criar caso não exista
         await client.query(`
             CREATE TABLE IF NOT EXISTS "${tableName}" (
-                data_hora VARCHAR(50) NOT NULL,
                 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                data_hora VARCHAR(50) NOT NULL,
                 timehome VARCHAR(255) NOT NULL,
                 resultadohome INT,
                 player_name VARCHAR(255),
@@ -371,6 +371,10 @@ if (teamID10) {
                     try {
                         let rowData = '';
 
+                        // Extração da data do jogo
+                        let datajogo = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
+                        rowData += `${datajogo}, `;
+
                         // Extração dos times
                         let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
                         let playerName = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
@@ -401,9 +405,6 @@ if (teamID10) {
                         console.log("Resultado Casa:", Resultadohome);
                         console.log("Resultado Visitante:", Resultadoaway);
 
-                        // Extração da data do jogo
-                        let datajogo = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
-                        rowData += `${datajogo}, `;
 
                         console.log("Data:", datajogo);
                         console.log(`Time Casa: ${timehome}`);
