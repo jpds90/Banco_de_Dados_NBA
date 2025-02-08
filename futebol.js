@@ -216,9 +216,12 @@ const saveDataToPlayersTable = async (teamName, data) => {
             ]
         );
 
-        console.log(`✅ Dados salvos para o jogo: ${data.timehome} vs ${data.timeaway}`);
+        console.log(`Dados salvos para o jogador: ${item.playerName}`);
+        }
+
+        console.log(`Dados salvos para o time ${teamName}`);
     } catch (error) {
-        console.error(`❌ Erro ao salvar dados na tabela "${tableName}":`, error);
+        console.error(`Erro ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
     }
