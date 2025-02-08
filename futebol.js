@@ -118,7 +118,7 @@ const createPlayersTable = async (teamName) => {
                 data_hora VARCHAR(50) NOT NULL,
                 timehome VARCHAR(255) NOT NULL,
                 resultadohome INT,
-                player_name VARCHAR(255),
+                player_name VARCHAR(255) NOT NULL),
                 resultadoaway INT,
                 golos_esperados_xg INT,
                 posse_de_bola INT,
@@ -168,7 +168,6 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
-// Função para salvar os dados dos Time de Futebol no banco
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
@@ -178,9 +177,12 @@ const saveDataToPlayersTable = async (teamName, data) => {
         await fixSequence(client, tableName);
 
         for (const item of data) {
+            const dataFormatada = new Date(item.data_hora).toISOString().slice(0, 19).replace("T", " ");
+            const playerName = item.playerName || "Desconhecido";
+
             const { rows: existingRows } = await client.query(
                 `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
-                [item.playerName, item.data_hora]
+                [item.timehome, dataFormatada]
             );
 
             if (existingRows.length > 0) {
@@ -188,7 +190,6 @@ const saveDataToPlayersTable = async (teamName, data) => {
                 continue;
             }
 
-            // Inserção dinâmica das estatísticas
             const estatisticasKeys = [
                 "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
                 "remates_fora", "remates_bloqueados", "grandes_oportunidades", "cantos",
@@ -200,18 +201,18 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
             const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
             const values = [
-                item.data_hora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                dataFormatada, item.timehome, item.resultadohome, playerName, item.resultadoaway,
                 ...estatisticasKeys.map(stat => item[stat] || 0)
             ];
 
             const query = `
                 INSERT INTO "${tableName}" (${columns.join(", ")})
                 VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})
+                RETURNING id;
             `;
 
-            await client.query(query, values);
-
-            console.log(`✅ Dados salvos para o jogador: ${item.playerName}`);
+            const result = await client.query(query, values);
+            console.log(`✅ Registro inserido com ID: ${result.rows[0].id}`);
         }
 
         console.log(`✅ Todos os dados foram salvos para o time ${teamName}`);
@@ -221,6 +222,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
         client.release();
     }
 };
+
 
 
 
