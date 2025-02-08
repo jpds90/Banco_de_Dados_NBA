@@ -115,7 +115,7 @@ const createPlayersTable = async (teamName) => {
         await client.query(`
             CREATE TABLE IF NOT EXISTS "${tableName}" (
                 id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                data_hora TIMESTAMP NOT NULL,
+                data_hora VARCHAR(50) NOT NULL,
                 timehome VARCHAR(255) NOT NULL,
                 resultadohome INT,
                 timeaway VARCHAR(255) NOT NULL),
@@ -145,9 +145,17 @@ const createPlayersTable = async (teamName) => {
                 intercepcoes INT
             )
         `);
-        console.log(`Tabela "jogadores" criada ou já existente para o time: "${teamName}".`);
+        console.log("Query SQL:", query); // Log da query para depuração
+
+        await client.query(query);
+        console.log(`✅ Tabela "${tableName}" criada ou já existente.`);
     } catch (error) {
-        console.error(`Erro ao criar tabela para o time "${teamName}":`, error);
+        if (error.code === '42P07') { // Código de erro para "tabela já existe"
+            console.log(`⚠️ A tabela "${tableName}" já existe.`);
+        } else {
+            console.error(`❌ Erro ao criar tabela "${tableName}":`, error);
+            throw error;
+        }
     } finally {
         client.release();
     }
