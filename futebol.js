@@ -168,106 +168,54 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
-// Função para formatar a data corretamente
-const formatDate = (statisticData) => { 
-    console.log(`🔍 Formatando data: ${statisticData}`);
-
-    if (!statisticData) {
-        console.error("🚨 ERRO: Data inválida ou undefined!");
-        return null;
-    }
-
-    try {
-        const [dataParte, horaParte] = statisticData.split(" "); // "25.01.2025" e "17:00"
-        const [dia, mes, ano] = dataParte.split("."); // "25", "01", "2025"
-
-        // Formatar a data para "YYYY-MM-DDTHH:MM:SS"
-        const dataFormatada = new Date(`${ano}-${mes}-${dia}T${horaParte}:00`);
-        console.log(`✅ Data formatada com sucesso: ${dataFormatada}`);
-        return dataFormatada.toISOString().slice(0, 19).replace("T", " ");
-    } catch (error) {
-        console.error(`❌ Erro ao formatar data: ${error.message}`);
-        return null;
-    }
-};
-
-
-// Função para salvar os dados dos jogadores
-const saveDataToPlayersTable = async (teamName, data) => {
-    console.log(`🚀 Iniciando a inserção de dados para o time: ${teamName}`);
-
+const saveDataToPlayersTable = async (tableName, data) => {
     const client = await pool.connect();
     try {
-        const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-        console.log(`💾 Tabela definida: "${tableName}"`);
+        console.log(`💾 Salvando dados na tabela "${tableName}"...`);
 
-        // Corrigir a sequência antes de salvar os dados
-        console.log(`🔄 Corrigindo sequência da tabela "${tableName}"...`);
-        await fixSequence(client, tableName);
-        console.log(`✅ Sequência corrigida.`);
+        // Verifica se o jogador já foi registrado nesta data
+        const { rows: existingRows } = await client.query(
+            `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
+            [data.timehome, data.data_hora]
+        );
 
-        for (const item of data) {
-            console.log(`📌 Processando Time: ${item.timehome} no time ${item.playerName}`);
-
-            // Formatar a data antes de inserir
-            const dataFormatada = formatDate(item.datahora);
-            if (!dataFormatada) {
-                console.error("⛔ Pulando registro devido a erro na data.");
-                continue;
-            }
-
-            // Verificar se o jogador já está registrado
-            console.log("🔎 Verificando se já existe um registro para esse time e data...");
-            const { rows: existingRows } = await client.query(
-                `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
-                [item.timehome, dataFormatada]
-            );
-
-            if (existingRows.length > 0) {
-                console.log(`⚠️ Time ${item.timehome} já registrado com esta data (${dataFormatada}). Pulando...`);
-                continue;  // Pula para o próximo jogador
-            }
-
-            console.log("✅ Registro não encontrado. Prosseguindo com a inserção.");
-
-            const estatisticasKeys = [
-                "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
-                "remates_fora", "remates_bloqueados", "grandes_oportunidades", "cantos",
-                "remates_dentro_da_area", "remates_fora_da_area", "acertou_na_trave",
-                "defesas_de_guarda_redes", "livres", "foras_de_jogo", "faltas",
-                "cartoes_amarelos", "lancamentos", "toques_na_area_adversaria", "passes",
-                "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
-            ];
-
-            const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
-            const values = [
-                dataFormatada, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
-                ...estatisticasKeys.map(stat => item[stat] || 0)
-            ];
-
-            console.log(`📊 Colunas: ${columns.join(", ")}`);
-            console.log(`📊 Valores: ${JSON.stringify(values)}`);
-
-            const query = `
-                INSERT INTO "${tableName}" (${columns.join(", ")})
-                VALUES (${columns.map((_, i) => `$${i + 1}`).join(", ")})
-                RETURNING id;
-            `;
-
-            console.log("🔄 Executando query de inserção...");
-            const result = await client.query(query, values);
-            console.log(`✅ Registro inserido com ID: ${result.rows[0].id}`);
+        if (existingRows.length > 0) {
+            console.log(`⚠️ Jogador ${data.player_name} já registrado nesta data. Pulando...`);
+            return;
         }
 
-        console.log(`🎉 Todos os dados foram salvos para o time ${teamName}`);
+        // Inserir os dados do jogador
+        await client.query(
+            `INSERT INTO "${tableName}" (
+                data_hora, timehome, resultadohome, player_name, resultadoaway,
+                golos_esperados_xg, posse_de_bola, tentativas_de_golo, remates_a_baliza,
+                remates_fora, remates_bloqueados, grandes_oportunidades, cantos,
+                remates_dentro_da_area, remates_fora_da_area, acertou_na_trave,
+                defesas_de_guarda_redes, livres, foras_de_jogo, faltas,
+                cartoes_amarelos, lancamentos, toques_na_area_adversaria, passes,
+                passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
+            )`,
+            [
+                data.data_hora, data.timehome, data.resultadohome, data.player_name, data.resultadoaway,
+                data.golos_esperados_xg || 0, data.posse_de_bola || 0, data.tentativas_de_golo || 0,
+                data.remates_a_baliza || 0, data.remates_fora || 0, data.remates_bloqueados || 0,
+                data.grandes_oportunidades || 0, data.cantos || 0, data.remates_dentro_da_area || 0,
+                data.remates_fora_da_area || 0, data.acertou_na_trave || 0, data.defesas_de_guarda_redes || 0,
+                data.livres || 0, data.foras_de_jogo || 0, data.faltas || 0, data.cartoes_amarelos || 0,
+                data.lancamentos || 0, data.toques_na_area_adversaria || 0, data.passes || 0,
+                data.passes_no_ultimo_terco || 0, data.cruzamentos || 0, data.desarmes || 0, data.intercepcoes || 0
+            ]
+        );
+
+        console.log(`✅ Dados salvos para o jogador: ${data.player_name}`);
     } catch (error) {
-        console.error(`❌ ERRO ao salvar dados na tabela "${teamName}":`, error);
+        console.error(`❌ Erro ao salvar dados na tabela "${tableName}":`, error);
     } finally {
         client.release();
-        console.log("🔚 Conexão com o banco encerrada.");
     }
 };
-
 
 
 
