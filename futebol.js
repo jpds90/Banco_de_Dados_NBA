@@ -167,6 +167,13 @@ const fixSequence = async (client, tableName) => {
         throw error;
     }
 };
+const formatDate = (data) => {
+    const [dataParte, horaParte] = data.split(' '); // "25.01.2025" e "17:00"
+    const [dia, mes, ano] = dataParte.split('.'); // "25", "01", "2025"
+    
+    // Formatar a data para "YYYY-MM-DDTHH:MM:SS"
+    return new Date(`${ano}-${mes}-${dia}T${horaParte}:00`);
+};
 
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
@@ -177,17 +184,20 @@ const saveDataToPlayersTable = async (teamName, data) => {
         await fixSequence(client, tableName);
 
         for (const item of data) {
-            const dataFormatada = new Date(item.data_hora).toISOString().slice(0, 19).replace("T", " ");
-            const playerName = item.playerName || "Desconhecido";
+            console.log("🔍 Verificando data_hora:", item.data_hora);
 
-            const { rows: existingRows } = await client.query(
-                `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
-                [item.timehome, dataFormatada]
-            );
-
-            if (existingRows.length > 0) {
-                console.log(`⚠️ Jogador ${item.timehome} já registrado nesta data. Pulando...`);
-                continue;
+            let dataFormatada;
+            try {
+                // Verifica se a data está no formato correto e converte
+                if (!item.data_hora || isNaN(new Date(item.data_hora))) {
+                    // Converte para o formato correto
+                    dataFormatada = formatDate(item.data_hora).toISOString().slice(0, 19).replace("T", " ");
+                } else {
+                    dataFormatada = new Date(item.data_hora).toISOString().slice(0, 19).replace("T", " ");
+                }
+            } catch (error) {
+                console.error(`🚨 Erro ao processar data: ${error.message}`);
+                continue; // Pula esse registro inválido
             }
 
             const estatisticasKeys = [
