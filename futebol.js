@@ -425,7 +425,7 @@ const scrapeResults10 = async (link) => {
             // Salvando os dados no banco
             if (teamID10 && rowData.trim().length > 0) {
                 await saveDataToPlayersTable(teamID10, rowData);
-                console.log("🟢 Salvando dados no banco:", teamID10, rowData);
+                console.log("🟢 Salvando dados no banco:",rowData);
 
                 console.log(`✅ Dados salvos para o time ${teamID10}`);
             } else {
