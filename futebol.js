@@ -44,11 +44,11 @@ const getLastDateFromDatabase = async (teamTable) => {
         }
 
         console.log(`📅 Buscando a última data na tabela "${teamTable}"...`);
-        const result = await client.query(`SELECT data_hora FROM "${teamTable}" ORDER BY data_hora DESC LIMIT 1`);
+        const result = await client.query(`SELECT datajogo FROM "${teamTable}" ORDER BY datajogo DESC LIMIT 1`);
 
         if (result.rows.length > 0) {
-            console.log(`✅ Última data encontrada para a tabela "${teamTable}": ${result.rows[0].data_hora}`);
-            return result.rows[0].data_hora;
+            console.log(`✅ Última data encontrada para a tabela "${teamTable}": ${result.rows[0].datajogo}`);
+            return result.rows[0].datajogo;
         } else {
             console.log(`⚠️ Nenhuma data encontrada na tabela "${teamTable}"`);
             return null;
@@ -68,7 +68,7 @@ const checkDateInDatabase = async (teamTable, specificDate) => {
     try {
         console.log(`Verificando se a data ${specificDate} já existe na tabela ${teamTable}...`);
         const result = await client.query(
-            `SELECT COUNT(*) FROM "${teamTable}" WHERE data_hora = $1`, [specificDate]
+            `SELECT COUNT(*) FROM "${teamTable}" WHERE datajogo = $1`, [specificDate]
         );
 
         const count = result.rows[0].count;
@@ -111,7 +111,7 @@ const createPlayersTable = async (teamName) => {
 
         // Lista das estatísticas como colunas na tabela
         const estatisticas = [
-    timehome, resultadohome, playerName, resultadoaway,
+    datajogo, timehome, resultadohome, playerName, resultadoaway,
     estatisticasJogo["golos esperados (xg)"] || 0,
     estatisticasJogo["posse de bola"] || 0,
     estatisticasJogo["tentativas de golo"] || 0,
@@ -139,8 +139,8 @@ const createPlayersTable = async (teamName) => {
 
         // Criar tabela com colunas de informações adicionais + estatísticas
         const query = `
-    INSERT INTO agua_santa_futebol (
-        timehome, resultadohome, player_name, resultadoaway, 
+    INSERT INTO "${tableName}" (
+        datajogo, timehome, resultadohome, player_name, resultadoaway, 
         golos_esperados_xg, posse_de_bola, tentativas_de_golo, 
         remates_a_baliza, remates_fora, remates_bloqueados, 
         grandes_oportunidades, cantos, remates_dentro_da_area, 
@@ -155,7 +155,7 @@ const createPlayersTable = async (teamName) => {
         $13, $14, $15, $16, 
         $17, $18, $19, $20, 
         $21, $22, $23, $24, 
-        $25, $26, $27
+        $25, $26, $27, $28
     )`;
 
         await client.query(query);
@@ -194,7 +194,7 @@ const saveDataToPlayersTable = async (teamName, rowData) => {
 
         for (const item of rowData) {
             const { rows: existingRows } = await client.query(
-                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND data_hora = $2`,
+                `SELECT id FROM "${tableName}" WHERE player_name = $1 AND datajogo = $2`,
                 [item.playerName, item.data_hora]
             );
 
@@ -213,9 +213,9 @@ const saveDataToPlayersTable = async (teamName, rowData) => {
                 "passes_no_ultimo_terco", "cruzamentos", "desarmes", "intercepcoes"
             ];
 
-            const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
+            const columns = ["datajogo", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
             const values = [
-                item.data_hora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                item.datajogo, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
                 ...estatisticasKeys.map(stat => item[stat] || 0)
             ];
 
@@ -371,7 +371,7 @@ const scrapeResults10 = async (link) => {
             console.log(`⚽ Placar: ${Resultadohome} x ${Resultadoaway}`);
             console.log(`📅 Data do Jogo: ${datajogo}`);
 
-            let rowData = `${timehome}, ${playerName}, ${Resultadohome}, ${Resultadoaway}, ${datajogo}`;
+            let rowData = `${datajogo}, ${timehome}, ${playerName}, ${Resultadohome}, ${Resultadoaway}`;
 
             // Lista de estatísticas esperadas
             const estatisticasEsperadas = [
