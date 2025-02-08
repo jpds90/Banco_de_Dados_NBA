@@ -176,28 +176,29 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
-const saveDataToPlayersTable = async (tableName, data) => {
+const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
-        console.log(`💾 Salvando dados na tabela "${tableName}"...`);
+        const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+        console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
 
-        // Validação: Verifica se data_hora está presente e não é null
-        if (!data.data_hora) {
-            throw new Error('A propriedade "data_hora" é obrigatória e não pode ser null.');
-        }
+        // Corrigir a sequência antes de salvar os dados
+        await fixSequence(client, tableName);
 
-        // Verifica se o jogador já foi registrado nesta data
+        for (const item of data) {
+            // Verificar se o jogador já está registrado
         const { rows: existingRows } = await client.query(
-            `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
-            [data.timehome, data.data_hora]
+            `SELECT id FROM "${tableName}" WHERE timehome = $1 AND timeaway = $2 AND data_hora = $3`,
+            [data.timehome, data.timeaway, data.data_hora]
         );
 
-        if (existingRows.length > 0) {
-            console.log(`⚠️ Time ${data.timehome} já registrado nesta data. Pulando...`);
-            return;
-        }
+            if (existingRows.length > 0) {
+                console.log(`Time ${data.timehome} já registrado com esta data. Pulando...`);
+                continue;  // Pula para o próximo jogador
+            }
 
-        // Inserir os dados do jogador
+
+        // Inserir os dados do jogo
         await client.query(
             `INSERT INTO "${tableName}" (
                 data_hora, timehome, resultadohome, timeaway, resultadoaway,
@@ -208,7 +209,7 @@ const saveDataToPlayersTable = async (tableName, data) => {
                 cartoes_amarelos, lancamentos, toques_na_area_adversaria, passes,
                 passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
             )`,
             [
                 data.data_hora, data.timehome, data.resultadohome, data.timeaway, data.resultadoaway,
@@ -222,7 +223,7 @@ const saveDataToPlayersTable = async (tableName, data) => {
             ]
         );
 
-        console.log(`✅ Dados salvos para o jogador: ${data.timeaway}`);
+        console.log(`✅ Dados salvos para o jogo: ${data.timehome} vs ${data.timeaway}`);
     } catch (error) {
         console.error(`❌ Erro ao salvar dados na tabela "${tableName}":`, error);
     } finally {
