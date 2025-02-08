@@ -168,28 +168,67 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
+// Função para formatar a data corretamente
+const formatDate = (datahora) => { 
+    console.log(`🔍 Formatando data: ${datahora}`);
+
+    if (!datahora) {
+        console.error("🚨 ERRO: Data inválida ou undefined!");
+        return null;
+    }
+
+    try {
+        const [dataParte, horaParte] = datahora.split(" "); // "25.01.2025" e "17:00"
+        const [dia, mes, ano] = dataParte.split("."); // "25", "01", "2025"
+
+        // Formatar a data para "YYYY-MM-DDTHH:MM:SS"
+        const dataFormatada = new Date(`${ano}-${mes}-${dia}T${horaParte}:00`);
+        console.log(`✅ Data formatada com sucesso: ${dataFormatada}`);
+        return dataFormatada.toISOString().slice(0, 19).replace("T", " ");
+    } catch (error) {
+        console.error(`❌ Erro ao formatar data: ${error.message}`);
+        return null;
+    }
+};
+
+
 // Função para salvar os dados dos jogadores
 const saveDataToPlayersTable = async (teamName, data) => {
+    console.log(`🚀 Iniciando a inserção de dados para o time: ${teamName}`);
+
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-        console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
+        console.log(`💾 Tabela definida: "${tableName}"`);
 
         // Corrigir a sequência antes de salvar os dados
+        console.log(`🔄 Corrigindo sequência da tabela "${tableName}"...`);
         await fixSequence(client, tableName);
+        console.log(`✅ Sequência corrigida.`);
 
         for (const item of data) {
+            console.log(`📌 Processando Time: ${item.timehome} no time ${item.playerName}`);
+
+            // Formatar a data antes de inserir
+            const dataFormatada = formatDate(item.datahora);
+            if (!dataFormatada) {
+                console.error("⛔ Pulando registro devido a erro na data.");
+                continue;
+            }
+
             // Verificar se o jogador já está registrado
+            console.log("🔎 Verificando se já existe um registro para esse time e data...");
             const { rows: existingRows } = await client.query(
                 `SELECT id FROM "${tableName}" WHERE timehome = $1 AND data_hora = $2`,
-                [item.timehome, item.datahora]
+                [item.timehome, dataFormatada]
             );
 
             if (existingRows.length > 0) {
-                console.log(`Jogador ${item.playerName} já registrado com esta data. Pulando...`);
+                console.log(`⚠️ Time ${item.timehome} já registrado com esta data (${dataFormatada}). Pulando...`);
                 continue;  // Pula para o próximo jogador
             }
 
+            console.log("✅ Registro não encontrado. Prosseguindo com a inserção.");
 
             const estatisticasKeys = [
                 "golos_esperados_xg", "posse_de_bola", "tentativas_de_golo", "remates_a_baliza",
@@ -202,9 +241,12 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
             const columns = ["data_hora", "timehome", "resultadohome", "player_name", "resultadoaway", ...estatisticasKeys];
             const values = [
-                item.datahora, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
+                dataFormatada, item.timehome, item.resultadohome, item.playerName, item.resultadoaway,
                 ...estatisticasKeys.map(stat => item[stat] || 0)
             ];
+
+            console.log(`📊 Colunas: ${columns.join(", ")}`);
+            console.log(`📊 Valores: ${JSON.stringify(values)}`);
 
             const query = `
                 INSERT INTO "${tableName}" (${columns.join(", ")})
@@ -212,17 +254,20 @@ const saveDataToPlayersTable = async (teamName, data) => {
                 RETURNING id;
             `;
 
+            console.log("🔄 Executando query de inserção...");
             const result = await client.query(query, values);
             console.log(`✅ Registro inserido com ID: ${result.rows[0].id}`);
         }
 
-        console.log(`✅ Todos os dados foram salvos para o time ${teamName}`);
+        console.log(`🎉 Todos os dados foram salvos para o time ${teamName}`);
     } catch (error) {
-        console.error(`❌ Erro ao salvar dados na tabela "${teamName}":`, error);
+        console.error(`❌ ERRO ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
+        console.log("🔚 Conexão com o banco encerrada.");
     }
 };
+
 
 
 
