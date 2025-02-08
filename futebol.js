@@ -118,7 +118,7 @@ const createPlayersTable = async (teamName) => {
                 data_hora VARCHAR(50) NOT NULL,
                 timehome VARCHAR(255) NOT NULL,
                 resultadohome INT,
-                timeaway VARCHAR(255) NOT NULL),
+                timeaway VARCHAR(255) NOT NULL,
                 resultadoaway INT,
                 golos_esperados_xg INT,
                 posse_de_bola INT,
