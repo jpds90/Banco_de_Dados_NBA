@@ -125,7 +125,7 @@ const createPlayersTable = async (teamName) => {
                 tentativas_de_golo INT,
                 remates_a_baliza INT,
                 remates_fora INT,
-                remates_bloqueado INT,
+                remates_bloqueados INT,
                 grandes_oportunidades INT,
                 cantos INT,
                 remates_dentro_da_area INT,
