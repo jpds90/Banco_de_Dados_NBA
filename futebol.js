@@ -169,16 +169,16 @@ const fixSequence = async (client, tableName) => {
 };
 
 // Função para formatar a data corretamente
-const formatDate = (datahora) => { 
-    console.log(`🔍 Formatando data: ${datahora}`);
+const formatDate = (statisticData) => { 
+    console.log(`🔍 Formatando data: ${statisticData}`);
 
-    if (!datahora) {
+    if (!statisticData) {
         console.error("🚨 ERRO: Data inválida ou undefined!");
         return null;
     }
 
     try {
-        const [dataParte, horaParte] = datahora.split(" "); // "25.01.2025" e "17:00"
+        const [dataParte, horaParte] = statisticData.split(" "); // "25.01.2025" e "17:00"
         const [dia, mes, ano] = dataParte.split("."); // "25", "01", "2025"
 
         // Formatar a data para "YYYY-MM-DDTHH:MM:SS"
