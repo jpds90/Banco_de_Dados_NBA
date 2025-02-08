@@ -167,13 +167,6 @@ const fixSequence = async (client, tableName) => {
         throw error;
     }
 };
-const formatDate = (data) => {
-    const [dataParte, horaParte] = data.split(' '); // "25.01.2025" e "17:00"
-    const [dia, mes, ano] = dataParte.split('.'); // "25", "01", "2025"
-    
-    // Formatar a data para "YYYY-MM-DDTHH:MM:SS"
-    return new Date(`${ano}-${mes}-${dia}T${horaParte}:00`);
-};
 
 // Função para salvar os dados dos jogadores
 const saveDataToPlayersTable = async (teamName, data) => {
