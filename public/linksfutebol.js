@@ -17,6 +17,10 @@ function getSavedUrl() {
 
 // ✅ URL dinâmica com fallback padrão
 const url = getSavedUrl();
+// ✅ Extrair nome antes de "/lista/"
+const tableName = url.split('/').slice(-3, -2)[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+
+console.log(`📌 Nome da tabela extraído: ${tableName}`);
 
 // ✅ Configuração do banco de dados (PostgreSQL)
 const dbConfig = {
@@ -39,7 +43,7 @@ async function scrapeAndSaveLinks() {
 
     // 🔹 Cria a tabela se não existir
     await client.query(`
-        CREATE TABLE IF NOT EXISTS linksFutebol (
+        CREATE TABLE IF NOT EXISTS ${tableName} (
             id SERIAL PRIMARY KEY,
             team_name VARCHAR(255) NOT NULL,
             link VARCHAR(255) NOT NULL,
@@ -48,8 +52,8 @@ async function scrapeAndSaveLinks() {
     `);
 
     // 🔹 Limpa os links antigos antes de inserir os novos
-    await client.query('TRUNCATE TABLE linksFutebol');
-    console.log('🗑️ Tabela "linksFutebol" limpa.');
+    await client.query('TRUNCATE TABLE ${tableName}');
+    console.log('🗑️ Tabela ${tableName} limpa.');
 
     try {
         console.log("📌 Acessando URL:", url);
