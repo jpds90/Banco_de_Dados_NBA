@@ -525,11 +525,21 @@ const scrapeResults10 = async (link) => {
                 };
 
                 console.log("Dados coletados:", teamData);
-                await saveDataToPlayersTable(teamData);
-            }
-        } catch (error) {
-            console.error("Erro ao extrair estatísticas:", error);
-        }
+                // Verificando se a data está correta antes de salvar
+                console.log("🟢 Dados estruturados para salvar:", JSON.stringify(teamData, null, 2));
+
+                // Antes de salvar, verificando se 'teamName' é uma string válida
+                if (teamID10 && teamData.data_hora) {
+                    if (typeof teamID10 === 'string' && teamID10.trim() !== '') {
+                        await saveDataToPlayersTable(teamID10, teamData);
+                        console.log(`✅ Dados salvos para o time ${teamID10}`);
+                    } else {
+                        console.log("⚠️ O nome do time (teamID10) não é válido. Nenhum dado foi salvo.");
+                    }
+                } else {
+                    console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
+                }
+
     }
 
     await browser.close();
