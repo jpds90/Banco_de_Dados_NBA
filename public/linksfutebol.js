@@ -18,9 +18,16 @@ function getSavedUrl() {
 // ✅ URL dinâmica com fallback padrão
 const url = getSavedUrl();
 // ✅ Extrair nome antes de "/lista/"
-const tableName = url.split('/').slice(-3, -2)[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+const tableName = url
+    .split('/')
+    .slice(-3, -2)[0] // Pega o nome correto na URL
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .replace(/[^a-z0-9]+/g, "_") // Substitui espaços e caracteres inválidos por "_"
+    .replace(/^_+|_+$/g, "") + "_link"; // Remove "_" extras e adiciona "_link"
 
-console.log(`📌 Nome da tabela extraído: ${tableName}`);
+console.log(tableName); // Exemplo: "serie_a_link"
+
 
 // ✅ Configuração do banco de dados (PostgreSQL)
 const dbConfig = {
