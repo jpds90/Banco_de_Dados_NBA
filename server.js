@@ -251,38 +251,38 @@ app.post('/execute-script', (req, res) => {
         res.send('Script.js executado com sucesso.');
     });
 });
+
+
+// Função para executar um script Node.js de forma segura
+function runScript(scriptPath, res, scriptName) {
+    exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`❌ Erro ao executar ${scriptName}: ${error.message}`);
+            return res.status(500).json({ success: false, message: `Erro ao executar ${scriptName}.` });
+        }
+        
+        if (stderr) {
+            console.warn(`⚠️ Saída com alerta (${scriptName}): ${stderr}`);
+        }
+
+        console.log(`✅ ${scriptName} executado com sucesso: ${stdout}`);
+        res.json({ success: true, message: `${scriptName} executado com sucesso.` });
+    });
+}
+
 // Rota para executar o script saveLinks.js
 app.post('/futebollink', (req, res) => {
-    const saveLinksPath = path.join(__dirname, 'public', 'linksfutebol.js');
-    exec(`node ${saveLinksPath}`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Erro ao executar o Link Futebol: ${error.message}`);
-            return res.status(500).send('Erro ao executar o Link Futebol.');
-        }
-        if (stderr) {
-            console.error(`Erro no script: ${stderr}`);
-            return res.status(500).send('Erro ao executar o Link Futebol.');
-        }
-        console.log(`Resultado do script: ${stdout}`);
-        res.send('Link Futebol executado com sucesso.');
-    });
+    const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
+    runScript(scriptPath, res, 'Link Futebol');
 });
 
+// Rota para executar o script oddsfutebol.js
 app.post('/oddsfutebol', (req, res) => {
-    const saveLinksPath = path.join(__dirname, 'public', 'oddsfutebol.js');
-    exec(`node ${saveLinksPath}`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`Erro ao executar o Odds Futebol: ${error.message}`);
-            return res.status(500).send('Erro ao executar odds Futebol.');
-        }
-        if (stderr) {
-            console.error(`Erro no script: ${stderr}`);
-            return res.status(500).send('Erro ao executar Odds Futebol.');
-        }
-        console.log(`Resultado Odds Futebol: ${stdout}`);
-        res.send('Odds Futebol executado com sucesso.');
-    });
+    const scriptPath = path.join(__dirname, 'public', 'oddsfutebol.js');
+    runScript(scriptPath, res, 'Odds Futebol');
 });
+
+
 // Rota para executar a atualização de jogadores
 app.post('/execute-Jogadores', async (req, res) => {
     const { links } = req.body; // Links das equipes selecionadas
