@@ -173,23 +173,21 @@ const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
         const tableName = teamName.replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-        console.log(`Salvando dados de jogadores na tabela "${tableName}"...`);
+        console.log(`🔵 Salvando dados na tabela "${tableName}"...`);
 
         // Corrigir a sequência antes de salvar os dados
         await fixSequence(client, tableName);
 
-        for (const item of data) {
-            // Verificar se o jogador já está registrado
+        // Verificar se o jogo já está registrado
         const { rows: existingRows } = await client.query(
             `SELECT id FROM "${tableName}" WHERE timehome = $1 AND timeaway = $2 AND data_hora = $3`,
             [data.timehome, data.timeaway, data.data_hora]
         );
 
-            if (existingRows.length > 0) {
-                console.log(`Time ${data.timehome} já registrado com esta data. Pulando...`);
-                continue;  // Pula para o próximo jogador
-            }
-
+        if (existingRows.length > 0) {
+            console.log(`⚠️ Jogo entre ${data.timehome} e ${data.timeaway} em ${data.data_hora} já registrado. Pulando...`);
+            return; // Não salva duplicado
+        }
 
         // Inserir os dados do jogo
         await client.query(
@@ -216,16 +214,14 @@ const saveDataToPlayersTable = async (teamName, data) => {
             ]
         );
 
-        console.log(`Dados salvos para o jogador: ${item.playerName}`);
-        }
-
-        console.log(`Dados salvos para o time ${teamName}`);
+        console.log(`✅ Dados salvos para ${data.timehome} vs ${data.timeaway} (${data.data_hora})`);
     } catch (error) {
-        console.error(`Erro ao salvar dados na tabela "${teamName}":`, error);
+        console.error(`❌ Erro ao salvar dados na tabela "${teamName}":`, error);
     } finally {
         client.release();
     }
 };
+
 
 
 
