@@ -302,8 +302,15 @@ const scrapeResults10 = async (link) => {
 
         const browser = await puppeteer.launch({
         headless: true, // Garante que o navegador rode em modo headless
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
+        args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-zygote',
+        '--single-process',], // Evita restrições no ambiente do Render
     });
+
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
     await loadPageWithRetries(page, fullLink);
@@ -333,7 +340,7 @@ const scrapeResults10 = async (link) => {
 
             return [...sportName.querySelectorAll('[id]')].map(element => element.id).slice(0, 60);
         });
-
+console.log(id);
         const page2 = await browser.newPage();
         let teamData = '';
 
@@ -559,34 +566,12 @@ if (teamID10 && teamData.data_hora) {
     console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
 }
 
+// Fechar a página de cada jogador
+await page2.close();
 
-                // Fechar a página de cada jogador
-                await page2.close();
-            } catch (error) {
-                console.error(`Erro ao processar o jogador com ID ${ids[i]}:`, error);
-                console.log('Pulando para o próximo jogador...');
-                continue; // Pula para o próximo jogador no loop
-            }
-        }
-    } catch (error) {
-        console.error("Erro geral no processamento:", error);
-    }
-    // Extrai o nome do time do link
-    const rawTeamName = link.split('/').slice(-3, -2)[0]; // Obtém o nome bruto do time
-    const teamName = rawTeamName.replace('-', ' '); // Formata para exibição (ex.: "los angeles-lakers" -> "los angeles lakers")
-    const normalizedTeamName = rawTeamName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase() + '_futebol'; // Normaliza para uso no banco (ex.: "los angeles-lakers" -> "los_angeles_lakers")
+console.log(`Scraping finalizado para o link: ${link}`);
+await browser.close();
 
-    console.log(`Time identificado a partir do link: ${teamName}`);
-
-    // Cria a tabela apenas para o time do link
-    await createPlayersTable(normalizedTeamName); // Cria a tabela para os Time de Futebol
-    await saveDataToPlayersTable(normalizedTeamName, data); // Salva os dados dos Time de Futebol
-
-    console.log(`Scraping finalizado para o link: ${link}`);
-    await browser.close();
-
-    };
-};
     // Função principal
     if (require.main === module) {
         (async () => {
