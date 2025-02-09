@@ -211,7 +211,7 @@ await client.query(
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
     )`,
     [
-        data.data_hora, data.timehome, data.resultadohome, data.timeaway, data.resultadoaway,
+        data.data_hora || "1900-01-01 00:00:00",  data.timehome || "Desconhecido", data.resultadohome || 0, data.timeaway || "Desconhecido", data.resultadoaway || 0,
         cleanNumber(data.golos_esperados_xg), cleanNumber(data.posse_de_bola),
         cleanNumber(data.tentativas_de_golo), cleanNumber(data.remates_a_baliza),
         cleanNumber(data.remates_fora), cleanNumber(data.remates_bloqueados),
