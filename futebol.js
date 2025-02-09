@@ -300,15 +300,16 @@ const scrapeResults10 = async (link) => {
     const fullLink = `${link}resultados/`;
     console.log('Link completo para scraping:', fullLink);
 
-        const browser = await puppeteer.launch({
+    const browser = await puppeteer.launch({
         headless: true, // Garante que o navegador rode em modo headless
         args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-zygote',
-        '--single-process',], // Evita restrições no ambiente do Render
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-zygote',
+            '--single-process',
+        ], // Evita restrições no ambiente do Render
     });
 
     const page = await browser.newPage();
@@ -318,10 +319,10 @@ const scrapeResults10 = async (link) => {
     const url = await page.evaluate(() => window.location.href);
 
     console.log('URL capturada:', url);
-        const start_index = url.indexOf("/equipa/") + "/equipa/".length;
-        const end_index = url.indexOf("/", start_index);
-        const teamId = url.substring(start_index, end_index).replace(/-/g, ' ');
-    // Extrair e formatar o nome do time para utilizar como ID da tabela
+    const start_index = url.indexOf("/equipa/") + "/equipa/".length;
+    const end_index = url.indexOf("/", start_index);
+    const teamId = url.substring(start_index, end_index).replace(/-/g, ' ');
+
     let teamID10 = null;
 
     if (start_index !== -1 && end_index !== -1) {
@@ -330,250 +331,210 @@ const scrapeResults10 = async (link) => {
     } else {
         console.log('Erro ao extrair o ID da equipe.');
     }
+
+    await sleep(10000);
+    await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
+
+    const ids = await page.evaluate(() => {
+        const sportName = document.querySelector('.sportName.soccer');
+        if (!sportName) throw new Error('SportName não encontrado');
+        return [...sportName.querySelectorAll('[id]')].map(element => element.id).slice(0, 60);
+    });
+
+    console.log(ids);
+
+    const page2 = await browser.newPage();
+    let teamData = '';
+
+    for (let id of ids) {
+        const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
+        console.log("Processando URL:", url);
+        await page2.goto(url, { timeout: 120000 });
         await sleep(10000);
-        await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
 
-        // Obtendo os IDs dos jogos
-        const ids = await page.evaluate(() => {
-            const sportName = document.querySelector('.sportName.soccer');
-            if (!sportName) throw new Error('SportName não encontrado');
-
-            return [...sportName.querySelectorAll('[id]')].map(element => element.id).slice(0, 60);
-        });
-console.log(id);
-        const page2 = await browser.newPage();
-        let teamData = '';
-
-        for (let id of ids) {
-            const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
-            console.log("Processando URL:", url);
-            await page2.goto(url, { timeout: 120000 });
-            await sleep(10000);
-// Processar estatísticas apenas se o teamID10 for válido
-if (teamID10) {
-    const lastDate = await getLastDateFromDatabase(teamID10);
-    console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
-
-    try {
-        // Espera o elemento carregar por até 10 segundos
-        await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
-
-        // Tenta encontrar o elemento na página
-        const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
-
-        if (statisticElementHandle) {
-            // Extrai o texto do elemento encontrado
-            const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
-            console.log(`Data ${statisticData} encontrada!`);
-
-            // Verifica se a data extraída já existe no banco de dados
-            const dateExists = await checkDateInDatabase(teamID10, statisticData);
-
-            if (dateExists) {
-                console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                await page2.close();
-
-                // Fecha o navegador e encerra o scraping com sucesso
-                await browser.close();
-                console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
-                return; // Encerra toda a função scrapeResults1
-            } else {
-                console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
-            }
-        } else {
-            console.log("❌ Elemento de data do jogo não encontrado!");
-        }
-    } catch (error) {
-        console.error("Erro ao extrair a data do jogo:", error);
-    }
-}
+        if (teamID10) {
+            const lastDate = await getLastDateFromDatabase(teamID10);
+            console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
             try {
-                const rows = await page2.$$(`#detail`);
-                for (const row of rows) {
-                    try {
-                        let rowData = '';
+                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
 
-                        // Extração da data do jogo
-                        let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
-                        rowData += `${data_hora}, `;
+                const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
-                        // Extração dos times
-                        let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
-                        let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
+                if (statisticElementHandle) {
+                    const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
+                    console.log(`Data ${statisticData} encontrada!`);
 
-                        let normalizedTeamId = normalizeString(teamId);
-                        let normalizedTimeHome = normalizeString(timehome);
-                        let normalizedTimeAway = normalizeString(timeaway);
+                    const dateExists = await checkDateInDatabase(teamID10, statisticData);
 
-                        console.log(`Time: ${normalizedTeamId}`);
-                        console.log(`Time Casa: ${normalizedTimeHome}`);
-                        console.log(`Time Visitante: ${normalizedTimeAway}`);
+                    if (dateExists) {
+                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
+                        await page2.close();
+                        await browser.close();
+                        console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
+                        return;
+                    } else {
+                        console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
+                    }
+                } else {
+                    console.log("❌ Elemento de data do jogo não encontrado!");
+                }
+            } catch (error) {
+                console.error("Erro ao extrair a data do jogo:", error);
+            }
+        }
 
-                        // Identifica se o time pesquisado joga em casa ou fora
-                        let isHome = normalizedTeamId === normalizedTimeHome;
-                        let isAway = normalizedTeamId === normalizedTimeAway;
+        try {
+            const rows = await page2.$$(`#detail`);
+            for (const row of rows) {
+                let rowData = '';
 
-                        console.log(`Time Casa: ${isHome}`);
-                        console.log(`Time Visitante: ${isAway}`);
+                // Extração da data do jogo
+                let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
+                rowData += `${data_hora}, `;
 
-                        rowData += `${timehome || '0'}, `;
-                        rowData += `${timeaway || '0'}, `;
+                // Extração dos times
+                let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
+                let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
 
-                        // Extração do placar
-                        let Resultadohome = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(1)`, el => el.textContent.trim()).catch(() => '0');
-                        let Resultadoaway = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(3)`, el => el.textContent.trim()).catch(() => '0');
+                let normalizedTeamId = normalizeString(teamId);
+                let normalizedTimeHome = normalizeString(timehome);
+                let normalizedTimeAway = normalizeString(timeaway);
 
-                        rowData += `${Resultadohome}, ${Resultadoaway}, `;
-                        console.log("Resultado Casa:", Resultadohome);
-                        console.log("Resultado Visitante:", Resultadoaway);
+                console.log(`Time: ${normalizedTeamId}`);
+                console.log(`Time Casa: ${normalizedTimeHome}`);
+                console.log(`Time Visitante: ${normalizedTimeAway}`);
 
+                let isHome = normalizedTeamId === normalizedTimeHome;
+                let isAway = normalizedTeamId === normalizedTimeAway;
 
-                        console.log("Data:", data_hora);
-                        console.log(`Time Casa: ${timehome}`);
-                        console.log("Resultado Casa:", Resultadohome);
-                        console.log(`Time Visitante: ${timeaway}`);
-                        console.log("Resultado Visitante:", Resultadoaway);
-                        // Lista de estatísticas esperadas
-                        const estatisticasEsperadas = [
-                            "golos esperados (xg)", "posse de bola", "tentativas de golo", "remates à baliza",
-                            "remates fora", "remates bloqueados", "grandes oportunidades", "cantos",
-                            "remates dentro da área", "remates fora da área", "acertou na trave",
-                            "defesas de guarda-redes", "livres", "foras de jogo", "faltas",
-                            "cartões amarelos", "lançamentos", "toques na área adversária", "passes",
-                            "passes no último terço", "cruzamentos", "desarmes", "intercepções"
-                        ];
+                console.log(`Time Casa: ${isHome}`);
+                console.log(`Time Visitante: ${isAway}`);
 
-                        let estatisticasJogo = {};
-                        estatisticasEsperadas.forEach(stat => {
-                            estatisticasJogo[stat] = '0';
-                        });
+                rowData += `${timehome || '0'}, `;
+                rowData += `${timeaway || '0'}, `;
+
+                let Resultadohome = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(1)`, el => el.textContent.trim()).catch(() => '0');
+                let Resultadoaway = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(3)`, el => el.textContent.trim()).catch(() => '0');
+
+                rowData += `${Resultadohome}, ${Resultadoaway}, `;
+                console.log("Resultado Casa:", Resultadohome);
+                console.log("Resultado Visitante:", Resultadoaway);
+
+                let estatisticasJogo = {};
+                const estatisticasEsperadas = [
+                    "golos esperados (xg)", "posse de bola", "tentativas de golo", "remates à baliza",
+                    "remates fora", "remates bloqueados", "grandes oportunidades", "cantos",
+                    "remates dentro da área", "remates fora da área", "acertou na trave",
+                    "defesas de guarda-redes", "livres", "foras de jogo", "faltas",
+                    "cartões amarelos", "lançamentos", "toques na área adversária", "passes",
+                    "passes no último terço", "cruzamentos", "desarmes", "intercepções"
+                ];
+
+                estatisticasEsperadas.forEach(stat => {
+                    estatisticasJogo[stat] = '0';
+                });
+
+                try {
+                    const section = await row.$('.section');
+                    if (!section) throw new Error('Elemento .section não encontrado.');
+
+                    const subsections = await section.$$('div[class*="row"]');
+                    if (subsections.length === 0) throw new Error('Nenhuma subseção encontrada.');
+
+                    console.log(`Encontradas ${subsections.length} subseções.`);
+
+                    let normalizedEstatisticasEsperadas = estatisticasEsperadas.map(stat => normalizeString(stat));
+
+                    for (let i = 0; i < estatisticasEsperadas.length && i < subsections.length; i++) {
+                        const subsection = subsections[i];
 
                         try {
-                            const section = await row.$('.section');
-                            if (!section) throw new Error('Elemento .section não encontrado.');
+                            let statisticName = await subsection.$eval(`div[class*="category"]`, el => {
+                                return el.textContent
+                                    .replace(/[0-9%()\/]/g, '')
+                                    .trim()
+                                    .normalize("NFD").replace(/[\u0300-\u036f]/g, '')
+                                    .toLowerCase();
+                            });
 
-                            const subsections = await section.$$('div[class*="row"]');
-                            if (subsections.length === 0) throw new Error('Nenhuma subseção encontrada.');
+                            let normalizedCategory = normalizeString(statisticName);
 
-                            console.log(`Encontradas ${subsections.length} subseções.`);
+                            let estatisticaCorreta = estatisticasEsperadas.find(stat => {
+                                return normalizedCategory === normalizeString(stat);
+                            });
 
-                            // Normalizar todas as estatísticas esperadas para facilitar a comparação
-                            let normalizedEstatisticasEsperadas = estatisticasEsperadas.map(stat => normalizeString(stat));
+                            if (estatisticaCorreta) {
+                                let valueSelector = isHome ? 'div[class*="homeValue"]' :
+                                    isAway ? 'div[class*="awayValue"]' : '';
 
-                            for (let i = 0; i < estatisticasEsperadas.length && i < subsections.length; i++) {
-                              try {
-                                  const subsection = subsections[i];
+                                if (valueSelector) {
+                                    let extractedValue = await subsection.$eval(valueSelector, el => el.textContent.trim()).catch(() => '0');
 
-                                  let statisticName = await subsection.$eval(`div[class*="category"]`, el => {
-                                      return el.textContent
-                                          .replace(/[0-9%()\/]/g, '') // Remove números, %, parênteses e barras
-                                          .trim()
-                                          .normalize("NFD").replace(/[\u0300-\u036f]/g, '') // Remove acentos
-                                          .toLowerCase();
-                                  });
-
-                                  let normalizedCategory = normalizeString(statisticName);
-
-                                  // Verifica se a estatística extraída corresponde a alguma da lista esperada
-                                  let estatisticaCorreta = estatisticasEsperadas.find((stat, index) => {
-                                      return normalizedCategory === normalizeString(stat);
-                                  });
-
-                                  if (estatisticaCorreta) {
-                                      let valueSelector = isHome ? 'div[class*="homeValue"]' :
-                                          isAway ? 'div[class*="awayValue"]' : '';
-
-                                      if (valueSelector) {
-                                          let extractedValue = await subsection.$eval(valueSelector, el => el.textContent.trim()).catch(() => '0');
-
-                                          // Se for "passes", extrair o percentual e fração
-                                          if (estatisticaCorreta === "passes") {
-                                              let percentageMatch = extractedValue.match(/(\d+)%/); // Captura "84%"
-                                              let fractionMatch = extractedValue.match(/\((\d+\/\d+)\)/); // Captura "(330/392)"
-
-                                              if (percentageMatch && fractionMatch) {
-                                                  extractedValue = `${percentageMatch[1]}% (${fractionMatch[1]})`;
-                                              } else if (percentageMatch) {
-                                                  extractedValue = `${percentageMatch[1]}%`;
-                                              } else if (fractionMatch) {
-                                                  extractedValue = `(${fractionMatch[1]})`;
-                                              }
-                                          }
-
-                                          estatisticasJogo[estatisticaCorreta] = extractedValue;
-                                          console.log(`Estatística coletada: ${estatisticaCorreta} -> ${extractedValue}`);
-                                      }
-                                  } else {
-                                      console.warn(`Estatística inesperada encontrada: ${statisticName}`);
-                                  }
-
-                              } catch (error) {
-                                  console.error(`Erro ao extrair estatísticas da subseção ${i + 1}:`, error);
-                              }
-                          }
+                                    estatisticasJogo[estatisticaCorreta] = extractedValue;
+                                    console.log(`Estatística coletada: ${estatisticaCorreta} -> ${extractedValue}`);
+                                }
+                            } else {
+                                console.warn(`Estatística inesperada encontrada: ${statisticName}`);
+                            }
 
                         } catch (error) {
-                            console.error('Erro ao extrair as subseções:', error);
-                                // Se o erro for "Nenhuma subseção encontrada", define todas as estatísticas como "0"
-                                if (error.message.includes("Nenhuma subseção encontrada")) {
-                                  estatisticasEsperadas.forEach(stat => {
-                                    estatisticasJogo[stat] = "0";
-                                  });
-                                  console.warn("Nenhuma estatística encontrada. Todas as estatísticas foram definidas como 0.");
-                                }
+                            console.error(`Erro ao extrair estatísticas da subseção ${i + 1}:`, error);
                         }
+                    }
 
-let teamData = {
-    data_hora: data_hora || null,  // Corrigido para pegar a data corretamente
-    timehome: timehome || null,
-    resultadohome: Resultadohome || 0,
-    timeaway: timeaway || null,
-    resultadoaway: Resultadoaway || 0,
-    golos_esperados_xg: estatisticasJogo["golos esperados (xg)"] || 0,
-    posse_de_bola: estatisticasJogo["posse de bola"] || 0,
-    tentativas_de_golo: estatisticasJogo["tentativas de golo"] || 0,
-    remates_a_baliza: estatisticasJogo["remates à baliza"] || 0,
-    remates_fora: estatisticasJogo["remates fora"] || 0,
-    remates_bloqueados: estatisticasJogo["remates bloqueados"] || 0,
-    grandes_oportunidades: estatisticasJogo["grandes oportunidades"] || 0,
-    cantos: estatisticasJogo["cantos"] || 0,
-    remates_dentro_da_area: estatisticasJogo["remates dentro da área"] || 0,
-    remates_fora_da_area: estatisticasJogo["remates fora da área"] || 0,
-    acertou_na_trave: estatisticasJogo["acertou na trave"] || 0,
-    defesas_de_guarda_redes: estatisticasJogo["defesas de guarda-redes"] || 0,
-    livres: estatisticasJogo["livres"] || 0,
-    foras_de_jogo: estatisticasJogo["foras de jogo"] || 0,
-    faltas: estatisticasJogo["faltas"] || 0,
-    cartoes_amarelos: estatisticasJogo["cartões amarelos"] || 0,
-    lancamentos: estatisticasJogo["lançamentos"] || 0,
-    toques_na_area_adversaria: estatisticasJogo["toques na área adversária"] || 0,
-    passes: estatisticasJogo["passes"] || 0,
-    passes_no_ultimo_terco: estatisticasJogo["passes no último terço"] || 0,
-    cruzamentos: estatisticasJogo["cruzamentos"] || 0,
-    desarmes: estatisticasJogo["desarmes"] || 0,
-    intercepcoes: estatisticasJogo["intercepções"] || 0
+                } catch (error) {
+                    console.error('Erro ao extrair as subseções:', error);
+                    if (error.message.includes("Nenhuma subseção encontrada")) {
+                        estatisticasEsperadas.forEach(stat => {
+                            estatisticasJogo[stat] = "0";
+                        });
+                        console.warn("Nenhuma estatística encontrada. Todas as estatísticas foram definidas como 0.");
+                    }
+                }
+
+                teamData = {
+                    data_hora: data_hora || null,
+                    timehome: timehome || null,
+                    resultadohome: Resultadohome || 0,
+                    timeaway: timeaway || null,
+                    resultadoaway: Resultadoaway || 0,
+                    golos_esperados_xg: estatisticasJogo["golos esperados (xg)"] || 0,
+                    posse_de_bola: estatisticasJogo["posse de bola"] || 0,
+                    tentativas_de_golo: estatisticasJogo["tentativas de golo"] || 0,
+                    remates_a_baliza: estatisticasJogo["remates à baliza"] || 0,
+                    remates_fora: estatisticasJogo["remates fora"] || 0,
+                    remates_bloqueados: estatisticasJogo["remates bloqueados"] || 0,
+                    grandes_oportunidades: estatisticasJogo["grandes oportunidades"] || 0,
+                    cantos: estatisticasJogo["cantos"] || 0,
+                    remates_dentro_da_area: estatisticasJogo["remates dentro da área"] || 0,
+                    remates_fora_da_area: estatisticasJogo["remates fora da área"] || 0,
+                    acertou_na_trave: estatisticasJogo["acertou na trave"] || 0,
+                    defesas_de_guarda_redes: estatisticasJogo["defesas de guarda-redes"] || 0,
+                    livres: estatisticasJogo["livres"] || 0,
+                    foras_de_jogo: estatisticasJogo["foras de jogo"] || 0,
+                    faltas: estatisticasJogo["faltas"] || 0,
+                    cartoes_amarelos: estatisticasJogo["cartões amarelos"] || 0,
+                    lancamentos: estatisticasJogo["lançamentos"] || 0,
+                    toques_na_area_adversaria: estatisticasJogo["toques na área adversária"] || 0,
+                    passes: estatisticasJogo["passes"] || 0,
+                    passes_no_ultimo_terco: estatisticasJogo["passes no último terço"] || 0,
+                    cruzamentos: estatisticasJogo["cruzamentos"] || 0,
+                    desarmes: estatisticasJogo["desarmes"] || 0,
+                    intercepcoes: estatisticasJogo["intercepções"] || 0,
+                };
+
+                console.log("Dados coletados:", teamData);
+                await saveDataToPlayersTable(teamData);
+            }
+        } catch (error) {
+            console.error("Erro ao extrair estatísticas:", error);
+        }
+    }
+
+    await browser.close();
 };
 
-// Verificando se a data está correta antes de salvar
-console.log("🟢 Dados estruturados para salvar:", JSON.stringify(teamData, null, 2));
-
-// Salvar dados no banco antes de fechar a página
-if (teamID10 && teamData.data_hora) {
-    await saveDataToPlayersTable(teamID10, teamData);
-    console.log(`✅ Dados salvos para o time ${teamID10}`);
-} else {
-    console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
-}
-
-// Fechar a página de cada jogador
-await page2.close();
-
-console.log(`Scraping finalizado para o link: ${link}`);
-await browser.close();
-
-    };
-};
     // Função principal
     if (require.main === module) {
         (async () => {
