@@ -105,7 +105,7 @@ async function scrapeResults() {
         const ids = await page.evaluate(() => {
             const container = document.querySelector('.container');
             if (!container) throw new Error('Container não encontrado');
-            const sportName = container.querySelector('.sportName.basketball');
+            const sportName = container.querySelector('.sportName.soccer');
             if (!sportName) throw new Error('sportName não encontrado');
             const ids = [];
             sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
