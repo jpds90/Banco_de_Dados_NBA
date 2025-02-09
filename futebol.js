@@ -540,11 +540,14 @@ const scrapeResults10 = async (link) => {
                     console.log("⚠️ Nenhum dado foi salvo. Verifique as estatísticas.");
                 }
 
+            }
+        } catch (error) {
+            console.error("Erro geral no scraping:", error);
+        }
     }
 
     await browser.close();
 };
-
     // Função principal
     if (require.main === module) {
         (async () => {
