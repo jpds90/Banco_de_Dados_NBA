@@ -19,7 +19,8 @@ function getSavedUrl() {
 const url = getSavedUrl();
 
 // ✅ Extrair nome antes de "/lista/"
-const tableName = url.split('/').slice(-2, -1)[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+const tableName = url.split('/').slice(-3, -2)[0].toLowerCase().replace(/[^a-z0-9_]/g, '');
+
 console.log(`📌 Nome da tabela extraído: ${tableName}`);
 
 const pool = new Pool({
