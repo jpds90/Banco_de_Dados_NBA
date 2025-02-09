@@ -169,6 +169,13 @@ const fixSequence = async (client, tableName) => {
     }
 };
 
+const cleanNumber = (value) => {
+    if (typeof value === "string") {
+        return value.replace("%", "").trim() || '0'; // Remove '%' e espaços extras
+    }
+    return value || '0'; // Garante que valores vazios sejam '0'
+};
+
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
@@ -186,7 +193,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
 
         if (existingRows.length > 0) {
             console.log(`⚠️ Jogo entre ${data.timehome} e ${data.timeaway} em ${data.data_hora} já registrado. Pulando...`);
-            return; // Não salva duplicado
+            return;
         }
 
         // Inserir os dados do jogo
@@ -204,13 +211,18 @@ const saveDataToPlayersTable = async (teamName, data) => {
             )`,
             [
                 data.data_hora, data.timehome, data.resultadohome, data.timeaway, data.resultadoaway,
-                data.golos_esperados_xg || '0', data.posse_de_bola || '0', data.tentativas_de_golo || '0',
-                data.remates_a_baliza || '0', data.remates_fora || '0', data.remates_bloqueados || '0',
-                data.grandes_oportunidades || '0', data.cantos || '0', data.remates_dentro_da_area || '0',
-                data.remates_fora_da_area || '0', data.acertou_na_trave || '0', data.defesas_de_guarda_redes || '0',
-                data.livres || '0', data.foras_de_jogo || '0', data.faltas || '0', data.cartoes_amarelos || '0',
-                data.lancamentos || '0', data.toques_na_area_adversaria || '0', data.passes || '0',
-                data.passes_no_ultimo_terco || '0', data.cruzamentos || '0', data.desarmes || '0', data.intercepcoes || '0'
+                cleanNumber(data.golos_esperados_xg), cleanNumber(data.posse_de_bola),
+                cleanNumber(data.tentativas_de_golo), cleanNumber(data.remates_a_baliza),
+                cleanNumber(data.remates_fora), cleanNumber(data.remates_bloqueados),
+                cleanNumber(data.grandes_oportunidades), cleanNumber(data.cantos),
+                cleanNumber(data.remates_dentro_da_area), cleanNumber(data.remates_fora_da_area),
+                cleanNumber(data.acertou_na_trave), cleanNumber(data.defesas_de_guarda_redes),
+                cleanNumber(data.livres), cleanNumber(data.foras_de_jogo),
+                cleanNumber(data.faltas), cleanNumber(data.cartoes_amarelos),
+                cleanNumber(data.lancamentos), cleanNumber(data.toques_na_area_adversaria),
+                cleanNumber(data.passes), cleanNumber(data.passes_no_ultimo_terco),
+                cleanNumber(data.cruzamentos), cleanNumber(data.desarmes),
+                cleanNumber(data.intercepcoes)
             ]
         );
 
@@ -221,6 +233,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
         client.release();
     }
 };
+
 
 
 
