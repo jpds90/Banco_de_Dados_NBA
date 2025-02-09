@@ -267,6 +267,22 @@ app.post('/futebollink', (req, res) => {
         res.send('Link Futebol executado com sucesso.');
     });
 });
+
+app.post('/oddsfutebol', (req, res) => {
+    const saveLinksPath = path.join(__dirname, 'public', 'oddsfutebol.js');
+    exec(`node ${saveLinksPath}`, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`Erro ao executar o Odds Futebol: ${error.message}`);
+            return res.status(500).send('Erro ao executar odds Futebol.');
+        }
+        if (stderr) {
+            console.error(`Erro no script: ${stderr}`);
+            return res.status(500).send('Erro ao executar Odds Futebol.');
+        }
+        console.log(`Resultado Odds Futebol: ${stdout}`);
+        res.send('Odds Futebol executado com sucesso.');
+    });
+});
 // Rota para executar a atualização de jogadores
 app.post('/execute-Jogadores', async (req, res) => {
     const { links } = req.body; // Links das equipes selecionadas
