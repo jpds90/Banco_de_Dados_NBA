@@ -171,10 +171,11 @@ const fixSequence = async (client, tableName) => {
 
 const cleanNumber = (value) => {
     if (typeof value === "string") {
-        return value.replace("%", "").trim() || '0'; // Remove '%' e espaços extras
+        return value.split(" ")[0].replace("%", "").trim() || '0'; // Pega só o primeiro número e remove "%"
     }
-    return value || '0'; // Garante que valores vazios sejam '0'
+    return value || '0';
 };
+
 
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
@@ -197,34 +198,35 @@ const saveDataToPlayersTable = async (teamName, data) => {
         }
 
         // Inserir os dados do jogo
-        await client.query(
-            `INSERT INTO "${tableName}" (
-                data_hora, timehome, resultadohome, timeaway, resultadoaway,
-                golos_esperados_xg, posse_de_bola, tentativas_de_golo, remates_a_baliza,
-                remates_fora, remates_bloqueados, grandes_oportunidades, cantos,
-                remates_dentro_da_area, remates_fora_da_area, acertou_na_trave,
-                defesas_de_guarda_redes, livres, foras_de_jogo, faltas,
-                cartoes_amarelos, lancamentos, toques_na_area_adversaria, passes,
-                passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
-            ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
-            )`,
-            [
-                data.data_hora, data.timehome, data.resultadohome, data.timeaway, data.resultadoaway,
-                cleanNumber(data.golos_esperados_xg), cleanNumber(data.posse_de_bola),
-                cleanNumber(data.tentativas_de_golo), cleanNumber(data.remates_a_baliza),
-                cleanNumber(data.remates_fora), cleanNumber(data.remates_bloqueados),
-                cleanNumber(data.grandes_oportunidades), cleanNumber(data.cantos),
-                cleanNumber(data.remates_dentro_da_area), cleanNumber(data.remates_fora_da_area),
-                cleanNumber(data.acertou_na_trave), cleanNumber(data.defesas_de_guarda_redes),
-                cleanNumber(data.livres), cleanNumber(data.foras_de_jogo),
-                cleanNumber(data.faltas), cleanNumber(data.cartoes_amarelos),
-                cleanNumber(data.lancamentos), cleanNumber(data.toques_na_area_adversaria),
-                cleanNumber(data.passes), cleanNumber(data.passes_no_ultimo_terco),
-                cleanNumber(data.cruzamentos), cleanNumber(data.desarmes),
-                cleanNumber(data.intercepcoes)
-            ]
-        );
+await client.query(
+    `INSERT INTO "${tableName}" (
+        data_hora, timehome, resultadohome, timeaway, resultadoaway,
+        golos_esperados_xg, posse_de_bola, tentativas_de_golo, remates_a_baliza,
+        remates_fora, remates_bloqueados, grandes_oportunidades, cantos,
+        remates_dentro_da_area, remates_fora_da_area, acertou_na_trave,
+        defesas_de_guarda_redes, livres, foras_de_jogo, faltas,
+        cartoes_amarelos, lancamentos, toques_na_area_adversaria, passes,
+        passes_no_ultimo_terco, cruzamentos, desarmes, intercepcoes
+    ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28
+    )`,
+    [
+        data.data_hora, data.timehome, data.resultadohome, data.timeaway, data.resultadoaway,
+        cleanNumber(data.golos_esperados_xg), cleanNumber(data.posse_de_bola),
+        cleanNumber(data.tentativas_de_golo), cleanNumber(data.remates_a_baliza),
+        cleanNumber(data.remates_fora), cleanNumber(data.remates_bloqueados),
+        cleanNumber(data.grandes_oportunidades), cleanNumber(data.cantos),
+        cleanNumber(data.remates_dentro_da_area), cleanNumber(data.remates_fora_da_area),
+        cleanNumber(data.acertou_na_trave), cleanNumber(data.defesas_de_guarda_redes),
+        cleanNumber(data.livres), cleanNumber(data.foras_de_jogo),
+        cleanNumber(data.faltas), cleanNumber(data.cartoes_amarelos),
+        cleanNumber(data.lancamentos), cleanNumber(data.toques_na_area_adversaria),
+        cleanNumber(data.passes), cleanNumber(data.passes_no_ultimo_terco),
+        cleanNumber(data.cruzamentos), cleanNumber(data.desarmes),
+        cleanNumber(data.intercepcoes)
+    ]
+);
+
 
         console.log(`✅ Dados salvos para ${data.timehome} vs ${data.timeaway} (${data.data_hora})`);
     } catch (error) {
