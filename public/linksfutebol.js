@@ -52,8 +52,9 @@ async function scrapeAndSaveLinks() {
     `);
 
     // 🔹 Limpa os links antigos antes de inserir os novos
-    await client.query('TRUNCATE TABLE ${tableName}');
-    console.log('🗑️ Tabela ${tableName} limpa.');
+    await client.query(`TRUNCATE TABLE ${tableName}`);
+console.log(`🗑️ Tabela ${tableName} limpa.`);
+
 
     try {
         console.log("📌 Acessando URL:", url);
