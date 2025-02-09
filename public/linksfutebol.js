@@ -96,8 +96,8 @@ console.log(`🗑️ Tabela ${tableName} limpa.`);
                     const awayUrl = await page2.evaluate(el => el.href, awayElement);
 
                     // 🔹 Salvar no banco de dados
-                    await client.query('INSERT INTO linksFutebol (team_name, link, event_time) VALUES ($1, $2, $3)', [homeName, homeUrl, eventTime]);
-                    await client.query('INSERT INTO linksFutebol (team_name, link, event_time) VALUES ($1, $2, $3)', [awayName, awayUrl, eventTime]);
+                    await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [homeName, homeUrl, eventTime]);
+                    await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [awayName, awayUrl, eventTime]);
 
                     console.log(`✅ Salvo: ${homeName} | ${awayName}`);
                 } catch (error) {
