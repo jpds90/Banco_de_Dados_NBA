@@ -572,6 +572,8 @@ await page2.close();
 console.log(`Scraping finalizado para o link: ${link}`);
 await browser.close();
 
+    };
+};
     // Função principal
     if (require.main === module) {
         (async () => {
