@@ -263,25 +263,27 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
 
 
 // Função para buscar links da tabela 'links'
-const fetchLinksFromDatabase = async () => {
+const fetchLinksFromDatabase = async (tableName) => {
     const client = await pool.connect();
     try {
-        console.log('Buscando todos os links da tabela "links Futebol"...');
-        const result = await client.query('SELECT link FROM linksfutebol');
+        console.log(`🔍 Buscando links na tabela: ${tableName}...`);
+        const result = await client.query(`SELECT link FROM ${tableName}`);
+        
         if (result.rows.length > 0) {
-            console.log(`${result.rows.length} links encontrados no banco de dados.`);
+            console.log(`✅ ${result.rows.length} links encontrados.`);
             return result.rows.map(row => row.link);
         } else {
-            console.log('Nenhum link encontrado na tabela "links".');
+            console.log("⚠️ Nenhum link encontrado.");
             return [];
         }
     } catch (error) {
-        console.error('Erro ao buscar links no banco de dados:', error);
+        console.error(`❌ Erro ao buscar links na tabela ${tableName}:`, error);
         return [];
     } finally {
         client.release();
     }
 };
+
 // Função para remover caracteres especiais e normalizar as strings
 function normalizeString(str) {
     return str
