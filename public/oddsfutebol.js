@@ -1,37 +1,52 @@
 const puppeteer = require('puppeteer');
 const { Pool } = require('pg');
-const fs = require('fs');
 const sleep = require('sleep-promise');
 
-// ✅ Função para carregar a URL salva no backend
-function getSavedUrl() {
-    try {
-        const url = fs.readFileSync('url.txt', 'utf8').trim();
-        console.log("🔍 URL carregada no Puppeteer:", url);
-        return url;
-    } catch (error) {
-        console.error("❌ Erro ao ler URL salva:", error);
-        return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão
-    }
-}
-
-// ✅ URL dinâmica com fallback padrão
-const url = getSavedUrl();
-
-// ✅ Extrair nome antes de "/lista/"
-const tableName = url.split('/').slice(-3, -2)[0]
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-z0-9]+/g, "_") + "_odds"; // Substitui espaços e caracteres inválidos por "_"
-
-console.log(`📌 Nome da tabela extraído: ${tableName}`);
-
+// ✅ Conexão com o banco de dados
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
 });
 
-async function createTableIfNotExists() {
+// ✅ Função para carregar a URL da liga salva no banco de dados
+async function getSavedUrl(tableName) {
+    const client = await pool.connect();
+    try {
+        console.log(`🔍 Buscando URL na tabela: ${tableName}_link...`);
+        const result = await client.query(`SELECT link FROM ${tableName}_link ORDER BY id DESC LIMIT 1`);
+
+        if (result.rows.length > 0) {
+            console.log(`✅ URL carregada: ${result.rows[0].link}`);
+            return result.rows[0].link;
+        } else {
+            console.log("⚠️ Nenhuma URL encontrada. Usando URL padrão.");
+            return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão
+        }
+    } catch (error) {
+        console.error("❌ Erro ao buscar URL no banco:", error);
+        return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão em caso de erro
+    } finally {
+        client.release();
+    }
+}
+
+// ✅ Nome da tabela a partir da URL
+async function getTableName() {
+    const defaultLeague = "laliga"; // Liga padrão caso não tenha uma no banco
+    const url = await getSavedUrl(defaultLeague);
+
+    const tableName = url.split('/').slice(-3, -2)[0]
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^a-z0-9]+/g, "_") + "_odds"; // Substitui espaços e caracteres inválidos por "_"
+
+    console.log(`📌 Nome da tabela extraído: ${tableName}`);
+    return { tableName, url };
+}
+
+
+// ✅ Criar tabela no banco de dados, se não existir
+async function createTableIfNotExists(tableName) {
     const client = await pool.connect();
     try {
         await client.query(`
@@ -50,7 +65,8 @@ async function createTableIfNotExists() {
     }
 }
 
-async function saveToDatabase(data) {
+// ✅ Salvar dados no banco de dados
+async function saveToDatabase(tableName, data) {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -80,8 +96,10 @@ async function saveToDatabase(data) {
     }
 }
 
+// ✅ Função principal do scraping
 async function scrapeResults() {
-    await createTableIfNotExists();
+    const { tableName, url } = await getTableName();
+    await createTableIfNotExists(tableName);
 
     const browser = await puppeteer.launch({
         headless: true,
@@ -150,7 +168,7 @@ async function scrapeResults() {
         }
 
         if (futureGamesData.length > 0) {
-            await saveToDatabase(futureGamesData);
+            await saveToDatabase(tableName, futureGamesData);
         }
     } catch (error) {
         console.error('Erro durante o scraping:', error);
@@ -159,4 +177,5 @@ async function scrapeResults() {
     }
 }
 
+// ✅ Executar o script
 scrapeResults();
