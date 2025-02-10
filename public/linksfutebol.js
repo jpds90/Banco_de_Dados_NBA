@@ -17,7 +17,7 @@ const tableName = url
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
     .replace(/[^a-z0-9]+/g, "_") // Substitui espaços e caracteres inválidos por "_"
-    .replace(/^_+|_+$/g, "") + "_link"; // Remove "_" extras e adiciona "_link"
+    .replace(/^_+|_+$/g, "") + "_link1"; // Remove "_" extras e adiciona "_link"
 
 console.log(tableName); // Exemplo: "serie_a_link"
 
