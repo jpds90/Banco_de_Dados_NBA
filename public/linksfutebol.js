@@ -3,13 +3,17 @@ const sleep = require('sleep-promise');
 const { Client } = require('pg');
 const fs = require('fs');
 
+async function scrapeAndSaveLinks(tableName) {
+    if (!tableName) {
+        console.error("❌ tableName não informado!");
+        return;
+    }
+
 // ✅ Função para carregar a URL salva no backend
 async function getTableName() {
     const url = await getSavedUrl(tableName);
 
 
-// ✅ URL dinâmica com fallback padrão
-const url = getSavedUrl();
 // ✅ Extrair nome antes de "/lista/"
 const tableName = url
     .split('/')
@@ -117,4 +121,5 @@ async function getNewIds(page, excludedIds, neededCount) {
 }
 
 // 🔥 Inicia o processo
-scrapeAndSaveLinks();
+module.exports = { scrapeAndSaveLinks };
+
