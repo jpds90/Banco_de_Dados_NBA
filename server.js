@@ -17,7 +17,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 
-module.exports = pool;
+
 // Configuração do pool de conexão com o banco de dados
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Usando a URL completa do Render
