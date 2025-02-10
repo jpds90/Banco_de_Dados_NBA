@@ -11,12 +11,14 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
-
+const pool = require("./db");
 
 const app = express();
 // Configuração da porta para Render (usa a variável PORT ou padrão 3000)
 const port = process.env.PORT || 3000;
 
+
+module.exports = pool;
 // Configuração do pool de conexão com o banco de dados
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL, // Usando a URL completa do Render
@@ -284,6 +286,28 @@ function runScript(scriptPath, res, scriptName) {
     });
 }
 
+// ✅ Função para buscar links da tabela no banco de dados
+const fetchLinksFromDatabase = async (tableName) => {
+    const client = await pool.connect();
+    try {
+        console.log(`🔍 Buscando links na tabela: ${tableName}...`);
+        const result = await client.query(`SELECT link FROM ${tableName}`);
+
+        if (result.rows.length > 0) {
+            console.log(`✅ ${result.rows.length} links encontrados.`);
+            return result.rows.map(row => row.link);
+        } else {
+            console.log("⚠️ Nenhum link encontrado.");
+            return [];
+        }
+    } catch (error) {
+        console.error(`❌ Erro ao buscar links na tabela ${tableName}:`, error);
+        return [];
+    } finally {
+        client.release();
+    }
+};
+
 // Rota para executar o script futebol link.js
 app.post("/futebollink", async (req, res) => {
     const { tableName } = req.body;
@@ -294,13 +318,13 @@ app.post("/futebollink", async (req, res) => {
 
     try {
         const links = await fetchLinksFromDatabase(tableName);
-        // Faça algo com os links aqui...
         res.json({ success: true, message: "Links processados!", links });
     } catch (error) {
         console.error("Erro ao processar links:", error);
         res.status(500).json({ success: false, message: "Erro ao processar links." });
     }
 });
+
 
 
 // Rota para executar o script oddsfutebol.js
