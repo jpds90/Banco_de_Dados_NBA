@@ -72,18 +72,32 @@ app.get('/table/:name', async (req, res) => {
     }
 });
 // Endpoint para receber a URL do frontend
-app.post('/salvar-url', (req, res) => {
-    const { url } = req.body;
-    if (!url) {
-        return res.status(400).json({ error: "URL inválida" });
+app.post("/salvar-url", async (req, res) => {
+    const { url, tableName } = req.body;
+
+    if (!url || !tableName) {
+        return res.status(400).json({ success: false, message: "URL ou tableName ausente" });
     }
 
-    // Salva a URL em um arquivo
-    fs.writeFileSync('url.txt', url, 'utf8');
-    console.log(`URL salva: ${url}`);
-    
-    res.json({ success: true, message: "URL salva com sucesso!" });
+    try {
+        const client = await pool.connect();
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS ${tableName} (
+                id SERIAL PRIMARY KEY,
+                link TEXT NOT NULL
+            )
+        `);
+
+        await client.query(`INSERT INTO ${tableName} (link) VALUES ($1)`, [url]);
+        client.release();
+
+        res.json({ success: true, message: "URL salva com sucesso!" });
+    } catch (error) {
+        console.error("Erro ao salvar a URL:", error);
+        res.status(500).json({ success: false, message: "Erro ao salvar a URL." });
+    }
 });
+
 
 // Rota para exibir links únicos
 app.get('/links', async (req, res) => {
