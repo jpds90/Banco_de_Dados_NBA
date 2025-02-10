@@ -4,16 +4,9 @@ const { Client } = require('pg');
 const fs = require('fs');
 
 // ✅ Função para carregar a URL salva no backend
-function getSavedUrl() {
-    try {
-        const url = fs.readFileSync('url.txt', 'utf8').trim();
-        console.log("🔍 URL carregada no Puppeteer:", url);
-        return url;
-    } catch (error) {
-        console.error("❌ Erro ao ler URL salva:", error);
-        return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão
-    }
-}
+async function getTableName() {
+    const url = await getSavedUrl(tableName);
+
 
 // ✅ URL dinâmica com fallback padrão
 const url = getSavedUrl();
