@@ -284,11 +284,24 @@ function runScript(scriptPath, res, scriptName) {
     });
 }
 
-// Rota para executar o script saveLinks.js
-app.post('/futebollink', (req, res) => {
-    const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
-    runScript(scriptPath, res, 'Link Futebol');
+// Rota para executar o script futebol link.js
+app.post("/futebollink", async (req, res) => {
+    const { tableName } = req.body;
+
+    if (!tableName) {
+        return res.status(400).json({ success: false, message: "tableName não informado" });
+    }
+
+    try {
+        const links = await fetchLinksFromDatabase(tableName);
+        // Faça algo com os links aqui...
+        res.json({ success: true, message: "Links processados!", links });
+    } catch (error) {
+        console.error("Erro ao processar links:", error);
+        res.status(500).json({ success: false, message: "Erro ao processar links." });
+    }
 });
+
 
 // Rota para executar o script oddsfutebol.js
 app.post('/oddsfutebol', (req, res) => {
