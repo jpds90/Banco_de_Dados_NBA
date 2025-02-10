@@ -19,16 +19,12 @@ function getSavedUrl() {
 const url = getSavedUrl();
 
 // ✅ Extrair nome antes de "/lista/"
-const tableName = url
-    .split('/')
-    .slice(-3, -2)[0] // Pega o nome correto na URL
+const tableName = url.split('/').slice(-3, -2)[0]
     .toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-z0-9]+/g, "_") // Substitui espaços e caracteres inválidos por "_"
-    .replace(/^_+|_+$/g, "") + "_odds"; // Remove "_" extras e adiciona "_link"
+    .replace(/[^a-z0-9]+/g, "_") + "_odds"; // Substitui espaços e caracteres inválidos por "_"
 
-console.log(tableName); // Exemplo: "serie_a_link"
-
+console.log(`📌 Nome da tabela extraído: ${tableName}`);
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -67,7 +63,11 @@ async function saveToDatabase(data) {
         `;
 
         for (const row of data) {
-            await client.query(queryText, [row.dataJogo, row.timeHome, row.timeAway]);
+            await client.query(queryText, [
+                row.dataJogo,
+                row.timeHome,
+                row.timeAway
+            ]);
         }
 
         await client.query('COMMIT');
@@ -82,7 +82,12 @@ async function saveToDatabase(data) {
 
 async function scrapeResults() {
     await createTableIfNotExists();
-    const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
     const page = await browser.newPage();
     const page2 = await browser.newPage();
     const futureGamesData = [];
@@ -96,29 +101,52 @@ async function scrapeResults() {
             if (!container) throw new Error('Container não encontrado');
             const sportName = container.querySelector('.sportName.soccer');
             if (!sportName) throw new Error('sportName não encontrado');
-            return Array.from(sportName.querySelectorAll('[id]')).map(el => el.id).slice(0, 15);
+            const ids = [];
+            sportName.querySelectorAll('[id]').forEach(element => ids.push(element.id));
+            return ids.slice(0, 15);
         });
 
         for (let id of ids) {
-            const summaryUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/`;
-            console.log("Processando URL:", summaryUrl);
+            const summaryUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/`;
+            console.log("Processando URL de resumo:", summaryUrl);
             await page2.goto(summaryUrl, { timeout: 180000 });
             await sleep(10000);
 
             let gameDateStr = '', timeHome = '', timeAway = '';
 
             try {
-                gameDateStr = await page2.$eval('div.duelParticipant__startTime', el => el.textContent.trim());
-                timeHome = await page2.$eval('div.duelParticipant__home .participant__participantName a', el => el.textContent.trim());
-                timeAway = await page2.$eval('div.duelParticipant__away .participant__participantName', el => el.textContent.trim());
+                const dataJogo = await page2.$eval(
+                    'div.duelParticipant__startTime',
+                    (element) => element.textContent.trim()
+                );
+
+                const [datePart, time] = dataJogo.split(' ');
+                const [day, month] = datePart.split('.');
+                let year = new Date().getFullYear();
+                const currentMonth = new Date().getMonth() + 1;
+                if (parseInt(month) < currentMonth) year += 1;
+                gameDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')} ${time}`;
+
+                timeHome = await page2.$eval(
+                    'div.duelParticipant__home .participant__participantName a',
+                    (element) => element.textContent.trim()
+                );
+                timeAway = await page2.$eval(
+                    'div.duelParticipant__away .participant__participantName',
+                    (element) => element.textContent.trim()
+                );
             } catch (error) {
-                console.error('Erro ao processar a página:', error);
+                console.error('Erro ao processar a página de resumo:', error);
                 continue;
             }
 
             if (!gameDateStr) continue;
 
-            futureGamesData.push({ dataJogo: gameDateStr, timeHome, timeAway });
+            futureGamesData.push({
+                dataJogo: gameDateStr,
+                timeHome: timeHome || 'Indefinido',
+                timeAway: timeAway || 'Indefinido'
+            });
         }
 
         if (futureGamesData.length > 0) {
