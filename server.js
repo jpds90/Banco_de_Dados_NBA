@@ -341,6 +341,9 @@ app.post("/futebollink", async (req, res) => {
     }
 
     try {
+        console.log(`🚀 Iniciando scraping para ${tableName}...`);
+        await scrapeAndSaveLinks();  // 🔹 Garante que os links sejam extraídos antes de buscá-los
+
         const links = await fetchLinksFromDatabase(tableName);
         res.json({ success: true, message: "Links processados!", links });
     } catch (error) {
@@ -348,6 +351,7 @@ app.post("/futebollink", async (req, res) => {
         res.status(500).json({ success: false, message: "Erro ao processar links." });
     }
 });
+
 
 
 
