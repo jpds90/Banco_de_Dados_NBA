@@ -97,7 +97,10 @@ leagueElement.addEventListener("click", async (event) => {
         const result = await response.json();
         console.log("✅ Resposta do servidor (salvar-url):", result);
 
-        if (!result.success) throw new Error("Erro ao salvar a URL.");
+        if (!result.success && result.message !== "URL já está salva!") {
+    throw new Error("Erro ao salvar a URL.");
+}
+
 
         console.log("🚀 Executando script futebollink...");
         const executeScriptResponse = await fetch("https://analise-jpnba.onrender.com/futebollink", {
