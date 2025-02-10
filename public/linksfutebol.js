@@ -28,22 +28,19 @@ const dbConfig = {
     ssl: { rejectUnauthorized: false }, // Evita erros de SSL no Render
 };
 
-async function scrapeAndSaveLinks() {
-    // 🔹 Inicia o Puppeteer
+async function scrapeAndSaveLinks(tableName) {
     const browser = await puppeteer.launch({
-        headless: true, // Modo invisível para otimizar o processamento
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Necessário para rodar no Render
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage();
     const page2 = await browser.newPage();
 
-    // 🔹 Conexão com o banco de dados
     const client = new Client(dbConfig);
     await client.connect();
 
-    // 🔹 Cria a tabela se não existir
     await client.query(`
-        CREATE TABLE IF NOT EXISTS ${tableName} (
+        CREATE TABLE IF NOT EXISTS "${tableName}" (
             id SERIAL PRIMARY KEY,
             team_name VARCHAR(255) NOT NULL,
             link VARCHAR(255) NOT NULL,
@@ -51,18 +48,15 @@ async function scrapeAndSaveLinks() {
         );
     `);
 
-    // 🔹 Limpa os links antigos antes de inserir os novos
-    await client.query(`TRUNCATE TABLE ${tableName}`);
-console.log(`🗑️ Tabela ${tableName} limpa.`);
-
-
+    await client.query(`TRUNCATE TABLE "${tableName}"`);
+    console.log(`🗑️ Tabela ${tableName} limpa.`);
+    
     try {
         console.log("📌 Acessando URL:", url);
         await page.goto(url, { timeout: 120000 });
         await sleep(10000);
         await page.waitForSelector('.container', { timeout: 90000 });
 
-        // 🔹 Pega os IDs dos jogos
         const idObjects = await getNewIds(page, [], 20);
 
         for (const { id, eventTime } of idObjects) {
@@ -88,7 +82,6 @@ console.log(`🗑️ Tabela ${tableName} limpa.`);
                     const homeUrl = await page2.evaluate(el => el.href, homeElement);
                     const awayUrl = await page2.evaluate(el => el.href, awayElement);
 
-                    // 🔹 Salvar no banco de dados
                     await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [homeName, homeUrl, eventTime]);
                     await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [awayName, awayUrl, eventTime]);
 
@@ -101,11 +94,11 @@ console.log(`🗑️ Tabela ${tableName} limpa.`);
     } catch (error) {
         console.error(`❌ Erro geral no scraping: ${error}`);
     } finally {
-        // 🔹 Fecha Puppeteer e a conexão com o banco
         await browser.close();
         await client.end();
     }
 }
+
 
 // ✅ Função para pegar IDs de jogos
 async function getNewIds(page, excludedIds, neededCount) {
