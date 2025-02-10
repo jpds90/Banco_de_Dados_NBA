@@ -72,6 +72,25 @@ app.get('/table/:name', async (req, res) => {
         res.status(500).send('Erro ao buscar dados da tabela');
     }
 });
+
+
+// ✅ Criar a tabela automaticamente se não existir
+const ensureTableExists = async (tableName) => {
+    const client = await pool.connect();
+    try {
+        await client.query(`
+            CREATE TABLE IF NOT EXISTS ${tableName} (
+                id SERIAL PRIMARY KEY,
+                link TEXT NOT NULL
+            )
+        `);
+        console.log(`✅ Tabela ${tableName} verificada/criada.`);
+    } catch (error) {
+        console.error(`❌ Erro ao criar/verificar a tabela ${tableName}:`, error);
+    } finally {
+        client.release();
+    }
+};
 // Endpoint para receber a URL do frontend
 app.post("/salvar-url", async (req, res) => {
     const { url, tableName } = req.body;
@@ -80,24 +99,30 @@ app.post("/salvar-url", async (req, res) => {
         return res.status(400).json({ success: false, message: "URL ou tableName ausente" });
     }
 
-    try {
-        const client = await pool.connect();
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS ${tableName} (
-                id SERIAL PRIMARY KEY,
-                link TEXT NOT NULL
-            )
-        `);
+    const client = await pool.connect();
 
+    try {
+        // 🔎 Verifica se a URL já existe na tabela
+        const checkExistence = await client.query(`SELECT * FROM ${tableName} WHERE link = $1`, [url]);
+
+        if (checkExistence.rows.length > 0) {
+            console.log(`🔄 URL já existe na tabela ${tableName}: ${url}`);
+            return res.json({ success: false, message: "URL já está salva!" });
+        }
+
+        // 💾 Se a URL não existir, insere no banco
         await client.query(`INSERT INTO ${tableName} (link) VALUES ($1)`, [url]);
-        client.release();
+        console.log(`✅ URL salva na tabela ${tableName}: ${url}`);
 
         res.json({ success: true, message: "URL salva com sucesso!" });
     } catch (error) {
-        console.error("Erro ao salvar a URL:", error);
-        res.status(500).json({ success: false, message: "Erro ao salvar a URL." });
+        console.error("❌ Erro ao salvar URL:", error);
+        res.status(500).json({ success: false, message: "Erro ao salvar URL." });
+    } finally {
+        client.release();
     }
 });
+
 
 
 // Rota para exibir links únicos
