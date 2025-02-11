@@ -265,7 +265,7 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
 // Função para buscar links da tabela 'links'
 const fetchLinksFromDatabase = async (tableName) => {
     const client = await pool.connect();
-    const modifiedTableName = `${tableName}1`; // Adiciona o número 1 ao final do nome da tabela
+    const modifiedTableName = `${tableName}s`; // Adiciona o número 1 ao final do nome da tabela
 
     try {
         console.log(`🔍 Buscando links na tabela: ${modifiedTableName}...`);
