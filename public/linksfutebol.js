@@ -3,22 +3,22 @@ const sleep = require('sleep-promise');
 const { Client } = require('pg');
 const fs = require('fs');
 
-
 // ✅ Função para carregar a URL salva no backend
 async function getTableName() {
-    const url = await getSavedUrl(tableName);
+    const url = await getSavedUrl(); // Aqui não usamos tableName, já que ele será derivado de 'url'
 
+    // ✅ Extrair nome antes de "/lista/"
+    const tableName = url
+        .split('/')
+        .slice(-3, -2)[0] // Pega o nome correto na URL
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+        .replace(/[^a-z0-9]+/g, "_") // Substitui espaços e caracteres inválidos por "_"
+        .replace(/^_+|_+$/g, "") + "_link1"; // Remove "_" extras e adiciona "_link"
 
-// ✅ Extrair nome antes de "/lista/"
-const tableName = url
-    .split('/')
-    .slice(-3, -2)[0] // Pega o nome correto na URL
-    .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-    .replace(/[^a-z0-9]+/g, "_") // Substitui espaços e caracteres inválidos por "_"
-    .replace(/^_+|_+$/g, "") + "_link1"; // Remove "_" extras e adiciona "_link"
-
-console.log(tableName); // Exemplo: "serie_a_link"
+    console.log(tableName); // Exemplo: "serie_a_link"
+    return tableName;
+}
 
 
 // ✅ Configuração do banco de dados (PostgreSQL)
@@ -27,7 +27,8 @@ const dbConfig = {
     ssl: { rejectUnauthorized: false }, // Evita erros de SSL no Render
 };
 
-async function scrapeAndSaveLinks(tableName) {
+async function scrapeAndSaveLinks(url) {
+    const tableName = await getTableName(url);  // Obter o nome da tabela
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -117,4 +118,3 @@ async function getNewIds(page, excludedIds, neededCount) {
 
 // 🔥 Inicia o processo
 module.exports = { scrapeAndSaveLinks };
-
