@@ -340,7 +340,11 @@ app.post('/futebollink', (req, res) => {
 });
 
 
-
+// Rota para executar o script oddsfutebol.js
+app.post('/timefutebol', (req, res) => {
+    const scriptPath = path.join(__dirname, 'public', 'futebol.js');
+    runScript(scriptPath, res, 'Odds Futebol');
+});
 
 
 // Rota para executar o script oddsfutebol.js
