@@ -157,3 +157,4 @@ async function startScraping() {
 }
 
 startScraping();
+module.exports = { scrapeAndSaveLinks };
