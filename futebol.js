@@ -552,30 +552,35 @@ const scrapeResults10 = async (link) => {
 
     await browser.close();
 };
-// Função principal para coordenar a execução
-const main = async (links) => {
-    if (links.length > 0) {
-        for (const link of links) {
-            await scrapeResults10(link);  // Executa o scraping para cada link encontrado
+// Função principal
+if (require.main === module) {
+    (async () => {
+        try {
+            console.log("Executando Dados de futebol.js...");
+
+            const links = await fetchLinksFromDatabase();
+
+            // Log dos links no console
+            console.log('Links obtidos do banco de dados Dados de futebol:', links);
+
+            if (links.length === 0) {
+                console.log('Nenhum link encontrado para processamento Dados de futebol.');
+                process.exit(0); // Nada a fazer, mas encerra com sucesso
+            }
+
+            for (const link of links) {
+                console.log(`Iniciando o scraping para o link Dados de futebol: ${link}`);
+                await scrapeResults(link);
+            }
+
+            console.log('Processo de scraping completo Dados de futebol!');
+            process.exit(0); // Indicar sucesso
+        } catch (error) {
+            console.error("Erro em Dados de futebol.js:", error);
+            process.exit(1); // Indicar falha
         }
-    } else {
-        console.log("⚠️ Nenhum link para processar.");
-    }
-};
-
-// Função de execução antes da função principal
-const executeBeforeMain = async (tableName) => {
-    console.log("🔄 Executando ação antes de chamar a função principal...");
-
-    // Buscando os links antes de chamar o main
-    const links = await fetchLinksFromDatabase1(tableName);
-
-    // Depois de buscar os links, chama a função main
-    main(links);
-};
-
-// Executa antes do main
-executeBeforeMain();
+    })();
+}
 
 // Exportando a função
 module.exports = {
