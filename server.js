@@ -11,7 +11,6 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
-const { scrapeAndSaveLinks } = require(path.resolve(__dirname, '../public/linksfutebol'));
 
 
 const app = express();
@@ -335,24 +334,11 @@ const fetchLinksFromDatabase = async (tableName) => {
 };
 
 // Rota para executar o script futebol link.js
-app.post("/futebollink", async (req, res) => {
-    const { tableName } = req.body;
-
-    if (!tableName) {
-        return res.status(400).json({ success: false, message: "tableName não informado" });
-    }
-
-    try {
-        console.log(`🚀 Iniciando scraping para ${tableName}...`);
-        await scrapeAndSaveLinks();  // 🔹 Garante que os links sejam extraídos antes de buscá-los
-
-        const links = await fetchLinksFromDatabase(tableName);
-        res.json({ success: true, message: "Links processados!", links });
-    } catch (error) {
-        console.error("Erro ao processar links:", error);
-        res.status(500).json({ success: false, message: "Erro ao processar links." });
-    }
+app.post('/futebollink', (req, res) => {
+    const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
+    runScript(scriptPath, res, 'Odds Futebol');
 });
+
 
 
 
