@@ -5,7 +5,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const { scrapeResults } = require('./script');
 const { scrapeResults1 } = require('./jogadores');
-const { fetchLinksFromDatabase } = require('./futebol');
+const { fetchLinksFromDatabase1 } = require('./futebol');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
@@ -345,8 +345,8 @@ app.post('/timefutebol', async (req, res) => {
     console.log(`🔍 Recebido tableName: ${tableName}`);
 
     try {
-        // Chamando a função fetchLinksFromDatabase e passando o tableName
-        const links = await fetchLinksFromDatabase(tableName);
+        // Chamando a função fetchLinksFromDatabase1 e passando o tableName
+        const links = await fetchLinksFromDatabase1(tableName);
 
         // Enviando os links encontrados para o frontend
         res.json(links);
