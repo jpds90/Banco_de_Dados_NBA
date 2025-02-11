@@ -575,7 +575,7 @@ const executeBeforeMain = async (tableName) => {
 };
 
 // Executa antes do main
-executeBeforeMain(tableName);
+executeBeforeMain();
 
 // Exportando a função
 module.exports = {
