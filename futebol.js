@@ -262,15 +262,28 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
 }
 
 
-// Função para buscar links da tabela 'links'
+// Função para buscar links da tabela (com "s" no nome da tabela)
 const fetchLinksFromDatabase1 = async (tableName) => {
     const client = await pool.connect();
-    const modifiedTableName = `${tableName}s`; // Adiciona o número 1 ao final do nome da tabela
+    const modifiedTableName = `${tableName}s`; // Adiciona o "s" ao nome da tabela
 
     try {
         console.log(`🔍 Buscando links na tabela: ${modifiedTableName}...`);
+
+        // Verifica se a tabela realmente existe no banco de dados
+        const checkTable = await client.query(
+            `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1) AS exists`,
+            [modifiedTableName]
+        );
+
+        if (!checkTable.rows[0].exists) {
+            console.error(`❌ Erro: A tabela ${modifiedTableName} não existe no banco de dados.`);
+            return [];
+        }
+
+        // Agora buscamos os links da tabela correta
         const result = await client.query(`SELECT link FROM ${modifiedTableName}`);
-        
+
         if (result.rows.length > 0) {
             console.log(`✅ ${result.rows.length} links encontrados.`);
             return result.rows.map(row => row.link);
@@ -552,31 +565,35 @@ const scrapeResults10 = async (link) => {
 
     await browser.close();
 };
-// Função principal
+// Função principal onde você chama a função de scraping
 if (require.main === module) {
     (async () => {
         try {
-            console.log("Executando Dados de futebol.js...");
+            // Obtém o nome da tabela da linha de comando ou usa um padrão
+            const dynamicTableName = process.argv[2] || 'laliga_links';
+            console.log(`🟢 Tabela selecionada: ${dynamicTableName}`);
 
-            const links = await fetchLinksFromDatabase();
+            // Buscar os links no banco de dados
+            const links = await fetchLinksFromDatabase1(dynamicTableName);
 
-            // Log dos links no console
-            console.log('Links obtidos do banco de dados Dados de futebol:', links);
+            // Log detalhado para depuração
+            console.log('🔗 Links obtidos:', links);
 
             if (links.length === 0) {
-                console.log('Nenhum link encontrado para processamento Dados de futebol.');
-                process.exit(0); // Nada a fazer, mas encerra com sucesso
+                console.log('⚠️ Nenhum link encontrado para processamento.');
+                process.exit(0); // Sai sem erro, pois simplesmente não há links
             }
 
+            // Loop para processar cada link com scraping
             for (const link of links) {
-                console.log(`Iniciando o scraping para o link Dados de futebol: ${link}`);
-                await scrapeResults(link);
+                console.log(`⏳ Iniciando o scraping para o link: ${link}`);
+                await scrapeResults10(link);
             }
 
-            console.log('Processo de scraping completo Dados de futebol!');
-            process.exit(0); // Indicar sucesso
+            console.log('✅ Processo de scraping completo!');
+            process.exit(0); // Sucesso
         } catch (error) {
-            console.error("Erro em Dados de futebol.js:", error);
+            console.error("❌ Erro no script futebol.js:", error);
             process.exit(1); // Indicar falha
         }
     })();
