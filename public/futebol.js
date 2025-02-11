@@ -286,7 +286,6 @@ const fetchLinksFromDatabase = async (tableName) => {
     }
 };
 
-
 // Função para remover caracteres especiais e normalizar as strings
 function normalizeString(str) {
     return str
@@ -295,9 +294,9 @@ function normalizeString(str) {
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
         .replace(/[\s\-]/g, ''); // Remove espaços e hífens
-  }
+}
 
-// Scraping do site
+// Função de scraping
 const scrapeResults10 = async (link) => {
     const data = [];
     console.log(`Iniciando o scraping para o link: ${link}`);
@@ -322,8 +321,8 @@ const scrapeResults10 = async (link) => {
     await loadPageWithRetries(page, fullLink);
 
     const url = await page.evaluate(() => window.location.href);
-
     console.log('URL capturada:', url);
+
     const start_index = url.indexOf("/equipa/") + "/equipa/".length;
     const end_index = url.indexOf("/", start_index);
     const teamId = url.substring(start_index, end_index).replace(/-/g, ' ');
@@ -553,37 +552,4 @@ const scrapeResults10 = async (link) => {
 
     await browser.close();
 };
-    // Função principal
-    if (require.main === module) {
-        (async () => {
-            try {
-                console.log("Executando script.js...");
 
-                const links = await fetchLinksFromDatabase();
-
-                // Log dos links no console
-                console.log('Links obtidos do banco de dados:', linksfutebol);
-
-                if (links.length === 0) {
-                    console.log('Nenhum link encontrado para processamento.');
-                    process.exit(0); // Nada a fazer, mas encerra com sucesso
-                }
-
-                for (const link of linksfutebol) {
-                    console.log(`Iniciando o scraping para o link: ${link}`);
-                    await scrapeResults(link);
-                }
-
-                console.log('Processo de scraping completo!');
-                process.exit(0); // Indicar sucesso
-            } catch (error) {
-                console.error("Erro em script.js:", error);
-                process.exit(1); // Indicar falha
-            }
-        })();
-    }
-
-
-
-    // script.js
-    module.exports = { scrapeResults10 };
