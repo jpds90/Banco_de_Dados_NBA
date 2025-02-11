@@ -261,42 +261,43 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
     }
 }
 
+const processAndScrapeLinks = async (tableName) => {
+  const client = await pool.connect();
+  const modifiedTableName = `${tableName}s`; // Adiciona o "s" ao nome da tabela
 
-// Função para buscar links da tabela (com "s" no nome da tabela)
-const fetchLinksFromDatabase1 = async (tableName) => {
-    const client = await pool.connect();
-    const modifiedTableName = `${tableName}s`; // Adiciona o "s" ao nome da tabela
+  try {
+    console.log(`🔍 Buscando links na tabela: ${modifiedTableName}...`);
 
-    try {
-        console.log(`🔍 Buscando links na tabela: ${modifiedTableName}...`);
+    // Verifica se a tabela realmente existe no banco de dados
+    const checkTable = await client.query(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1) AS exists`,
+      [modifiedTableName]
+    );
 
-        // Verifica se a tabela realmente existe no banco de dados
-        const checkTable = await client.query(
-            `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = $1) AS exists`,
-            [modifiedTableName]
-        );
-
-        if (!checkTable.rows[0].exists) {
-            console.error(`❌ Erro: A tabela ${modifiedTableName} não existe no banco de dados.`);
-            return [];
-        }
-
-        // Agora buscamos os links da tabela correta
-        const result = await client.query(`SELECT link FROM ${modifiedTableName}`);
-
-        if (result.rows.length > 0) {
-            console.log(`✅ ${result.rows.length} links encontrados.`);
-            return result.rows.map(row => row.link);
-        } else {
-            console.log("⚠️ Nenhum link encontrado.");
-            return [];
-        }
-    } catch (error) {
-        console.error(`❌ Erro ao buscar links na tabela ${modifiedTableName}:`, error);
-        return [];
-    } finally {
-        client.release();
+    if (!checkTable.rows[0].exists) {
+      console.error(`❌ Erro: A tabela ${modifiedTableName} não existe no banco de dados.`);
+      return;
     }
+
+    // Busca os links na tabela
+    const result = await client.query(`SELECT link FROM ${modifiedTableName}`);
+    if (result.rows.length > 0) {
+      console.log(`✅ ${result.rows.length} links encontrados.`);
+      const links = result.rows.map(row => row.link);
+      
+      // Itera e chama o scraping para cada link
+      for (const link of links) {
+        console.log("🔄 Chamando scrapeResults10 para:", link);
+        await scrapeResults10(link);
+      }
+    } else {
+      console.log("⚠️ Nenhum link encontrado.");
+    }
+  } catch (error) {
+    console.error(`❌ Erro ao buscar ou processar os links na tabela ${modifiedTableName}:`, error);
+  } finally {
+    client.release();
+  }
 };
 
 // Função para remover caracteres especiais e normalizar as strings
@@ -585,21 +586,21 @@ if (require.main === module) {
             }
 
             // Loop para processar cada link com scraping
-            for (const link of links) {
-                console.log(`⏳ Iniciando o scraping para o link: ${link}`);
-                await scrapeResults10(link);
-            }
+for (const link of links) {
+    console.log(`⏳ Chamando scrapeResults10 para: ${link}`);
+    try {
+        await scrapeResults10(link);
+        console.log(`✅ Concluído scrapeResults10 para: ${link}`);
+    } catch (error) {
+        console.error(`❌ Erro ao processar link ${link}:`, error);
+    }
+}
 
-            console.log('✅ Processo de scraping completo!');
-            process.exit(0); // Sucesso
-        } catch (error) {
-            console.error("❌ Erro no script futebol.js:", error);
-            process.exit(1); // Indicar falha
-        }
     })();
 }
 
 // Exportando a função
 module.exports = {
   fetchLinksFromDatabase1
+ 
 };
