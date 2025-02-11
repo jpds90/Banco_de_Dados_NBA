@@ -5,7 +5,7 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const { scrapeResults } = require('./script');
 const { scrapeResults1 } = require('./jogadores');
-const { scrapeResults10 } = require('./futebol');
+const { fetchLinksFromDatabase } = require('./futebol');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
@@ -340,10 +340,20 @@ app.post('/futebollink', (req, res) => {
 });
 
 
-// Rota para executar o script oddsfutebol.js
-app.post('/timefutebol', (req, res) => {
-    const scriptPath = path.join(__dirname, 'public', 'futebol.js');
-    runScript(scriptPath, res, 'Extrair os Dados dos Times');
+app.post('/timefutebol', async (req, res) => {
+    const { tableName } = req.body;  // Extraindo tableName do corpo da requisição
+    console.log(`🔍 Recebido tableName: ${tableName}`);
+
+    try {
+        // Chamando a função fetchLinksFromDatabase e passando o tableName
+        const links = await fetchLinksFromDatabase(tableName);
+
+        // Enviando os links encontrados para o frontend
+        res.json(links);
+    } catch (error) {
+        console.error("Erro ao buscar links:", error);
+        res.status(500).send('Erro ao buscar os links');
+    }
 });
 
 
