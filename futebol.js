@@ -554,7 +554,7 @@ const scrapeResults10 = async (link) => {
 };
 // Função principal para coordenar a execução
 const main = async () => {
-    const links = await fetchLinksFromDatabase1(modifiedTableName); // Busca os links da tabela
+    const links = await fetchLinksFromDatabase1(tableName); // Busca os links da tabela
 
     if (links.length > 0) {
         for (const link of links) {
