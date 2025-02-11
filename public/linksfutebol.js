@@ -136,6 +136,7 @@ async function getNewIds(page, excludedIds, neededCount) {
     return await page.evaluate((excludedIds, neededCount) => {
         const ids = [];
         document.querySelectorAll('[id]').forEach(el => {
+            console.log("ID encontrado: ", el.id);  // Logar todos os IDs encontrados
             if (!excludedIds.includes(el.id)) {
                 const timeElement = el.querySelector('.event__time');
                 if (timeElement) {
@@ -143,9 +144,11 @@ async function getNewIds(page, excludedIds, neededCount) {
                 }
             }
         });
+        console.log("IDs extraídos: ", ids);  // Verifique os IDs extraídos
         return ids.slice(0, neededCount);
     }, excludedIds, neededCount);
 }
+
 
 // 🔥 Inicia o processo
 async function startScraping() {
