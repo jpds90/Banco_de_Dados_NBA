@@ -566,39 +566,6 @@ const scrapeResults10 = async (link) => {
 
     await browser.close();
 };
-// Função principal onde você chama a função de scraping
-if (require.main === module) {
-    (async () => {
-        try {
-            // Obtém o nome da tabela da linha de comando ou usa um padrão
-            const dynamicTableName = process.argv[2] || 'laliga_links';
-            console.log(`🟢 Tabela selecionada: ${dynamicTableName}`);
-
-            // Buscar os links no banco de dados
-            const links = await fetchLinksFromDatabase1(dynamicTableName);
-
-            // Log detalhado para depuração
-            console.log('🔗 Links obtidos:', links);
-
-            if (links.length === 0) {
-                console.log('⚠️ Nenhum link encontrado para processamento.');
-                process.exit(0); // Sai sem erro, pois simplesmente não há links
-            }
-
-            // Loop para processar cada link com scraping
-for (const link of links) {
-    console.log(`⏳ Chamando scrapeResults10 para: ${link}`);
-    try {
-        await scrapeResults10(link);
-        console.log(`✅ Concluído scrapeResults10 para: ${link}`);
-    } catch (error) {
-        console.error(`❌ Erro ao processar link ${link}:`, error);
-    }
-}
-
-    })();
-}
-
 // Exportando a função
 module.exports = {
   fetchLinksFromDatabase1
