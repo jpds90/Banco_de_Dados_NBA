@@ -46,7 +46,7 @@ const dbConfig = {
     ssl: { rejectUnauthorized: false }, // Evita erros de SSL no Render
 };
 
-async function scrapeAndSaveLinks() {
+async function scrapeAndSaveLinks(tableName, url) {
     // 🔹 Inicia o Puppeteer
     const browser = await puppeteer.launch({
         headless: true, // Modo invisível para otimizar o processamento
@@ -61,7 +61,7 @@ async function scrapeAndSaveLinks() {
 
     // 🔹 Cria a tabela se não existir
     await client.query(`
-        CREATE TABLE IF NOT EXISTS ${tableName} (
+        CREATE TABLE IF NOT EXISTS "${tableName}" (
             id SERIAL PRIMARY KEY,
             team_name VARCHAR(255) NOT NULL,
             link VARCHAR(255) NOT NULL,
@@ -70,9 +70,8 @@ async function scrapeAndSaveLinks() {
     `);
 
     // 🔹 Limpa os links antigos antes de inserir os novos
-    await client.query(`TRUNCATE TABLE ${tableName}`);
-console.log(`🗑️ Tabela ${tableName} limpa.`);
-
+    await client.query(`TRUNCATE TABLE "${tableName}"`);
+    console.log(`🗑️ Tabela ${tableName} limpa.`);
 
     try {
         console.log("📌 Acessando URL:", url);
@@ -142,4 +141,9 @@ async function getNewIds(page, excludedIds, neededCount) {
 }
 
 // 🔥 Inicia o processo
-scrapeAndSaveLinks();
+async function startScraping() {
+    const { tableName, url } = await getTableName();
+    scrapeAndSaveLinks(tableName, url);
+}
+
+startScraping();
