@@ -261,7 +261,7 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
     }
 }
 
-const processAndScrapeLinks = async (tableName) => {
+const fetchLinksFromDatabase1 = async (tableName) => {
   const client = await pool.connect();
   const modifiedTableName = `${tableName}s`; // Adiciona o "s" ao nome da tabela
 
