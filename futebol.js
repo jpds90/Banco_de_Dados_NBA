@@ -552,4 +552,7 @@ const scrapeResults10 = async (link) => {
 
     await browser.close();
 };
-
+// Exportando a função
+module.exports = {
+  fetchLinksFromDatabase
+};
