@@ -3,11 +3,6 @@ const sleep = require('sleep-promise');
 const { Client } = require('pg');
 const fs = require('fs');
 
-async function scrapeAndSaveLinks(tableName) {
-    if (!tableName) {
-        console.error("❌ tableName não informado!");
-        return;
-    }
 
 // ✅ Função para carregar a URL salva no backend
 async function getTableName() {
