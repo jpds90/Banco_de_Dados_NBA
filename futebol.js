@@ -553,9 +553,7 @@ const scrapeResults10 = async (link) => {
     await browser.close();
 };
 // Função principal para coordenar a execução
-const main = async () => {
-    const links = await fetchLinksFromDatabase1(tableName); // Busca os links da tabela
-
+const main = async (links) => {
     if (links.length > 0) {
         for (const link of links) {
             await scrapeResults10(link);  // Executa o scraping para cada link encontrado
@@ -565,9 +563,19 @@ const main = async () => {
     }
 };
 
-// Chama a função principal
-main();
+// Função de execução antes da função principal
+const executeBeforeMain = async (tableName) => {
+    console.log("🔄 Executando ação antes de chamar a função principal...");
 
+    // Buscando os links antes de chamar o main
+    const links = await fetchLinksFromDatabase1(tableName);
+
+    // Depois de buscar os links, chama a função main
+    main(links);
+};
+
+// Executa antes do main
+executeBeforeMain(tableName);
 
 // Exportando a função
 module.exports = {
