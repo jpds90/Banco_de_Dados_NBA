@@ -341,20 +341,21 @@ app.post('/futebollink', (req, res) => {
 
 
 app.post('/timefutebol', async (req, res) => {
-    const { tableName } = req.body;  // Extraindo tableName do corpo da requisição
+    const { tableName } = req.body;
     console.log(`🔍 Recebido tableName: ${tableName}`);
 
     try {
-        // Chamando a função fetchLinksFromDatabase1 e passando o tableName
         const links = await fetchLinksFromDatabase1(tableName);
 
-        // Enviando os links encontrados para o frontend
+        console.log("📤 Enviando links para o frontend:", links);  // 🔥 Adicione isso
+
         res.json(links);
     } catch (error) {
-        console.error("Erro ao buscar links:", error);
+        console.error("❌ Erro ao buscar links:", error);
         res.status(500).send('Erro ao buscar os links');
     }
 });
+
 
 
 // Rota para executar o script oddsfutebol.js
