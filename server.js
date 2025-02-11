@@ -11,7 +11,8 @@ const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
-const { scrapeAndSaveLinks } = require('../public/linksfutebol');
+const { scrapeAndSaveLinks } = require(path.resolve(__dirname, '../public/linksfutebol'));
+
 
 const app = express();
 // Configuração da porta para Render (usa a variável PORT ou padrão 3000)
