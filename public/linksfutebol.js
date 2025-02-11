@@ -3,6 +3,12 @@ const sleep = require('sleep-promise');
 const { Client } = require('pg');
 const fs = require('fs');
 
+// ✅ Conexão com o banco de dados
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+});
+
 // ✅ Função para carregar a URL da liga salva no banco de dados
 async function getSavedUrl(tableName) {
     const client = await pool.connect();
@@ -39,12 +45,6 @@ async function getTableName() {
     return { tableName, url };
 }
 
-
-// ✅ Configuração do banco de dados (PostgreSQL)
-const dbConfig = {
-    connectionString: process.env.DATABASE_URL, // Usa a variável de ambiente
-    ssl: { rejectUnauthorized: false }, // Evita erros de SSL no Render
-};
 
 async function scrapeAndSaveLinks(tableName, url) {
     // 🔹 Inicia o Puppeteer
