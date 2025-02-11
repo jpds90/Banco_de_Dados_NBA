@@ -3,21 +3,40 @@ const sleep = require('sleep-promise');
 const { Client } = require('pg');
 const fs = require('fs');
 
-// ✅ Função para carregar a URL salva no backend
-async function getTableName() {
-    const url = await getSavedUrl(); // Aqui não usamos tableName, já que ele será derivado de 'url'
+// ✅ Função para carregar a URL da liga salva no banco de dados
+async function getSavedUrl(tableName) {
+    const client = await pool.connect();
+    try {
+        console.log(`🔍 Buscando URL na tabela: ${tableName}_link...`);
+        const result = await client.query(`SELECT link FROM ${tableName}_link ORDER BY id DESC LIMIT 1`);
 
-    // ✅ Extrair nome antes de "/lista/"
-    const tableName = url
-        .split('/')
-        .slice(-3, -2)[0] // Pega o nome correto na URL
+        if (result.rows.length > 0) {
+            console.log(`✅ URL carregada: ${result.rows[0].link}`);
+            return result.rows[0].link;
+        } else {
+            console.log("⚠️ Nenhuma URL encontrada. Usando URL padrão.");
+            return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão
+        }
+    } catch (error) {
+        console.error("❌ Erro ao buscar URL no banco:", error);
+        return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão em caso de erro
+    } finally {
+        client.release();
+    }
+}
+
+// ✅ Nome da tabela a partir da URL
+async function getTableName() {
+    const defaultLeague = "laliga"; // Liga padrão caso não tenha uma no banco
+    const url = await getSavedUrl(defaultLeague);
+
+    const tableName = url.split('/').slice(-3, -2)[0]
         .toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .replace(/[^a-z0-9]+/g, "_") // Substitui espaços e caracteres inválidos por "_"
-        .replace(/^_+|_+$/g, "") + "_link1"; // Remove "_" extras e adiciona "_link"
+        .replace(/[^a-z0-9]+/g, "_") + "_links"; // Substitui espaços e caracteres inválidos por "_"
 
-    console.log(tableName); // Exemplo: "serie_a_link"
-    return tableName;
+    console.log(`📌 Nome da tabela extraído: ${tableName}`);
+    return { tableName, url };
 }
 
 
@@ -27,20 +46,22 @@ const dbConfig = {
     ssl: { rejectUnauthorized: false }, // Evita erros de SSL no Render
 };
 
-async function scrapeAndSaveLinks(url) {
-    const tableName = await getTableName(url);  // Obter o nome da tabela
+async function scrapeAndSaveLinks() {
+    // 🔹 Inicia o Puppeteer
     const browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true, // Modo invisível para otimizar o processamento
+        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Necessário para rodar no Render
     });
     const page = await browser.newPage();
     const page2 = await browser.newPage();
 
+    // 🔹 Conexão com o banco de dados
     const client = new Client(dbConfig);
     await client.connect();
 
+    // 🔹 Cria a tabela se não existir
     await client.query(`
-        CREATE TABLE IF NOT EXISTS "${tableName}" (
+        CREATE TABLE IF NOT EXISTS ${tableName} (
             id SERIAL PRIMARY KEY,
             team_name VARCHAR(255) NOT NULL,
             link VARCHAR(255) NOT NULL,
@@ -48,15 +69,18 @@ async function scrapeAndSaveLinks(url) {
         );
     `);
 
-    await client.query(`TRUNCATE TABLE "${tableName}"`);
-    console.log(`🗑️ Tabela ${tableName} limpa.`);
-    
+    // 🔹 Limpa os links antigos antes de inserir os novos
+    await client.query(`TRUNCATE TABLE ${tableName}`);
+console.log(`🗑️ Tabela ${tableName} limpa.`);
+
+
     try {
         console.log("📌 Acessando URL:", url);
         await page.goto(url, { timeout: 120000 });
         await sleep(10000);
         await page.waitForSelector('.container', { timeout: 90000 });
 
+        // 🔹 Pega os IDs dos jogos
         const idObjects = await getNewIds(page, [], 20);
 
         for (const { id, eventTime } of idObjects) {
@@ -82,6 +106,7 @@ async function scrapeAndSaveLinks(url) {
                     const homeUrl = await page2.evaluate(el => el.href, homeElement);
                     const awayUrl = await page2.evaluate(el => el.href, awayElement);
 
+                    // 🔹 Salvar no banco de dados
                     await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [homeName, homeUrl, eventTime]);
                     await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [awayName, awayUrl, eventTime]);
 
@@ -94,11 +119,11 @@ async function scrapeAndSaveLinks(url) {
     } catch (error) {
         console.error(`❌ Erro geral no scraping: ${error}`);
     } finally {
+        // 🔹 Fecha Puppeteer e a conexão com o banco
         await browser.close();
         await client.end();
     }
 }
-
 
 // ✅ Função para pegar IDs de jogos
 async function getNewIds(page, excludedIds, neededCount) {
@@ -117,4 +142,4 @@ async function getNewIds(page, excludedIds, neededCount) {
 }
 
 // 🔥 Inicia o processo
-module.exports = { scrapeAndSaveLinks };
+scrapeAndSaveLinks();
