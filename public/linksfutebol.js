@@ -14,11 +14,11 @@ const pool = new Pool({
 async function getSavedUrl(tableName) {
     const client = await pool.connect();
     try {
-        console.log(`🔍 Buscando URL na tabela: ${tableName}_link...`);
+        console.log(`🔍 Buscando URL na tabela link Futebol: ${tableName}_link...`);
         const result = await client.query(`SELECT link FROM ${tableName}_link ORDER BY id DESC LIMIT 1`);
 
         if (result.rows.length > 0) {
-            console.log(`✅ URL carregada: ${result.rows[0].link}`);
+            console.log(`✅ URL carregada do link Futebol ${tableName} : ${result.rows[0].link}`);
             return result.rows[0].link;
         } else {
             console.log("⚠️ Nenhuma URL encontrada. Usando URL padrão.");
@@ -42,7 +42,7 @@ async function getTableName() {
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
         .replace(/[^a-z0-9]+/g, "_") + "_links"; // Substitui espaços e caracteres inválidos por "_"
 
-    console.log(`📌 Nome da tabela extraído: ${tableName}`);
+    console.log(`📌 Nome da tabela extraído Link Futebol: ${tableName}`);
     return { tableName, url };
 }
 
