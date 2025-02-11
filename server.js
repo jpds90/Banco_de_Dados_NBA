@@ -336,21 +336,21 @@ const fetchLinksFromDatabase = async (tableName) => {
 // Rota para executar o script futebol link.js
 app.post('/futebollink', (req, res) => {
     const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
-    runScript(scriptPath, res, 'Odds Futebol');
+    runScript(scriptPath, res, 'Extrair URL dos Times');
 });
 
 
 // Rota para executar o script oddsfutebol.js
 app.post('/timefutebol', (req, res) => {
     const scriptPath = path.join(__dirname, 'public', 'futebol.js');
-    runScript(scriptPath, res, 'Odds Futebol');
+    runScript(scriptPath, res, 'Extrair os Dados dos Times');
 });
 
 
 // Rota para executar o script oddsfutebol.js
 app.post('/oddsfutebol', (req, res) => {
     const scriptPath = path.join(__dirname, 'public', 'oddsfutebol.js');
-    runScript(scriptPath, res, 'Odds Futebol');
+    runScript(scriptPath, res, 'Extrair os confrontos');
 });
 
 
