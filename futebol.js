@@ -552,6 +552,23 @@ const scrapeResults10 = async (link) => {
 
     await browser.close();
 };
+// Função principal para coordenar a execução
+const main = async () => {
+    const links = await fetchLinksFromDatabase1(modifiedTableName); // Busca os links da tabela
+
+    if (links.length > 0) {
+        for (const link of links) {
+            await scrapeResults10(link);  // Executa o scraping para cada link encontrado
+        }
+    } else {
+        console.log("⚠️ Nenhum link para processar.");
+    }
+};
+
+// Chama a função principal
+main();
+
+
 // Exportando a função
 module.exports = {
   fetchLinksFromDatabase1
