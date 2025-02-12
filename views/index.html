@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Tabelas</title>
+    <title>Dados ALLIN - Sports</title>
     <style>
         .container {
             display: flex;
@@ -45,8 +45,9 @@
     <button id="clearAllTablesExceptLinksButton">Apagar Todas as Tabelas (Exceto Links)</button>
 
     <div class="container">
-        <!-- Categorias serão preenchidas dinamicamente -->
-        <% const categorias = { 
+        <% 
+        // Criar categorias
+        const categorias = { 
             futebol: [], 
             lesoes: [], 
             jogadores: [], 
@@ -54,6 +55,7 @@
             outros: [] 
         };
 
+        // Separar as tabelas por categoria
         tables.forEach(table => {
             if (table.includes('_futebol')) {
                 categorias.futebol.push(table);
@@ -66,7 +68,12 @@
             } else {
                 categorias.outros.push(table);
             }
-        }); 
+        });
+
+        // Ordenar cada categoria alfabeticamente
+        Object.keys(categorias).forEach(categoria => {
+            categorias[categoria].sort();
+        });
         %>
 
         <% Object.keys(categorias).forEach(categoria => { %>
