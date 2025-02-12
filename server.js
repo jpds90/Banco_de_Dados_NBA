@@ -160,8 +160,9 @@ app.get('/confrontosfutebol', async (req, res) => {
         const results = [];
 
         for (const { time_home, time_away } of oddsRows) {
-            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + "_futebol";
-            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + "_futebol";
+        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
 
             const confrontationResult = await pool.query(`
                 SELECT resultadohome, resultadoaway, timehome, timeaway
