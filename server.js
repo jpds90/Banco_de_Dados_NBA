@@ -126,6 +126,28 @@ app.post("/salvar-url", async (req, res) => {
 
 
 
+
+//Buscar dados para Futebol
+app.get("/buscar-times", async (req, res) => {
+  const { tableName } = req.query;
+  if (!tableName) {
+    return res.status(400).json({ success: false, message: "tableName não fornecido!" });
+  }
+
+  try {
+    const query = `SELECT data_jogo, time_home, time_away FROM ${tableName}`;
+    const [rows] = await db.query(query);
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Erro ao buscar os times:", error);
+    return res.status(500).json({ success: false, message: "Erro ao buscar os times." });
+  }
+});
+
+
+
+
+
 // Rota para exibir links únicos
 app.get('/links', async (req, res) => {
     const client = await pool.connect();
@@ -3550,6 +3572,7 @@ function authenticateToken(req, res, next) {
 }
 
 
+app.use(authenticateToken); // Aplica o middleware a todas as rotas protegidas
 
 
 
@@ -3745,26 +3768,6 @@ app.post('/save-odds', async (req, res) => {
         res.status(500).json({ success: false, error: error.message });
     }
 });
-
-//Buscar dados para Futebol
-app.get("/buscar-times", async (req, res) => {
-  const { tableName } = req.query;
-  if (!tableName) {
-    return res.status(400).json({ success: false, message: "tableName não fornecido!" });
-  }
-
-  try {
-    const query = `SELECT data_jogo, time_home, time_away FROM ${tableName}`;
-    const [rows] = await db.query(query);
-    return res.json({ success: true, data: rows });
-  } catch (error) {
-    console.error("Erro ao buscar os times:", error);
-    return res.status(500).json({ success: false, message: "Erro ao buscar os times." });
-  }
-});
-
-
-app.use(authenticateToken); // Aplica o middleware a todas as rotas protegidas
 
 // Servir arquivos estáticos da pasta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
