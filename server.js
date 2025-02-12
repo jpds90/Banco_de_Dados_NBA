@@ -150,13 +150,13 @@ app.get('/linksfut', async (req, res) => {
     try {
         const result = await client.query(`
             SELECT DISTINCT ON (link) team_name, link, event_time
-            FROM linksfutebol
+            FROM laliga_links
             ORDER BY link, event_time DESC
         `);
         res.json(result.rows);
     } catch (err) {
         console.error(err);
-        res.status(500).send('Erro ao buscar dados dos linksFutebol.');
+        res.status(500).send('Erro ao buscar dados dos laliga_links.');
     } finally {
         client.release();
     }
