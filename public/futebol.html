@@ -96,9 +96,7 @@
    <div id="countries"></div>
    
    <script>
-      // Token para autenticação
-      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoianBzb2ZpY2lhbDFAZ21haWwuY29 tIiwiaWF0IjoxNzM5MzgwMjg1LCJleHAiOjE3MzkzODM4ODV9.Ru3s3lPmL3fcnKHtrsUFed-HlN6ouXMVvTW9nmvNLdU";
-
+      
       // Função para normalizar o texto e remover acentos
       function formatText(text) {
          return text
@@ -147,14 +145,19 @@
                try {
                   // Fazendo a requisição GET e aguardando a resposta
                   const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`, {
-                     method: "GET",
-                     headers: {
-                        "Authorization": `Bearer ${token}`  // Token enviado no cabeçalho
-                     }
-                  });
-                  const result = await response.json();
-                  console.log("Dados recebidos:", result);
+  method: "GET",
+  // Não é mais necessário enviar o token
+})
+  .then(response => response.json())
+  .then(result => {
+    console.log("Dados recebidos:", result);
+  })
+  .catch(error => console.error("Erro:", error));
                   
+
+
+
+
                   // Limpa o conteúdo anterior e exibe os novos resultados
                   matchesDiv.innerHTML = "";
                   result.data.forEach(match => {
