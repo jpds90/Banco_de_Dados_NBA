@@ -3747,7 +3747,24 @@ app.post('/save-odds', async (req, res) => {
     }
 });
 
+//Buscar dados para Futebol
+app.post("/buscar-times", async (req, res) => {
+    const { tableName } = req.body;
 
+    if (!tableName) {
+        return res.status(400).json({ success: false, message: "Nome da tabela não fornecido." });
+    }
+
+    try {
+        const query = `SELECT data_jogo, time_home, time_away FROM ${tableName}`;
+        const [rows] = await db.query(query);
+
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+        res.status(500).json({ success: false, message: "Erro ao buscar os times." });
+    }
+});
 
 // Servir arquivos estáticos da pasta 'public'
 app.use(express.static(path.join(__dirname, 'public')));
