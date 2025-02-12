@@ -4,22 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lista de Tabelas</title>
+    <style>
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .category {
+            flex: 1;
+            min-width: 200px;
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .category h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .table-item {
+            background: white;
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 3px;
+            list-style: none;
+        }
+        a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <h1>Tabelas Disponíveis</h1>
     <button id="clearAllTablesExceptLinksButton">Apagar Todas as Tabelas (Exceto Links)</button>
-    <ul>
-        <% tables.forEach(table => { %>
-            <li>
-                <a href="/table/<%= table %>"><%= table %></a>
-            </li>
+
+    <div class="container">
+        <!-- Categorias serão preenchidas dinamicamente -->
+        <% const categorias = { 
+            futebol: [], 
+            lesoes: [], 
+            jogadores: [], 
+            links: [], 
+            outros: [] 
+        };
+
+        tables.forEach(table => {
+            if (table.includes('_futebol')) {
+                categorias.futebol.push(table);
+            } else if (table.includes('_lesoes')) {
+                categorias.lesoes.push(table);
+            } else if (table.includes('_jogadores')) {
+                categorias.jogadores.push(table);
+            } else if (table.includes('_link') || table.includes('_links')) {
+                categorias.links.push(table);
+            } else {
+                categorias.outros.push(table);
+            }
+        }); 
+        %>
+
+        <% Object.keys(categorias).forEach(categoria => { %>
+            <% if (categorias[categoria].length > 0) { %>
+                <div class="category">
+                    <h2><%= categoria.charAt(0).toUpperCase() + categoria.slice(1) %></h2>
+                    <% categorias[categoria].forEach(table => { %>
+                        <div class="table-item">
+                            <a href="/table/<%= table %>"><%= table %></a>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %>
         <% }); %>
-    </ul>
+    </div>
 
     <script>
         const clearAllTablesExceptLinks = async () => {
             const button = document.querySelector('#clearAllTablesExceptLinksButton');
-            button.disabled = true; // Desativa o botão enquanto a operação está em andamento
+            button.disabled = true;
             button.textContent = 'Apagando...';
     
             try {
@@ -27,7 +94,7 @@
     
                 if (response.ok) {
                     alert('Todas as tabelas (exceto links) foram apagadas com sucesso!');
-                    window.location.reload(); // Recarrega a página para refletir as mudanças
+                    window.location.reload();
                 } else {
                     alert('Erro ao apagar as tabelas.');
                 }
@@ -35,14 +102,12 @@
                 console.error('Erro na solicitação:', error);
                 alert('Erro ao apagar as tabelas.');
             } finally {
-                button.disabled = false; // Reativa o botão
+                button.disabled = false;
                 button.textContent = 'Apagar Todas as Tabelas (Exceto Links)';
             }
         };
     
         document.querySelector('#clearAllTablesExceptLinksButton').addEventListener('click', clearAllTablesExceptLinks);
     </script>
-    
-    
 </body>
 </html>
