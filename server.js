@@ -127,7 +127,7 @@ app.post("/salvar-url", async (req, res) => {
 
 
 
-//Buscar dados para Futebol
+// Buscar dados para Futebol
 app.get("/buscar-times", async (req, res) => {
   const { tableName } = req.query;
   if (!tableName) {
@@ -136,7 +136,7 @@ app.get("/buscar-times", async (req, res) => {
 
   try {
     const query = `SELECT data_jogo, time_home, time_away FROM ${tableName}`;
-    const [rows] = await db.query(query);
+    const { rows } = await pool.query(query); // ALTERADO DE db.query PARA pool.query
     return res.json({ success: true, data: rows });
   } catch (error) {
     console.error("Erro ao buscar os times:", error);
