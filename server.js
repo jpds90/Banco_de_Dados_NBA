@@ -145,50 +145,63 @@ app.get("/buscar-times", async (req, res) => {
 });
 
 // Rota para calcular as médias de gols
-app.get('/calcular-media-gols', (req, res) => {
-   const { tableName, home, away } = req.query;
+app.get('/confrontosfutebol', async (req, res) => {
+    try {
+        const { tableName } = req.query;
+        const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
+        const oddsRows = oddsResult.rows;
 
-   // Verificar se a liga existe na "base de dados"
-   if (!matchesDatabase[tableName]) {
-      return res.json({ success: false, message: "Liga não encontrada." });
-   }
+        const results = [];
 
-   // Pegar os jogos da liga correspondente
-   const matches = matchesDatabase[tableName];
+        for (const { time_home, time_away } of oddsRows) {
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_') + "_futebol";
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_') + "_futebol";
 
-   let homeGoals = 0;
-   let awayGoals = 0;
-   let homeGames = 0;
-   let awayGames = 0;
-   let totalGoals = 0;
+            const confrontationResult = await pool.query(`
+                SELECT resultadohome, resultadoaway, timehome, timeaway
+                FROM ${homeTable}
+                WHERE (timehome = $1 AND timeaway = $2)
+                   OR (timehome = $2 AND timeaway = $1)
+                ORDER BY id ASC
+            `, [time_home, time_away]);
 
-   // Processar os dados da liga selecionada
-   matches.forEach(match => {
-      if (match.timehome === home) {
-         homeGoals += match.resultadohome;
-         homeGames++;
-      }
-      if (match.timeaway === away) {
-         awayGoals += match.resultadoaway;
-         awayGames++;
-      }
-      if (match.timehome === home && match.timeaway === away) {
-         totalGoals += match.resultadohome + match.resultadoaway;
-      }
-   });
+            const confrontations = confrontationResult.rows;
 
-   const mediaGolsCasa = homeGames > 0 ? (homeGoals / homeGames) : 0;
-   const mediaGolsFora = awayGames > 0 ? (awayGoals / awayGames) : 0;
-   const mediaGolsTotal = (homeGoals + awayGoals) / (homeGames + awayGames);
+            let totalHomePoints = 0;
+            let totalAwayPoints = 0;
+            
+            confrontations.forEach(row => {
+                totalHomePoints += parseInt(row.resultadohome, 10) || 0;
+                totalAwayPoints += parseInt(row.resultadoaway, 10) || 0;
+            });
 
-   res.json({
-      success: true,
-      mediaGolsCasa,
-      mediaGolsFora,
-      mediaGolsTotal
-   });
+            const homeAveragePoints = confrontations.length > 0
+                ? (totalHomePoints / confrontations.length).toFixed(2)
+                : 0;
+
+            const awayAveragePoints = confrontations.length > 0
+                ? (totalAwayPoints / confrontations.length).toFixed(2)
+                : 0;
+
+            const totalPoints = confrontations.length > 0
+                ? ((totalHomePoints + totalAwayPoints) / confrontations.length).toFixed(2)
+                : 0;
+
+            results.push({
+                timehome: time_home,
+                timeaway: time_away,
+                home_average_points: homeAveragePoints,
+                away_average_points: awayAveragePoints,
+                total_points: totalPoints
+            });
+        }
+
+        res.json(results);
+    } catch (error) {
+        console.error('Erro ao processar os dados:', error);
+        res.status(500).send('Erro no servidor');
+    }
 });
-
 
 
 
