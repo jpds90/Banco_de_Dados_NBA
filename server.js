@@ -390,16 +390,16 @@ app.post('/execute-Jogadores', async (req, res) => {
 app.post('/execute-futebol', async (req, res) => {
     console.log('Recebendo requisição:', req.body); // Debug para verificar os dados recebidos
 
-    const { linksfutebol } = req.body;
+    const { laliga_links } = req.body;
 
     if (!Array.isArray(linksfutebol) || linksfutebol.length === 0) {
         return res.status(400).send('Nenhum link selecionado para Futebol.');
     }
 
     try {
-        console.log('Links selecionados para Time:', linksfutebol);
+        console.log('Links selecionados para Time:', laliga_links);
 
-        for (const link of linksfutebol) {
+        for (const link of laliga_links) {
             await scrapeResults10(link);
         }
 
