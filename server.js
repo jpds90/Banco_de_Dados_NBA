@@ -124,7 +124,7 @@ app.post("/salvar-url", async (req, res) => {
     }
 });
 
-
+//Futebol
 
 
 // Buscar dados para Futebol
@@ -144,9 +144,62 @@ app.get("/buscar-times", async (req, res) => {
   }
 });
 
+// Rota para calcular as médias de gols
+app.get('/calcular-media-gols', (req, res) => {
+   const { tableName, home, away } = req.query;
+
+   // Verificar se a liga existe na "base de dados"
+   if (!matchesDatabase[tableName]) {
+      return res.json({ success: false, message: "Liga não encontrada." });
+   }
+
+   // Pegar os jogos da liga correspondente
+   const matches = matchesDatabase[tableName];
+
+   let homeGoals = 0;
+   let awayGoals = 0;
+   let homeGames = 0;
+   let awayGames = 0;
+   let totalGoals = 0;
+
+   // Processar os dados da liga selecionada
+   matches.forEach(match => {
+      if (match.timehome === home) {
+         homeGoals += match.resultadohome;
+         homeGames++;
+      }
+      if (match.timeaway === away) {
+         awayGoals += match.resultadoaway;
+         awayGames++;
+      }
+      if (match.timehome === home && match.timeaway === away) {
+         totalGoals += match.resultadohome + match.resultadoaway;
+      }
+   });
+
+   const mediaGolsCasa = homeGames > 0 ? (homeGoals / homeGames) : 0;
+   const mediaGolsFora = awayGames > 0 ? (awayGoals / awayGames) : 0;
+   const mediaGolsTotal = (homeGoals + awayGoals) / (homeGames + awayGames);
+
+   res.json({
+      success: true,
+      mediaGolsCasa,
+      mediaGolsFora,
+      mediaGolsTotal
+   });
+});
 
 
 
+
+
+
+
+
+
+
+
+//NBA
 
 // Rota para exibir links únicos
 app.get('/links', async (req, res) => {
