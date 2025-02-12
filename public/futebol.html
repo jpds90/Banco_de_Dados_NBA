@@ -144,6 +144,7 @@
          
          try {
             const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
+           console.log(`URL dos Confrontos: ${response}`);
             const result = await response.json();
             
             matchesDiv.innerHTML = "";
