@@ -145,11 +145,14 @@
                try {
                   // Usando async/await para obter a resposta
                   const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`, {
-                     method: "GET"
-                  });
-                  
-                  const result = await response.json();
-                  console.log("Dados recebidos:", result);
+  method: "GET",
+  // Não é mais necessário enviar o token
+})
+  .then(response => response.json())
+  .then(result => {
+    console.log("Dados recebidos:", result);
+  })
+  .catch(error => console.error("Erro:", error));
                   
                   if (!result.success) {
                      throw new Error(result.message);
