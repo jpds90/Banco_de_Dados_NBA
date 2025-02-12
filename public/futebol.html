@@ -96,8 +96,10 @@
    <div id="countries"></div>
    
    <script>
-      
-      // Função para normalizar o texto e remover acentos
+      // Token para autenticação (se você quiser remover o token, veja abaixo como)
+      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoianBzb2ZpY2lhbDFAZ21haWwuY29 tIiwiaWF0IjoxNzM5Mzc5MDU5LCJleHAiOjE3MzkzODI2NTl9.2m7z9REDj2z4SRAqUtdudKKOTuQJfPCiCZW2BJ5mmf0";
+
+      // Função para normalizar o texto (removendo acentos, espaços, etc.)
       function formatText(text) {
          return text
             .normalize("NFD")
@@ -143,22 +145,23 @@
                leagueElement.classList.add("loading");
                
                try {
-                  // Fazendo a requisição GET e aguardando a resposta
+                  // Usando async/await para obter a resposta
                   const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`, {
-  method: "GET",
-  // Não é mais necessário enviar o token
-})
-  .then(response => response.json())
-  .then(result => {
-    console.log("Dados recebidos:", result);
-  })
-  .catch(error => console.error("Erro:", error));
+                     method: "GET",
+                     headers: {
+                        // Se a rota estiver aberta, você pode remover este cabeçalho
+                        "Authorization": `Bearer ${token}`
+                     }
+                  });
                   
-
-
-
-
-                  // Limpa o conteúdo anterior e exibe os novos resultados
+                  const result = await response.json();
+                  console.log("Dados recebidos:", result);
+                  
+                  if (!result.success) {
+                     throw new Error(result.message);
+                  }
+                  
+                  // Atualiza a interface com os dados recebidos
                   matchesDiv.innerHTML = "";
                   result.data.forEach(match => {
                      let matchElement = document.createElement("div");
@@ -168,7 +171,6 @@
                   });
                   
                   matchesDiv.style.display = "block";
-                  
                   leagueElement.classList.remove("loading");
                   leagueElement.classList.add("success");
                } catch (error) {
