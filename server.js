@@ -148,6 +148,12 @@ app.get("/buscar-times", async (req, res) => {
 app.get('/confrontosfutebol', async (req, res) => {
     try {
         const { tableName } = req.query;
+
+        // Validação para garantir que tableName não está vazio
+        if (!tableName) {
+            return res.status(400).json({ error: 'Nome da tabela não fornecido' });
+        }
+
         const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
         const oddsRows = oddsResult.rows;
 
