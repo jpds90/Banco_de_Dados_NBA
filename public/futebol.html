@@ -1,132 +1,189 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Países e Ligas</title>
-    <style>
-        .country {
-            cursor: pointer;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        .leagues {
-            display: none;
-            margin-left: 20px;
-        }
-        .league {
-            cursor: pointer;
-            color: blue;
-            text-decoration: underline;
-            margin-top: 5px;
-        }
-        .loading {
-            color: gray !important;
-        }
-        .success {
-            color: green !important;
-        }
-        .error {
-            color: red !important;
-        }
-        .matches {
-            margin-left: 40px;
-            margin-top: 10px;
-            display: none;
-        }
-    </style>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Casa de Apostas Esportivas</title>
+   <!-- Fonte moderna do Google Fonts -->
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+   <style>
+      /* Estilo geral da página */
+      body {
+         font-family: 'Roboto', sans-serif;
+         background-color: #1e1e1e;
+         color: #f1f1f1;
+         margin: 0;
+         padding: 0;
+      }
+      header {
+         background: linear-gradient(90deg, #ff4e50, #f9d423);
+         padding: 20px;
+         text-align: center;
+         font-size: 2em;
+         font-weight: bold;
+         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      }
+      /* Container centralizado para os países e ligas */
+      #countries {
+         margin: 20px auto;
+         max-width: 800px;
+         background-color: #2e2e2e;
+         padding: 20px;
+         border-radius: 8px;
+         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+      }
+      /* Estilo para o nome dos países */
+      .country {
+         cursor: pointer;
+         font-weight: bold;
+         margin-bottom: 10px;
+         padding: 10px;
+         background-color: #3a3a3a;
+         border-radius: 4px;
+         transition: background-color 0.3s;
+      }
+      .country:hover {
+         background-color: #4a4a4a;
+      }
+      /* Estilo para as ligas */
+      .leagues {
+         display: none;
+         margin-left: 20px;
+      }
+      .league {
+         cursor: pointer;
+         color: #00bfff;
+         text-decoration: underline;
+         margin: 10px 0;
+         padding: 5px;
+         transition: color 0.3s;
+      }
+      .league:hover {
+         color: #1e90ff;
+      }
+      /* Indicadores de status */
+      .loading {
+         color: #ffd700 !important;
+      }
+      .success {
+         color: #32cd32 !important;
+      }
+      .error {
+         color: #ff4500 !important;
+      }
+      /* Estilo para os jogos (matches) */
+      .matches {
+         margin-left: 40px;
+         margin-top: 10px;
+         display: none;
+      }
+      .match {
+         padding: 10px;
+         margin: 5px 0;
+         background-color: #333333;
+         border-radius: 4px;
+         transition: background-color 0.3s;
+      }
+      .match:hover {
+         background-color: #444444;
+      }
+   </style>
 </head>
 <body>
-    <h1>Selecione um País</h1>
-    <div id="countries"></div>
-    
-    <script>
-        function formatText(text) {
-            return text
-                .normalize("NFD")
-                .replace(/[̀-ͯ]/g, "")
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/^-+|-+$/g, "");
-        }
-
-        const countries = {
-            "Brasil": ["Série A", "Série B", "Série C", "Série D", "paulista", "carioca"],
-            "Portugal": ["Primeira Liga", "Segunda Liga"],
-            "Espanha": ["LaLiga", "Taça do Rei de Espanha"],
-        };
-
-        const countryContainer = document.getElementById("countries");
-
-        for (let country in countries) {
-            let countryElement = document.createElement("div");
-            countryElement.classList.add("country");
-            countryElement.textContent = country;
-            countryContainer.appendChild(countryElement);
+   <header>Casa de Apostas Esportivas</header>
+   <div id="countries"></div>
+   
+   <script>
+      function formatText(text) {
+         return text
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+      }
+      
+      const countries = {
+         "Brasil": ["Série A", "Série B", "Série C", "Série D", "paulista", "carioca"],
+         "Portugal": ["Primeira Liga", "Segunda Liga"],
+         "Espanha": ["LaLiga", "Taça do Rei de Espanha"],
+      };
+      
+      const countryContainer = document.getElementById("countries");
+      
+      for (let country in countries) {
+         let countryElement = document.createElement("div");
+         countryElement.classList.add("country");
+         countryElement.textContent = country;
+         countryContainer.appendChild(countryElement);
+         
+         let leaguesDiv = document.createElement("div");
+         leaguesDiv.classList.add("leagues");
+         
+         countries[country].forEach(league => {
+            let leagueElement = document.createElement("div");
+            leagueElement.textContent = league;
+            leagueElement.classList.add("league");
             
-            let leaguesDiv = document.createElement("div");
-            leaguesDiv.classList.add("leagues");
+            let matchesDiv = document.createElement("div");
+            matchesDiv.classList.add("matches");
             
-            countries[country].forEach(league => {
-                let leagueElement = document.createElement("div");
-                leagueElement.textContent = league;
-                leagueElement.classList.add("league");
-                
-                let matchesDiv = document.createElement("div");
-                matchesDiv.classList.add("matches");
-                
-                leagueElement.addEventListener("click", async (event) => {
-                    event.stopPropagation();
-                    
-                    let formattedLeague = formatText(league);
-                    let tableName = formattedLeague.replace(/[^a-z0-9]+/g, "_") + "_odds";
-                    console.log(`📌 Buscando dados para a tabela: ${tableName}`);
-                    
-                    leagueElement.classList.add("loading");
-                    
-                    try {
-                        const response = await fetch("https://analise-jpnba.onrender.com/buscar-times", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ tableName })
-                        });
-                        
-                        const result = await response.json();
-                        console.log("⚽ Dados recebidos:", result);
-                        
-                        if (!result.success) {
-                            throw new Error("Erro ao buscar os times.");
-                        }
-                        
-                        matchesDiv.innerHTML = "";
-                        result.data.forEach(match => {
-                            let matchElement = document.createElement("div");
-                            matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
-                            matchesDiv.appendChild(matchElement);
-                        });
-                        
-                        matchesDiv.style.display = "block";
-                        
-                        leagueElement.classList.remove("loading");
-                        leagueElement.classList.add("success");
-                    } catch (error) {
-                        console.error("❌ Erro ao buscar os times:", error);
-                        alert("❌ Ocorreu um erro ao buscar os times. Tente novamente.");
-                        leagueElement.classList.remove("loading");
-                        leagueElement.classList.add("error");
-                    }
-                });
-                
-                leaguesDiv.appendChild(leagueElement);
-                leaguesDiv.appendChild(matchesDiv);
-            });
-
-            countryElement.addEventListener("click", () => {
-                leaguesDiv.style.display = leaguesDiv.style.display === "block" ? "none" : "block";
+            leagueElement.addEventListener("click", async (event) => {
+               event.stopPropagation();
+               
+               // Gerando o tableName baseado na liga
+               let formattedLeague = formatText(league);
+               let tableName = formattedLeague.replace(/[^a-z0-9]+/g, "_") + "_odds";
+               console.log(`Buscando dados para a tabela: ${tableName}`);
+               
+               leagueElement.classList.add("loading");
+               
+               try {
+                  const response = await fetch("https://analise-jpnba.onrender.com/buscar-times", {
+                     method: "POST",
+                     headers: { "Content-Type": "application/json" },
+                     body: JSON.stringify({ tableName })
+                  });
+                  
+                  const result = await response.json();
+                  console.log("Dados recebidos:", result);
+                  
+                  if (!result.success) {
+                     throw new Error("Erro ao buscar os times.");
+                  }
+                  
+                  matchesDiv.innerHTML = "";
+                  result.data.forEach(match => {
+                     let matchElement = document.createElement("div");
+                     matchElement.classList.add("match");
+                     matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
+                     matchesDiv.appendChild(matchElement);
+                  });
+                  
+                  matchesDiv.style.display = "block";
+                  
+                  leagueElement.classList.remove("loading");
+                  leagueElement.classList.add("success");
+               } catch (error) {
+                  console.error("Erro ao buscar os times:", error);
+                  alert("Ocorreu um erro ao buscar os times. Tente novamente.");
+                  leagueElement.classList.remove("loading");
+                  leagueElement.classList.add("error");
+               }
             });
             
-            countryContainer.appendChild(leaguesDiv);
-        }
-    </script>
+            leaguesDiv.appendChild(leagueElement);
+            leaguesDiv.appendChild(matchesDiv);
+         });
+      
+         countryElement.addEventListener("click", () => {
+            leaguesDiv.style.display = leaguesDiv.style.display === "block" ? "none" : "block";
+         });
+         
+         countryContainer.appendChild(leaguesDiv);
+      }
+   </script>
 </body>
 </html>
