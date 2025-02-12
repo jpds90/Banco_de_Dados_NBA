@@ -235,7 +235,7 @@
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ linksfutebol: selectedLinks }),
+                    body: JSON.stringify({ laliga_links: selectedLinks }),
                 });
 
                 if (!response.ok) {
