@@ -43,7 +43,36 @@
    <button id="fetchGames" style="display: none;">Buscar Jogos</button>
    
    <div class="matches" id="matches"></div>
-   
+      <!-- Tabela de Médias de Gols -->
+   <table>
+      <thead>
+         <tr>
+            <th>Casa</th>
+            <th>Visitante</th>
+            <th>Média de Gols (Casa)</th>
+            <th>Média de Gols (Fora)</th>
+            <th>Média de Gols(Total)</th>
+         </tr>
+      </thead>
+      <tbody id="averagesTable"></tbody>
+   </table>
+
+   <!-- Segunda Linha de Tabelas Lado a Lado -->
+   <div class="side-by-side">
+      <table>
+         <thead>
+            <tr>
+               <th>Casa</th>
+               <th>Visitante</th>
+               <th>Média Confronto (Casa)</th>
+               <th>Média Confronto (Visitante)</th>
+               <th>Total de Gol</th>
+            </tr>
+         </thead>
+         <tbody id="headToHeadTable"></tbody>
+      </table>
+   </div>
+
    <script>
       const countries = {
          "Brasil": ["Série A", "Série B", "Série C"],
