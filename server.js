@@ -392,7 +392,7 @@ app.post('/execute-futebol', async (req, res) => {
 
     const { laliga_links } = req.body;
 
-    if (!Array.isArray(linksfutebol) || linksfutebol.length === 0) {
+    if (!Array.isArray(laliga_links) || laliga_links.length === 0) {
         return res.status(400).send('Nenhum link selecionado para Futebol.');
     }
 
