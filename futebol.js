@@ -568,6 +568,7 @@ const scrapeResults10 = async (link) => {
 };
 // Exportando a função
 module.exports = {
-  fetchLinksFromDatabase1
+  fetchLinksFromDatabase1,
+ scrapeResults10 
  
 };
