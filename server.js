@@ -455,6 +455,7 @@ app.post('/execute-odds', (req, res) => {
 // Rota para executar o script saveLinks.js
 app.post('/execute-script', (req, res) => {
     const saveLinksPath = path.join(__dirname, 'public', 'saveLinks.js');
+    console.log('Executando script links NBA.js...');
     exec(`node ${saveLinksPath}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`Erro ao executar o script: ${error.message}`);
@@ -465,7 +466,7 @@ app.post('/execute-script', (req, res) => {
             return res.status(500).send('Erro ao executar o script.');
         }
         console.log(`Resultado do script: ${stdout}`);
-        res.send('Script.js executado com sucesso.');
+        res.send('Links NBA executado com sucesso.');
     });
 });
 
