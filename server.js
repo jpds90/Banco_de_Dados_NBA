@@ -496,8 +496,12 @@ app.post('/execute-futebol', async (req, res) => {
     try {
         console.log('Links selecionados para Time:', laliga_links);
 
-        for (const link of laliga_links) {
-            await scrapeResults10(link);
+        // Itera sobre cada objeto que contém team_name e link
+        for (const item of laliga_links) {
+            // Extraindo team_name e link de cada objeto
+            const { team_name, link } = item;
+            console.log(`Processando time: ${team_name}, link: ${link}`);
+            await scrapeResults10(link, team_name);
         }
 
         res.status(200).send('Jogadores atualizados com sucesso!');
@@ -506,6 +510,7 @@ app.post('/execute-futebol', async (req, res) => {
         res.status(500).send('Erro ao atualizar Jogadores.');
     }
 });
+
 
 // Rota para executar a atualização de jogadores
 app.post('/execute-lesoes', async (req, res) => {
