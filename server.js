@@ -231,17 +231,6 @@ app.get('/probabilidade-vitoria', async (req, res) => {
       const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
       const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
-      // Verifica se as tabelas existem no banco
-      const tableCheckQuery = `
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' AND (table_name = $1 OR table_name = $2);
-      `;
-      const tableCheck = await pool.query(tableCheckQuery, [homeTable, awayTable]);
-
-      if (tableCheck.rows.length < 2) {
-        return res.status(404).json({ error: `Tabelas ${homeTable} ou ${awayTable} não encontradas no banco de dados.` });
-      }
 
       // Buscar os dados estatísticos da tabela do time da casa (homeTable)
       const query = `
