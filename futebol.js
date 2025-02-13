@@ -346,8 +346,8 @@ const scrapeResults10 = async (link, team_name) => {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
     }
     if (team_name && typeof team_name === 'string') {
-        // Exemplo: transforma "Girona" em "girona_futebol"
-        teamId = team_name.replace(/\s+/g, '_').toLowerCase();
+        // Exemplo: transforma "Girona" em "giron"
+        teamId = team_name;
         console.log(`ID do time processado: ${teamId}`);
     } else {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
