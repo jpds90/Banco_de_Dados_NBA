@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-    <h1>Atualizar Dados</h1>
+    <h1>Atualizar Dados - NBA - Futebol</h1>
 
     <button id="loadNBA">NBA</button>
     <button id="loadFutebol">Futebol</button>
@@ -68,12 +68,12 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            console.log("DOM carregado, iniciando script...");
+            console.log("🔄 DOM carregado!");
 
             let data = [];
 
             function renderTable(data) {
-                console.log("Renderizando tabela...");
+                console.log("📊 Renderizando tabela...");
                 const tableBody = document.getElementById('linksTable');
                 tableBody.innerHTML = '';
                 data.forEach(link => {
@@ -89,7 +89,7 @@
             }
 
             function loadLinks(endpoint) {
-                console.log(`Carregando links de ${endpoint}...`);
+                console.log(`🔗 Carregando links de ${endpoint}...`);
                 fetch(endpoint)
                     .then(response => response.json())
                     .then(fetchedData => {
@@ -97,7 +97,7 @@
                         renderTable(data);
                     })
                     .catch(error => {
-                        console.error('Erro ao carregar os links:', error);
+                        console.error('❌ Erro ao carregar os links:', error);
                         alert('Erro ao carregar os links.');
                     });
             }
@@ -116,7 +116,7 @@
             });
 
             function executeApiCall(endpoint, successMessage) {
-                console.log(`Chamando API em ${endpoint}...`);
+                console.log(`🚀 Executando API em ${endpoint}...`);
                 showLoadingMessage(true);
                 fetch(endpoint, { method: 'POST' })
                     .then(response => {
@@ -128,20 +128,14 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Erro ao chamar a API:', error);
+                        console.error('❌ Erro ao chamar a API:', error);
                         alert('Erro ao executar a ação.');
                     })
                     .finally(() => showLoadingMessage(false));
             }
 
-            document.getElementById('executeRank').addEventListener('click', () => executeApiCall('/execute-rank', 'Rank atualizado com sucesso!'));
-            document.getElementById('executeOdds').addEventListener('click', () => executeApiCall('/execute-odds', 'Odds atualizados com sucesso!'));
-            document.getElementById('executeScript').addEventListener('click', () => executeApiCall('/execute-script', 'Links atualizados com sucesso!'));
-            document.getElementById('executeScript1').addEventListener('click', () => executeApiCall('/futebollink', 'Links de Futebol atualizados com sucesso!'));
-
-            async function executeAction(endpoint, successMessage, sendFullObject = false) {
-                console.log(`Executando ação para ${endpoint}...`);
-
+            function executeAction(endpoint, successMessage, sendFullObject = false) {
+                console.log(`⚡ Enviando requisição para ${endpoint}...`);
                 const selectedItems = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
                     .map(checkbox => ({
                         link: checkbox.getAttribute('data-link'),
@@ -155,58 +149,39 @@
 
                 showLoadingMessage(true);
 
-                try {
-                    const requestBody = sendFullObject
-                        ? { laliga_links: selectedItems }  // Apenas para /execute-futebol
-                        : { links: selectedItems.map(item => item.link) }; // Apenas os links para os outros endpoints
+                const requestBody = sendFullObject
+                    ? { laliga_links: selectedItems }
+                    : { links: selectedItems.map(item => item.link) };
 
-                    console.log("Enviando:", requestBody);
-
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(requestBody),
-                    });
-
+                fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestBody),
+                })
+                .then(response => {
                     if (!response.ok) {
-                        const errorDetails = await response.text();
-                        console.error(`Erro ao atualizar ${endpoint}:`, errorDetails);
-                        alert(`Erro ao atualizar ${endpoint}: ${errorDetails || 'Verifique os logs.'}`);
-                        return;
+                        return response.text().then(text => { throw new Error(text); });
                     }
-
                     alert(successMessage);
                     window.location.reload();
-                } catch (error) {
-                    console.error('Erro ao chamar a API:', error);
+                })
+                .catch(error => {
+                    console.error(`❌ Erro ao atualizar ${endpoint}:`, error);
                     alert(`Erro ao atualizar ${endpoint}.`);
-                } finally {
-                    showLoadingMessage(false);
-                }
+                })
+                .finally(() => showLoadingMessage(false));
             }
 
             document.getElementById('executeAll10').addEventListener('click', () => executeAction('/execute-futebol', 'TIME atualizado com sucesso!', true));
             document.getElementById('executeAll1').addEventListener('click', () => executeAction('/execute-jogadores', 'Jogadores atualizados com sucesso!'));
             document.getElementById('executeAll2').addEventListener('click', () => executeAction('/execute-lesoes', 'Lesões atualizadas com sucesso!'));
 
-            // Adicionando funcionalidade de ordenação
-            document.querySelectorAll('th[data-column]').forEach(header => {
-                header.addEventListener('click', function () {
-                    console.log(`Ordenando por ${this.getAttribute('data-column')}`);
-                    const column = this.getAttribute('data-column');
-                    const order = this.getAttribute('data-order');
-                    const sortedData = [...data].sort((a, b) => {
-                        return order === 'asc' 
-                            ? a[column].localeCompare(b[column])
-                            : b[column].localeCompare(a[column]);
-                    });
+            document.getElementById('executeRank').addEventListener('click', () => executeApiCall('/execute-rank', 'Rank atualizado com sucesso!'));
+            document.getElementById('executeOdds').addEventListener('click', () => executeApiCall('/execute-odds', 'Odds atualizados com sucesso!'));
+            document.getElementById('executeScript').addEventListener('click', () => executeApiCall('/execute-script', 'Links atualizados com sucesso!'));
+            document.getElementById('executeScript1').addEventListener('click', () => executeApiCall('/futebollink', 'Links de Futebol atualizados com sucesso!'));
 
-                    this.setAttribute('data-order', order === 'asc' ? 'desc' : 'asc');
-                    renderTable(sortedData);
-                });
-            });
-
-            console.log("Eventos carregados!");
+            console.log("✅ Eventos adicionados com sucesso!");
         });
     </script>
 </body>
