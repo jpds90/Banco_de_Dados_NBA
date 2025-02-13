@@ -123,116 +123,6 @@ app.post("/salvar-url", async (req, res) => {
         client.release();
     }
 });
-app.get('/golsemcasa', async (req, res) => {
-    try {
-        // Captura o nome da tabela da query string
-        const tableName = req.query.tableName || 'odds';
-
-        // Log para verificar se o tableName está chegando corretamente
-        console.log(`📌 Nome da tabela recebida: ${tableName}`);
-
-        // Buscar os jogos da tabela especificada
-        const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
-        const oddsRows = oddsResult.rows;
-
-        console.log(`🔍 Registros encontrados: ${oddsRows.length}`);
-
-        const results = [];
-
-        for (const { time_home, time_away } of oddsRows) {
-        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-
-          // Verificar tabelas existentes
-          const tablesResult = await pool.query(`
-              SELECT table_name 
-              FROM information_schema.tables 
-              WHERE table_name = $1 OR table_name = $2
-          `, [homeTable, awayTable]);
-
-          const tableNames = tablesResult.rows.map(row => row.table_name);
-
-// Calcular média de Gols do time da casa
-let homeAvg = 0;
-if (tableNames.includes(homeTable)) {
-  const homeScoresResult = await pool.query(`
-      SELECT resultadohome, data_hora 
-      FROM ${homeTable} 
-      WHERE timehome = $1
-ORDER BY 
-  -- Prioriza registros no formato DD.MM. HH:MI
-  CASE
-      WHEN datahora LIKE '__.__. __:__' THEN 1
-      ELSE 2
-  END,
-  -- Ordena pela data/hora dentro de cada grupo de formatos
-  CASE
-      WHEN datahora LIKE '__.__. __:__' THEN 
-          TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-      WHEN datahora LIKE '__.__.____ __:__' THEN 
-          TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-  END DESC
-          LIMIT 12
-  `, [time_home]);
-
-  const homeScores = homeScoresResult.rows
-      .map(row => parseInt(row.home_score, 10))
-      .filter(score => !isNaN(score));
-
-  homeAvg = homeScores.length 
-      ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
-      : 0;
-}
-
-// Calcular média de Gols do time visitante
-let awayAvg = 0;
-if (tableNames.includes(awayTable)) {
-  const awayScoresResult = await pool.query(`
-      SELECT resultadoaway, data_hora 
-      FROM ${awayTable} 
-      WHERE away_team = $1
-ORDER BY 
-  -- Prioriza registros no formato DD.MM. HH:MI
-  CASE
-      WHEN datahora LIKE '__.__. __:__' THEN 1
-      ELSE 2
-  END,
-  -- Ordena pela data/hora dentro de cada grupo de formatos
-  CASE
-      WHEN datahora LIKE '__.__. __:__' THEN 
-          TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-      WHEN datahora LIKE '__.__.____ __:__' THEN 
-          TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
-  END DESC
-          LIMIT 12
-  `, [time_away]);
-
-  const awayScores = awayScoresResult.rows
-      .map(row => parseInt(row.away_score, 10))
-      .filter(score => !isNaN(score));
-
-  awayAvg = awayScores.length 
-      ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
-      : 0;
-}
-
-
-          // Garantir soma inteira para total_pontos
-          results.push({
-              time_home,
-              time_away,
-              home_avg: homeAvg,
-              away_avg: awayAvg,
-              total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
-          });
-      }
-
-      res.json(results);
-  } catch (error) {
-      console.error('Erro ao processar os dados:', error);
-      res.status(500).send('Erro no servidor');
-  }
-});
 
 
 //Futebol------------------Futebol------------futebol------------------------
@@ -489,6 +379,117 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 
 
 
+app.get('/golsemcasa', async (req, res) => {
+    try {
+        // Captura o nome da tabela da query string
+        const tableName = req.query.tableName || 'odds';
+
+        // Log para verificar se o tableName está chegando corretamente
+        console.log(`📌 Nome da tabela recebida: ${tableName}`);
+
+        // Buscar os jogos da tabela especificada
+        const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
+        const oddsRows = oddsResult.rows;
+
+        console.log(`🔍 Qtd de registros encontrados: ${oddsRows.length}`);
+
+        const results = [];
+        console.log(`🔍 Registros encontrados: ${results}`);
+
+        for (const { time_home, time_away } of oddsRows) {
+        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+          // Verificar tabelas existentes
+          const tablesResult = await pool.query(`
+              SELECT table_name 
+              FROM information_schema.tables 
+              WHERE table_name = $1 OR table_name = $2
+          `, [homeTable, awayTable]);
+
+          const tableNames = tablesResult.rows.map(row => row.table_name);
+
+// Calcular média de Gols do time da casa
+let homeAvg = 0;
+if (tableNames.includes(homeTable)) {
+  const homeScoresResult = await pool.query(`
+      SELECT resultadohome, data_hora 
+      FROM ${homeTable} 
+      WHERE timehome = $1
+ORDER BY 
+  -- Prioriza registros no formato DD.MM. HH:MI
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 1
+      ELSE 2
+  END,
+  -- Ordena pela data/hora dentro de cada grupo de formatos
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 
+          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+      WHEN data_hora LIKE '__.__.____ __:__' THEN 
+          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
+  END DESC
+          LIMIT 12
+  `, [time_home]);
+
+  const homeScores = homeScoresResult.rows
+      .map(row => parseInt(row.resultadohome, 10))
+      .filter(score => !isNaN(score));
+
+  homeAvg = homeScores.length 
+      ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
+      : 0;
+}
+
+// Calcular média de Gols do time visitante
+let awayAvg = 0;
+if (tableNames.includes(awayTable)) {
+  const awayScoresResult = await pool.query(`
+      SELECT resultadoaway, data_hora 
+      FROM ${awayTable} 
+      WHERE away_team = $1
+ORDER BY 
+  -- Prioriza registros no formato DD.MM. HH:MI
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 1
+      ELSE 2
+  END,
+  -- Ordena pela data/hora dentro de cada grupo de formatos
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 
+          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+      WHEN data_hora  LIKE '__.__.____ __:__' THEN 
+          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
+  END DESC
+          LIMIT 12
+  `, [time_away]);
+
+  const awayScores = awayScoresResult.rows
+      .map(row => parseInt(row.resultadoaway, 10))
+      .filter(score => !isNaN(score));
+
+  awayAvg = awayScores.length 
+      ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
+      : 0;
+}
+
+
+          // Garantir soma inteira para total_pontos
+          results.push({
+              time_home,
+              time_away,
+              home_avg: homeAvg,
+              away_avg: awayAvg,
+              total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
+          });
+      }
+
+      res.json(results);
+  } catch (error) {
+      console.error('Erro ao processar os dados:', error);
+      res.status(500).send('Erro no servidor');
+  }
+});
 
 
 
