@@ -345,7 +345,13 @@ const scrapeResults10 = async (link, team_name) => {
     } else {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
     }
-
+    if (team_name && typeof team_name === 'string') {
+        // Exemplo: transforma "Girona" em "girona_futebol"
+        teamId = team_name.replace(/\s+/g, '_').toLowerCase();
+        console.log(`ID do time processado: ${teamId}`);
+    } else {
+        console.log('Erro: team_name não foi fornecido ou não é válido.');
+    }
     await sleep(10000);
     await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
 
