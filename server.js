@@ -144,16 +144,20 @@ app.get("/buscar-times", async (req, res) => {
   }
 });
 
-// Rota para calcular as médias de gols
 // Rota para calcular as médias de gols, semelhante a /head-to-head-averages
 app.get('/confrontosfutebol', async (req, res) => {
     try {
-        // Se nenhum nome de tabela for passado, usar 'odds' como padrão
+        // Captura o nome da tabela da query string
         const tableName = req.query.tableName || 'odds';
+
+        // Log para verificar se o tableName está chegando corretamente
+        console.log(`📌 Nome da tabela recebida: ${tableName}`);
 
         // Buscar os jogos da tabela especificada
         const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
         const oddsRows = oddsResult.rows;
+
+        console.log(`🔍 Registros encontrados: ${oddsRows.length}`);
 
         const results = [];
 
