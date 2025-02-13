@@ -266,7 +266,7 @@ const fetchLinksFromDatabase1 = async (tableName) => {
   const modifiedTableName = `${tableName}s`; // Adiciona o "s" ao nome da tabela
 
   try {
-    console.log(`🔍 Buscando links na tabela: ${modifiedTableName}...`);
+    console.log(`🔍 Buscando dados na tabela: ${modifiedTableName}...`);
 
     // Verifica se a tabela realmente existe no banco de dados
     const checkTable = await client.query(
@@ -279,26 +279,25 @@ const fetchLinksFromDatabase1 = async (tableName) => {
       return;
     }
 
-    // Busca os links na tabela
-    const result = await client.query(`SELECT link FROM ${modifiedTableName}`);
+    // Busca os registros na tabela, agora incluindo team_name e link
+    const result = await client.query(`SELECT team_name, link FROM ${modifiedTableName}`);
     if (result.rows.length > 0) {
-      console.log(`✅ ${result.rows.length} links encontrados.`);
-      const links = result.rows.map(row => row.link);
-      
-      // Itera e chama o scraping para cada link
-      for (const link of links) {
-        console.log("🔄 Chamando scrapeResults10 para:", link);
-        await scrapeResults10(link);
+      console.log(`✅ ${result.rows.length} registros encontrados.`);
+      // Itera e chama o scraping para cada registro, enviando team_name e link
+      for (const registro of result.rows) {
+        console.log("🔄 Chamando scrapeResults10 para:", registro.link, "com team_name:", registro.team_name);
+        await scrapeResults10(registro.link, registro.team_name);
       }
     } else {
-      console.log("⚠️ Nenhum link encontrado.");
+      console.log("⚠️ Nenhum registro encontrado.");
     }
   } catch (error) {
-    console.error(`❌ Erro ao buscar ou processar os links na tabela ${modifiedTableName}:`, error);
+    console.error(`❌ Erro ao buscar ou processar os dados na tabela ${modifiedTableName}:`, error);
   } finally {
     client.release();
   }
 };
+
 
 // Função para remover caracteres especiais e normalizar as strings
 function normalizeString(str) {
