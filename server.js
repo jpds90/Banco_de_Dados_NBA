@@ -215,21 +215,35 @@ app.get('/confrontosfutebol', async (req, res) => {
 
 app.get('/probabilidade-vitoria', async (req, res) => {
   try {
+    console.log("Recebendo requisição para /probabilidade-vitoria");
+    
     const { tableName } = req.query;
+    console.log("Parâmetro recebido - tableName:", tableName);
 
     // Validação para garantir que tableName não está vazio
     if (!tableName) {
+      console.error("Erro: Nome da tabela não fornecido");
       return res.status(400).json({ error: 'Nome da tabela não fornecido' });
     }
 
     const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
     const oddsRows = oddsResult.rows;
 
+    console.log(`Foram encontrados ${oddsRows.length} registros na tabela ${tableName}`);
+
+    if (oddsRows.length === 0) {
+      return res.status(404).json({ error: `Nenhum jogo encontrado na tabela ${tableName}` });
+    }
+
     const results = [];
 
     for (const { time_home, time_away } of oddsRows) {
+      console.log(`Processando jogo: ${time_home} vs ${time_away}`);
+
       const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
       const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+      console.log("Tabelas geradas -> homeTable:", homeTable, "| awayTable:", awayTable);
 
       // Buscar os dados estatísticos da tabela do time da casa (homeTable)
       const query = `
@@ -243,10 +257,16 @@ app.get('/probabilidade-vitoria', async (req, res) => {
         WHERE timehome = $1 AND timeaway = $2;
       `;
 
+      console.log("Executando query na tabela:", homeTable);
+      console.log("Parâmetros -> timehome:", time_home, "| timeaway:", time_away);
+
       const { rows } = await pool.query(query, [time_home, time_away]);
 
+      console.log(`Resultados encontrados: ${rows.length}`);
+
       if (rows.length === 0) {
-        return res.status(404).json({ error: `Nenhum dado encontrado para ${time_home} vs ${time_away}.` });
+        console.warn(`Nenhum dado encontrado para ${time_home} vs ${time_away} na tabela ${homeTable}`);
+        continue;
       }
 
       // Preparação dos dados para o modelo
@@ -258,6 +278,8 @@ app.get('/probabilidade-vitoria', async (req, res) => {
       ]);
 
       const labels = rows.map(row => row.vitoria);
+
+      console.log(`Treinando modelo com ${data.length} amostras`);
 
       // Treinar o modelo de regressão logística
       const X = new Matrix(data);
@@ -274,7 +296,11 @@ app.get('/probabilidade-vitoria', async (req, res) => {
         data.reduce((sum, row) => sum + row[3], 0) / data.length,
       ];
 
+      console.log("Média das características calculada:", meanFeatures);
+
       const probability = logisticRegression.predictProbability(new Matrix([meanFeatures]));
+
+      console.log(`Probabilidade de vitória calculada para ${time_home}: ${probability[0][1]}`);
 
       // Adiciona os resultados no array de retorno
       results.push({
@@ -285,6 +311,7 @@ app.get('/probabilidade-vitoria', async (req, res) => {
     }
 
     // Retorna os resultados de todos os jogos analisados
+    console.log("Finalizando requisição. Resultados:", results);
     res.json({ resultados: results });
 
   } catch (error) {
@@ -292,6 +319,7 @@ app.get('/probabilidade-vitoria', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+
 
 
 
