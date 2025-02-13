@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Links NBA</title>
+    <title>Atualizar Dados</title>
     <style>
         table {
             width: 100%;
@@ -97,13 +97,8 @@
                 });
         }
 
-        document.getElementById('loadNBA').addEventListener('click', () => {
-            loadLinks('/links');
-        });
-
-        document.getElementById('loadFutebol').addEventListener('click', () => {
-            loadLinks('/linksfut');
-        });
+        document.getElementById('loadNBA').addEventListener('click', () => loadLinks('/links'));
+        document.getElementById('loadFutebol').addEventListener('click', () => loadLinks('/linksfut'));
 
         function showLoadingMessage(show) {
             document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
@@ -130,9 +125,7 @@
                     console.error('Erro ao chamar a API:', error);
                     alert('Erro ao executar a ação.');
                 })
-                .finally(() => {
-                    showLoadingMessage(false);
-                });
+                .finally(() => showLoadingMessage(false));
         }
 
         document.getElementById('executeRank').addEventListener('click', () => executeApiCall('/execute-rank', 'Rank atualizado com sucesso!'));
@@ -140,7 +133,7 @@
         document.getElementById('executeScript').addEventListener('click', () => executeApiCall('/execute-script', 'Links atualizados com sucesso!'));
         document.getElementById('executeScript1').addEventListener('click', () => executeApiCall('/futebollink', 'Links de Futebol atualizados com sucesso!'));
 
-        async function executeBothActions() {
+        async function executeAction(endpoint, successMessage, sendFullObject = false) {
             const selectedItems = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
                 .map(checkbox => ({
                     link: checkbox.getAttribute('data-link'),
@@ -155,53 +148,14 @@
             showLoadingMessage(true);
 
             try {
-                const endpoints = ['/execute-jogos', '/execute-jogadores', '/execute-lesoes'];
-                for (const endpoint of endpoints) {
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ links: selectedItems }),
-                    });
+                const requestBody = sendFullObject
+                    ? { laliga_links: selectedItems }  // Apenas para /execute-futebol
+                    : { links: selectedItems.map(item => item.link) }; // Apenas os links para os outros endpoints
 
-                    if (!response.ok) {
-                        const errorDetails = await response.text();
-                        console.error(`Erro ao atualizar ${endpoint}:`, errorDetails);
-                        alert(`Erro ao atualizar ${endpoint}: ${errorDetails || 'Verifique os logs.'}`);
-                        return;
-                    }
-                }
-
-                alert('Jogos, Jogadores e Lesões atualizados com sucesso!');
-                window.location.reload();
-            } catch (error) {
-                console.error('Erro ao chamar a API:', error);
-                alert('Erro ao atualizar os dados.');
-            } finally {
-                showLoadingMessage(false);
-            }
-        }
-
-        document.getElementById('executeAll').addEventListener('click', executeBothActions);
-
-        async function executeAction(endpoint, successMessage) {
-            const selectedItems = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
-                .map(checkbox => ({
-                    link: checkbox.getAttribute('data-link'),
-                    team_name: checkbox.getAttribute('data-team_name')
-                }));
-
-            if (selectedItems.length === 0) {
-                alert('Por favor, selecione pelo menos uma equipe.');
-                return;
-            }
-
-            showLoadingMessage(true);
-
-            try {
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ links: selectedItems }),
+                    body: JSON.stringify(requestBody),
                 });
 
                 if (!response.ok) {
@@ -221,48 +175,25 @@
             }
         }
 
+        document.getElementById('executeAll10').addEventListener('click', () => executeAction('/execute-futebol', 'TIME atualizado com sucesso!', true));
         document.getElementById('executeAll1').addEventListener('click', () => executeAction('/execute-jogadores', 'Jogadores atualizados com sucesso!'));
         document.getElementById('executeAll2').addEventListener('click', () => executeAction('/execute-lesoes', 'Lesões atualizadas com sucesso!'));
 
-        async function executeAction1(endpoint, successMessage) {
-            const selectedItems = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
-                .map(checkbox => ({
-                    link: checkbox.getAttribute('data-link'),
-                    team_name: checkbox.getAttribute('data-team_name')
-                }));
-
-            if (selectedItems.length === 0) {
-                alert('Por favor, selecione pelo menos uma equipe.');
-                return;
-            }
-
-            showLoadingMessage(true);
-
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ laliga_links: selectedItems }),
+        // Adicionando funcionalidade de ordenação
+        document.querySelectorAll('th[data-column]').forEach(header => {
+            header.addEventListener('click', function () {
+                const column = this.getAttribute('data-column');
+                const order = this.getAttribute('data-order');
+                const sortedData = [...data].sort((a, b) => {
+                    return order === 'asc' 
+                        ? a[column].localeCompare(b[column])
+                        : b[column].localeCompare(a[column]);
                 });
 
-                if (!response.ok) {
-                    const errorDetails = await response.text();
-                    console.error(`Erro ao atualizar ${endpoint}:`, errorDetails);
-                    alert(`Erro ao atualizar ${endpoint}: ${errorDetails || 'Verifique os logs.'}`);
-                    return;
-                }
-
-                alert(successMessage);
-                window.location.reload();
-            } catch (error) {
-                console.error('Erro ao chamar a API:', error);
-                alert(`Erro ao atualizar ${endpoint}.`);
-            } finally {
-                showLoadingMessage(false);
-            }
-        }
-
-        document.getElementById('executeAll10').addEventListener('click', () => executeAction1('/execute-futebol', 'TIME atualizado com sucesso!'));
+                this.setAttribute('data-order', order === 'asc' ? 'desc' : 'asc');
+                renderTable(sortedData);
+            });
+        });
     </script>
 </body>
 </html>
