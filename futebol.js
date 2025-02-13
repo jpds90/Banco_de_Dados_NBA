@@ -319,7 +319,7 @@ const scrapeResults10 = async (link, team_name) => {
     console.log('Link completo para scraping:', fullLink);
 
     const browser = await puppeteer.launch({
-        headless: true, // Garante que o navegador rode em modo headless
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -337,10 +337,9 @@ const scrapeResults10 = async (link, team_name) => {
     const url = await page.evaluate(() => window.location.href);
     console.log('URL capturada:', url);
 
-    // Em vez de extrair o nome do time da URL, vamos usar o team_name recebido:
     let teamID10 = null;
     if (team_name && typeof team_name === 'string') {
-        // Exemplo: transformar "Girona" em "girona_futebol"
+        // Exemplo: transforma "Girona" em "girona_futebol"
         teamID10 = team_name.replace(/\s+/g, '_').toLowerCase() + '_futebol';
         console.log(`ID do time processado (via team_name): ${teamID10}`);
     } else {
