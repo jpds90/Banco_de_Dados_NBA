@@ -166,7 +166,7 @@
 
          // Preencher as tabelas de médias e confrontos diretos
          try {
-            const averagesResponse = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol`);
+            const averagesResponse = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`);
             const averagesData = await averagesResponse.json();
             
             averagesTable.innerHTML = "";
