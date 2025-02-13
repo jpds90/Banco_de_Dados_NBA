@@ -406,22 +406,24 @@ function runScript(scriptPath, res, scriptName) {
     });
 }
 
-// ✅ Função para buscar links da tabela no banco de dados
+// ✅ Função para buscar dados da tabela no banco de dados
 const fetchLinksFromDatabase = async (tableName) => {
     const client = await pool.connect();
     try {
-        console.log(`🔍 Buscando links na tabela: ${tableName}...`);
-        const result = await client.query(`SELECT link FROM ${tableName}`);
+        console.log(`🔍 Buscando dados na tabela: ${tableName}...`);
+        // Seleciona as colunas team_name, link e event_time
+        const result = await client.query(`SELECT team_name, link, event_time FROM ${tableName}`);
 
         if (result.rows.length > 0) {
-            console.log(`✅ ${result.rows.length} links encontrados.`);
-            return result.rows.map(row => row.link);
+            console.log(`✅ ${result.rows.length} registros encontrados.`);
+            // Retorna o array de objetos com team_name, link e event_time
+            return result.rows;
         } else {
-            console.log("⚠️ Nenhum link encontrado.");
+            console.log("⚠️ Nenhum registro encontrado.");
             return [];
         }
     } catch (error) {
-        console.error(`❌ Erro ao buscar links na tabela ${tableName}:`, error);
+        console.error(`❌ Erro ao buscar dados na tabela ${tableName}:`, error);
         return [];
     } finally {
         client.release();
