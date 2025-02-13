@@ -311,9 +311,10 @@ function normalizeString(str) {
 }
 
 // Função de scraping
-const scrapeResults10 = async (link) => {
-    const data = [];
+// Função de scraping modificada para receber team_name
+const scrapeResults10 = async (link, team_name) => {
     console.log(`Iniciando o scraping para o link: ${link}`);
+    console.log(`Team name recebido: ${team_name}`);
 
     const fullLink = `${link}resultados/`;
     console.log('Link completo para scraping:', fullLink);
@@ -327,7 +328,7 @@ const scrapeResults10 = async (link) => {
             '--disable-accelerated-2d-canvas',
             '--no-zygote',
             '--single-process',
-        ], // Evita restrições no ambiente do Render
+        ],
     });
 
     const page = await browser.newPage();
@@ -337,17 +338,14 @@ const scrapeResults10 = async (link) => {
     const url = await page.evaluate(() => window.location.href);
     console.log('URL capturada:', url);
 
-    const start_index = url.indexOf("/equipa/") + "/equipa/".length;
-    const end_index = url.indexOf("/", start_index);
-    const teamId = url.substring(start_index, end_index).replace(/-/g, ' ');
-
+    // Em vez de extrair o nome do time da URL, vamos usar o team_name recebido:
     let teamID10 = null;
-
-    if (start_index !== -1 && end_index !== -1) {
-        teamID10 = `${url.substring(start_index, end_index).replace(/-/g, '_').toLowerCase()}_futebol`;
-        console.log(`ID do time processado: ${teamID10}`);
+    if (team_name && typeof team_name === 'string') {
+        // Exemplo: transformar "Girona" em "girona_futebol"
+        teamID10 = team_name.replace(/\s+/g, '_').toLowerCase() + '_futebol';
+        console.log(`ID do time processado (via team_name): ${teamID10}`);
     } else {
-        console.log('Erro ao extrair o ID da equipe.');
+        console.log('Erro: team_name não foi fornecido ou não é válido.');
     }
 
     await sleep(10000);
