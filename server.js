@@ -215,94 +215,96 @@ app.get('/confrontosfutebol', async (req, res) => {
 
 app.get('/probabilidade-vitoria', async (req, res) => {
   try {
-    const { tableName, timeHome, timeAway } = req.query;
+    const { tableName } = req.query;
 
-    // Validação dos parâmetros
-    if (!tableName || !timeHome || !timeAway) {
-      return res.status(400).json({ error: 'Parâmetros inválidos. Certifique-se de fornecer tableName, timeHome e timeAway.' });
+    // Validação para garantir que tableName não está vazio
+    if (!tableName) {
+      return res.status(400).json({ error: 'Nome da tabela não fornecido' });
     }
 
-    // Buscar os times na tabela especificada
     const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
     const oddsRows = oddsResult.rows;
 
-    if (oddsRows.length === 0) {
-      return res.status(404).json({ error: 'Nenhum time encontrado na tabela especificada.' });
+    const results = [];
+
+    for (const { time_home, time_away } of oddsRows) {
+      const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+      const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+      // Verifica se as tabelas existem no banco
+      const tableCheckQuery = `
+        SELECT table_name 
+        FROM information_schema.tables 
+        WHERE table_schema = 'public' AND (table_name = $1 OR table_name = $2);
+      `;
+      const tableCheck = await pool.query(tableCheckQuery, [homeTable, awayTable]);
+
+      if (tableCheck.rows.length < 2) {
+        return res.status(404).json({ error: `Tabelas ${homeTable} ou ${awayTable} não encontradas no banco de dados.` });
+      }
+
+      // Buscar os dados estatísticos da tabela do time da casa (homeTable)
+      const query = `
+        SELECT 
+          posse_de_bola, 
+          tentativas_de_golo, 
+          remates_a_baliza, 
+          grandes_oportunidades, 
+          CASE WHEN resultadohome > resultadoaway THEN 1 ELSE 0 END as vitoria
+        FROM ${homeTable}
+        WHERE timehome = $1 AND timeaway = $2;
+      `;
+
+      const { rows } = await pool.query(query, [time_home, time_away]);
+
+      if (rows.length === 0) {
+        return res.status(404).json({ error: `Nenhum dado encontrado para ${time_home} vs ${time_away}.` });
+      }
+
+      // Preparação dos dados para o modelo
+      const data = rows.map(row => [
+        row.posse_de_bola,
+        row.tentativas_de_golo,
+        row.remates_a_baliza,
+        row.grandes_oportunidades,
+      ]);
+
+      const labels = rows.map(row => row.vitoria);
+
+      // Treinar o modelo de regressão logística
+      const X = new Matrix(data);
+      const y = labels;
+
+      const logisticRegression = new LogisticRegression({ numSteps: 1000, learningRate: 0.5 });
+      logisticRegression.train(X, y);
+
+      // Fazer previsões (usando a média das features dos dados existentes)
+      const meanFeatures = [
+        data.reduce((sum, row) => sum + row[0], 0) / data.length,
+        data.reduce((sum, row) => sum + row[1], 0) / data.length,
+        data.reduce((sum, row) => sum + row[2], 0) / data.length,
+        data.reduce((sum, row) => sum + row[3], 0) / data.length,
+      ];
+
+      const probability = logisticRegression.predictProbability(new Matrix([meanFeatures]));
+
+      // Adiciona os resultados no array de retorno
+      results.push({
+        timeHome: time_home,
+        timeAway: time_away,
+        probabilidadeVitoria: probability[0][1], // Probabilidade de vitória (classe 1)
+      });
     }
 
-    // Transformação do nome do time para o formato de tabela
-    const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-    const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-
-    // Verificar se as tabelas existem no banco
-    const tableCheckQuery = `
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' AND (table_name = $1 OR table_name = $2);
-    `;
-    const tableCheck = await pool.query(tableCheckQuery, [homeTable, awayTable]);
-
-    if (tableCheck.rows.length < 2) {
-      return res.status(404).json({ error: 'Uma ou ambas as tabelas dos times não existem no banco de dados.' });
-    }
-
-    // Construção da consulta com os nomes das tabelas dinamicamente
-    const query = `
-      SELECT 
-        posse_de_bola, 
-        tentativas_de_golo, 
-        remates_a_baliza, 
-        grandes_oportunidades, 
-        CASE WHEN resultadohome > resultadoaway THEN 1 ELSE 0 END as vitoria
-      FROM ${homeTable}
-      WHERE timehome = $1 AND timeaway = $2;
-    `;
-
-    const { rows } = await pool.query(query, [timeHome, timeAway]);
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Nenhum dado encontrado para os times especificados.' });
-    }
-
-    // Preparação dos dados para o modelo
-    const data = rows.map(row => [
-      row.posse_de_bola,
-      row.tentativas_de_golo,
-      row.remates_a_baliza,
-      row.grandes_oportunidades,
-    ]);
-
-    const labels = rows.map(row => row.vitoria);
-
-    // Treinar o modelo de regressão logística
-    const X = new Matrix(data);
-    const y = labels;
-
-    const logisticRegression = new LogisticRegression({ numSteps: 1000, learningRate: 0.5 });
-    logisticRegression.train(X, y);
-
-    // Fazer previsões (usando a média das features dos dados existentes)
-    const meanFeatures = [
-      data.reduce((sum, row) => sum + row[0], 0) / data.length,
-      data.reduce((sum, row) => sum + row[1], 0) / data.length,
-      data.reduce((sum, row) => sum + row[2], 0) / data.length,
-      data.reduce((sum, row) => sum + row[3], 0) / data.length,
-    ];
-
-    const probability = logisticRegression.predictProbability(new Matrix([meanFeatures]));
-
-    // Retornar a probabilidade de vitória
-    res.json({
-      timeHome,
-      timeAway,
-      probabilidadeVitoria: probability[0][1], // Probabilidade de vitória (classe 1)
-    });
+    // Retorna os resultados de todos os jogos analisados
+    res.json({ resultados: results });
 
   } catch (error) {
     console.error('Erro ao calcular a probabilidade de vitória:', error);
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
+
 
 
 
