@@ -485,8 +485,7 @@ app.post('/execute-Jogadores', async (req, res) => {
 });
 // Rota para executar a atualização de jogadores
 app.post('/execute-futebol', async (req, res) => {
-    console.log('Recebendo requisição:', req.body); // Debug para verificar os dados recebidos
-
+    console.log('Recebendo requisição:', req.body);
     const { laliga_links } = req.body;
 
     if (!Array.isArray(laliga_links) || laliga_links.length === 0) {
@@ -494,22 +493,21 @@ app.post('/execute-futebol', async (req, res) => {
     }
 
     try {
-        console.log('Links selecionados para Time:', laliga_links);
+        console.log('Dados recebidos:', laliga_links);
 
-        // Itera sobre cada objeto que contém team_name e link
         for (const item of laliga_links) {
-            // Extraindo team_name e link de cada objeto
-            const { team_name, link } = item;
-            console.log(`Processando time: ${team_name}, link: ${link}`);
+            const { link, team_name } = item;
+            console.log(`Processando: team_name = ${team_name}, link = ${link}`);
             await scrapeResults10(link, team_name);
         }
 
-        res.status(200).send('Jogadores atualizados com sucesso!');
+        res.status(200).send('Time atualizado com sucesso!');
     } catch (error) {
         console.error('Erro ao atualizar Jogadores:', error);
         res.status(500).send('Erro ao atualizar Jogadores.');
     }
 });
+
 
 
 // Rota para executar a atualização de jogadores
