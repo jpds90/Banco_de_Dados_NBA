@@ -231,7 +231,6 @@ app.get('/probabilidade-vitoria', async (req, res) => {
       const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
       const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
-
       // Buscar os dados estatísticos da tabela do time da casa (homeTable)
       const query = `
         SELECT 
@@ -293,7 +292,6 @@ app.get('/probabilidade-vitoria', async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor.' });
   }
 });
-
 
 
 
