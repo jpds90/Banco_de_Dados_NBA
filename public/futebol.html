@@ -3,117 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Média de Gols por Time</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        h2 {
-            text-align: center;
-        }
-        .container {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .box {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        input {
-            width: 60px;
-            padding: 5px;
-            text-align: center;
-        }
-        button {
-            padding: 10px 15px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            display: block;
-            margin: 10px auto;
-        }
-        button:hover {
-            background: #218838;
-        }
-    </style>
+    <title>Estatísticas de Futebol</title>
 </head>
 <body>
+    <h2>Filtrar por País e Liga</h2>
+    <label for="countrySelect">Escolha o País:</label>
+    <select id="countrySelect" onchange="loadLeagues()">
+        <option value="">Selecione...</option>
+    </select>
 
-    <h2>Média de Gols por Time</h2>
+    <label for="leagueSelect">Escolha a Liga:</label>
+    <select id="leagueSelect">
+        <option value="">Selecione...</option>
+    </select>
 
-    <div class="container">
-        <!-- Caixa 1: Escolha da Liga -->
-        <div class="box">
-            <h3>Escolha a Liga</h3>
-            <select id="leagueSelect">
-                <option value="laliga">La Liga</option>
-                <option value="premier">Premier League</option>
-                <option value="seriea">Série A</option>
-            </select>
-            <button id="fetchGames">Buscar Jogos</button>
-        </div>
+    <button onclick="fetchGoalAverages()">Buscar Jogos</button>
 
-        <!-- Caixa 2: Tabela -->
-        <div class="box">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Casa</th>
-                        <th>Visitante</th>
-                        <th>Média Casa</th>
-                        <th>Qtd. vezes fez gols casa</th>
-                        <th>Média Fora</th>
-                        <th>Qtd. vezes fez gols fora</th>
-                        <th>Total</th>
-                        <th>Filtrar</th>
-                    </tr>
-                </thead>
-                <tbody id="goalAveragesTable"></tbody>
-            </table>
-        </div>
-    </div>
+    <h2>Comparação de Confrontos</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Casa</th>
+                <th>Visitante</th>
+                <th>Média de Gols (Casa)</th>
+                <th>Média de Gols (Fora)</th>
+                <th>Média Total</th>
+            </tr>
+        </thead>
+        <tbody id="headToHeadTable"></tbody>
+    </table>
+
+    <h2>Média de Gols e Contagem de Partidas</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Casa</th>
+                <th>Visitante</th>
+                <th>Média de Gols (Casa)</th>
+                <th>Qtd. Jogos > Gols (Casa)</th>
+                <th>Média de Gols (Fora)</th>
+                <th>Qtd. Jogos > Gols (Fora)</th>
+                <th>Média Total</th>
+                <th>Filtrar por Gols:</th>
+            </tr>
+        </thead>
+        <tbody id="goalAveragesTable"></tbody>
+    </table>
 
     <script>
-        async function fetchGoalAverages(tableName) {
+        async function loadCountries() {
             try {
-                const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
+                const response = await fetch("https://analise-jpnba.onrender.com/countries");
+                const countries = await response.json();
+                const countrySelect = document.getElementById("countrySelect");
+
+                countries.forEach(country => {
+                    const option = document.createElement("option");
+                    option.value = country;
+                    option.textContent = country;
+                    countrySelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar países:", error);
+            }
+        }
+
+        async function loadLeagues() {
+            const country = document.getElementById("countrySelect").value;
+            const leagueSelect = document.getElementById("leagueSelect");
+            leagueSelect.innerHTML = "<option value=''>Selecione...</option>";
+
+            if (!country) return;
+
+            try {
+                const response = await fetch(`https://analise-jpnba.onrender.com/leagues?country=${country}`);
+                const leagues = await response.json();
+
+                leagues.forEach(league => {
+                    const option = document.createElement("option");
+                    option.value = league;
+                    option.textContent = league;
+                    leagueSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Erro ao carregar ligas:", error);
+            }
+        }
+
+        async function fetchGoalAverages() {
+            const country = document.getElementById("countrySelect").value;
+            const league = document.getElementById("leagueSelect").value;
+            if (!country || !league) {
+                alert("Selecione um País e uma Liga!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?country=${country}&league=${league}`);
                 const data = await response.json();
 
                 const tableBody = document.getElementById("goalAveragesTable");
-                tableBody.innerHTML = ""; // Limpa a tabela antes de inserir os novos dados
-
-                if (data.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='8'>Nenhum dado encontrado</td></tr>";
-                    return;
-                }
+                tableBody.innerHTML = "";
 
                 data.forEach(match => {
                     const row = document.createElement("tr");
-
                     row.innerHTML = `
                         <td>${match.time_home}</td>
                         <td>${match.time_away}</td>
@@ -127,32 +120,25 @@
                                 onchange="updateGoalCount('${match.time_home}', '${match.time_away}', this.value, ${JSON.stringify(match.home_goal_counts)}, ${JSON.stringify(match.away_goal_counts)})">
                         </td>
                     `;
-
                     tableBody.appendChild(row);
                 });
             } catch (error) {
                 console.error("Erro ao buscar as médias de gols:", error);
-                document.getElementById("goalAveragesTable").innerHTML = "<tr><td colspan='8'>Erro ao carregar os dados</td></tr>";
             }
         }
 
-        function updateGoalCount(homeTeam, awayTeam, goalValue, homeGoalCounts, awayGoalCounts) {
-            const homeCount = homeGoalCounts[goalValue] || 0;
-            const awayCount = awayGoalCounts[goalValue] || 0;
+        function updateGoalCount(homeTeam, awayTeam, value, homeGoalCounts, awayGoalCounts) {
+            const goalThreshold = parseFloat(value);
+            if (isNaN(goalThreshold)) return;
 
-            document.getElementById(`home-count-${homeTeam}`).textContent = homeCount;
-            document.getElementById(`away-count-${awayTeam}`).textContent = awayCount;
+            const homeCount = homeGoalCounts.filter(g => g >= goalThreshold).length;
+            const awayCount = awayGoalCounts.filter(g => g >= goalThreshold).length;
+
+            document.getElementById(`home-count-${homeTeam}`).innerText = homeCount;
+            document.getElementById(`away-count-${awayTeam}`).innerText = awayCount;
         }
 
-        // Botão de buscar jogos
-        document.getElementById("fetchGames").addEventListener("click", function () {
-            const selectedLeague = document.getElementById("leagueSelect").value;
-            if (selectedLeague) {
-                const tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
-                fetchGoalAverages(tableName);
-            }
-        });
+        loadCountries();
     </script>
-
 </body>
 </html>
