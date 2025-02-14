@@ -496,7 +496,7 @@ results.push({
     away_goal_counts: countGoals(awayScores)
 });
 
-      }
+  
 
       res.json(results);
   } catch (error) {
