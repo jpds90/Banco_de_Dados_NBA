@@ -476,8 +476,8 @@ ORDER BY
 
           // Garantir soma inteira para total_pontos
           results.push({
-              timehome,
-              timeaway,
+              time_home,
+              time_away,
               home_avg: homeAvg,
               away_avg: awayAvg,
               total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
