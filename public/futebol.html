@@ -68,6 +68,17 @@
             width: 100%;
             font-size: 16px;
         }
+
+        /* Estilo para colocar as tabelas lado a lado */
+        .last-matches {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .team-table {
+            width: 48%;  /* Largura ajustada para caber lado a lado */
+        }
     </style>
 </head>
 <body>
@@ -117,17 +128,42 @@
         </table>
 
         <h2>Últimos Jogos</h2>
-        <table id="lastMatchesTable">
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Casa</th>
-                    <th>Fora</th>
-                    <th>Placar</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <!-- Estrutura para mostrar tabelas lado a lado -->
+        <div class="last-matches">
+            <div class="team-table">
+                <h3>Santos</h3>
+                <table id="santosLastMatchesTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Casa</th>
+                            <th>Fora</th>
+                            <th>Placar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Preencher com dados dos jogos do Santos -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="team-table">
+                <h3>Palmeiras</h3>
+                <table id="palmeirasLastMatchesTable">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Casa</th>
+                            <th>Fora</th>
+                            <th>Placar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Preencher com dados dos jogos do Palmeiras -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
