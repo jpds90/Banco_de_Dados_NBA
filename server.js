@@ -482,18 +482,23 @@ ORDER BY
     }, {});
 }
 
-results.push({
-    time_home,
-    time_away,
-    home_avg: homeAvg,
-    away_avg: awayAvg,
-    total_pontos: homeAvg + awayAvg,
-    home_goal_counts: homeGoalCounts,
-    away_goal_counts: awayGoalCounts,
+          results.push({
+              time_home,
+              time_away,
+              home_avg: homeAvg,
+              away_avg: awayAvg,
+              total_pontos: homeAvg + awayAvg,
+              home_goal_counts: homeGoalCounts,
+              away_goal_counts: awayGoalCounts,
+          });
+      }
+
+      res.json(results);
+  } catch (error) {
+      console.error('Erro ao processar os dados:', error);
+      res.status(500).send('Erro no servidor');
+  }
 });
-
-
-
 
 
 
