@@ -1,230 +1,206 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Casa de Apostas Esportivas</title>
-   <link rel="preconnect" href="https://fonts.googleapis.com">
-   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-   <style>
-      body {
-         font-family: 'Roboto', sans-serif;
-         background-color: #1e1e1e;
-         color: #f1f1f1;
-         text-align: center;
-         padding: 20px;
-      }
-      select, button {
-         padding: 10px;
-         font-size: 16px;
-         margin: 10px;
-      }
-      .matches {
-         margin-top: 20px;
-      }
-      .match {
-         padding: 10px;
-         background-color: #333;
-         border-radius: 5px;
-         margin: 5px 0;
-      }
-      table {
-         width: 100%;
-         margin-top: 30px;
-         border-collapse: collapse;
-      }
-      th, td {
-         padding: 10px;
-         border: 1px solid #444;
-      }
-      th {
-         background-color: #555;
-      }
-      .side-by-side {
-         display: flex;
-         justify-content: space-between;
-      }
-   </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas de Futebol</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h2 {
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .box {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        input {
+            width: 60px;
+            padding: 5px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 10px auto;
+        }
+        button:hover {
+            background: #218838;
+        }
+    </style>
 </head>
 <body>
-   <h1>Casa de Apostas Esportivas</h1>
-   
-   <select id="countrySelect">
-      <option value="">Escolha um país</option>
-   </select>
-   
-   <select id="leagueSelect" style="display: none;"></select>
-   
-   <button id="fetchGames" style="display: none;">Buscar Jogos</button>
-   
-   <div class="matches" id="matches"></div>
 
-   <!-- Segunda Linha de Tabelas Lado a Lado -->
-   <div class="side-by-side">
-      <table>
-         <thead>
-            <tr>
-               <th>Casa</th>
-               <th>Visitante</th>
-               <th>Média Confronto (Casa)</th>
-               <th>Média Confronto (Visitante)</th>
-               <th>Total de Gol</th>
-            </tr>
-         </thead>
-         <tbody id="headToHeadTable"></tbody>
-      </table>
-   
-<table>
-    <thead>
-        <tr>
-            <th>Casa</th>
-            <th>Visitante</th>
-            <th>Média de Gols (Casa)</th>
-            <th>Média de Gols (Fora)</th>
-            <th>Média de Gols (Total)</th>
-        </tr>
-    </thead>
-    <tbody id="goalAveragesTable"></tbody>
-</table>
-</div>
-   <script>
-      const countries = {
-         "Brasil": ["Série A", "Série B", "Série C"],
-         "Portugal": ["Primeira Liga", "Segunda Liga"],
-         "Espanha": ["LaLiga", "Taça do Rei de Espanha"]
-      };
+    <h2>Estatísticas de Futebol</h2>
 
-      const countrySelect = document.getElementById("countrySelect");
-      const leagueSelect = document.getElementById("leagueSelect");
-      const fetchGamesButton = document.getElementById("fetchGames");
-      const matchesDiv = document.getElementById("matches");
-      const averagesTable = document.getElementById("averagesTable");
-      const headToHeadTable = document.getElementById("headToHeadTable");
+    <div class="container">
+        <!-- Caixa 1: Escolha da Liga -->
+        <div class="box">
+            <h3>Escolha a Liga</h3>
+            <select id="leagueSelect">
+                <option value="laliga">La Liga</option>
+                <option value="premier">Premier League</option>
+                <option value="seriea">Série A</option>
+            </select>
+            <button id="fetchGames">Buscar Jogos</button>
+        </div>
+    </div>
 
-      // Preencher dropdown de países
-      for (let country in countries) {
-         let option = document.createElement("option");
-         option.value = country;
-         option.textContent = country;
-         countrySelect.appendChild(option);
-      }
+    <div class="container">
+        <!-- Caixa 2: Média de Gols -->
+        <div class="box">
+            <h3>Média de Gols</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Casa</th>
+                        <th>Visitante</th>
+                        <th>Média Casa</th>
+                        <th>Qtd. vezes fez gols casa</th>
+                        <th>Média Fora</th>
+                        <th>Qtd. vezes fez gols fora</th>
+                        <th>Total</th>
+                        <th>Filtrar</th>
+                    </tr>
+                </thead>
+                <tbody id="goalAveragesTable"></tbody>
+            </table>
+        </div>
 
-      countrySelect.addEventListener("change", function() {
-         leagueSelect.innerHTML = "<option value=''>Escolha uma liga</option>";
-         leagueSelect.style.display = "none";
-         fetchGamesButton.style.display = "none";
-         matchesDiv.innerHTML = "";
-         
-         if (this.value) {
-            countries[this.value].forEach(league => {
-               let option = document.createElement("option");
-               option.value = league;
-               option.textContent = league;
-               leagueSelect.appendChild(option);
-            });
-            leagueSelect.style.display = "block";
-         }
-      });
+        <!-- Caixa 3: Confrontos Diretos -->
+        <div class="box">
+            <h3>Head to Head</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Casa</th>
+                        <th>Visitante</th>
+                        <th>Pontos Casa</th>
+                        <th>Pontos Visitante</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="headToHeadTable"></tbody>
+            </table>
+        </div>
+    </div>
 
-      leagueSelect.addEventListener("change", function() {
-         fetchGamesButton.style.display = this.value ? "block" : "none";
-      });
+    <script>
+        async function fetchData(tableName) {
+            try {
+                const [goalResponse, headToHeadResponse] = await Promise.all([
+                    fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`),
+                    fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`)
+                ]);
 
-      fetchGamesButton.addEventListener("click", async function() {
-         const selectedLeague = leagueSelect.value;
-         if (!selectedLeague) return;
-         
-         let tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
-         console.log(`Buscando dados para a tabela: ${tableName}`);
-         
-         matchesDiv.innerHTML = "Carregando...";
-         
-         try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
-           console.log(`URL dos Confrontos: ${response}`);
-            const result = await response.json();
-            
-            matchesDiv.innerHTML = "";
-            
-            if (result.success && result.data.length > 0) {
-               result.data.forEach(match => {
-                  let matchElement = document.createElement("div");
-                  matchElement.classList.add("match");
-                  matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
-                  matchesDiv.appendChild(matchElement);
-               });
-            } else {
-               matchesDiv.innerHTML = "<p>Nenhum jogo encontrado.</p>";
+                const goalData = await goalResponse.json();
+                const headToHeadData = await headToHeadResponse.json();
+
+                updateGoalAveragesTable(goalData);
+                updateHeadToHeadTable(headToHeadData);
+            } catch (error) {
+                console.error("Erro ao buscar os dados:", error);
             }
-         } catch (error) {
-            console.error("Erro ao buscar os jogos:", error);
-            matchesDiv.innerHTML = "<p>Erro ao buscar os jogos. Tente novamente.</p>";
-         }
-
-         // Preencher as tabelas de médias e confrontos diretos
-         try {
-            const averagesResponse = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`);
-            const averagesData = await averagesResponse.json();
-            
-            headToHeadTable.innerHTML = "";
-
-               let headToHeadRow = document.createElement("tr");
-               headToHeadRow.innerHTML = `
-                  <td>${item.timehome}</td>
-                  <td>${item.timeaway}</td>
-                  <td>${item.home_average_points}</td>
-                  <td>${item.away_average_points}</td>
-                  <td>${item.total_points}</td>
-               `;
-               headToHeadTable.appendChild(headToHeadRow);
-            });
-         } catch (error) {
-            console.error('Erro ao buscar dados de confrontos:', error);
-         }
-      });
-async function fetchGoalAverages(tableName) {
-    try {
-        const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
-        const data = await response.json();
-
-        const tableBody = document.getElementById("goalAveragesTable");
-        tableBody.innerHTML = ""; // Limpa a tabela antes de inserir os novos dados
-
-        if (data.length === 0) {
-            tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
-            return;
         }
 
-        data.forEach(match => {
-            const row = document.createElement("tr");
+        function updateGoalAveragesTable(data) {
+            const tableBody = document.getElementById("goalAveragesTable");
+            tableBody.innerHTML = "";
 
-            row.innerHTML = `
-                <td>${match.time_home}</td>
-                <td>${match.time_away}</td>
-                <td>${match.home_avg}</td>
-                <td>${match.away_avg}</td>
-                <td>${match.total_pontos}</td>
-            `;
+            if (data.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='8'>Nenhum dado encontrado</td></tr>";
+                return;
+            }
 
-            tableBody.appendChild(row);
+            data.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.time_home}</td>
+                    <td>${item.time_away}</td>
+                    <td>${item.home_avg}</td>
+                    <td id="home-count-${item.time_home}">--</td>
+                    <td>${item.away_avg}</td>
+                    <td id="away-count-${item.time_away}">--</td>
+                    <td>${item.total_pontos}</td>
+                    <td>
+                        <input type="number" min="0" max="10" id="input-${item.time_home}" 
+                            onchange="updateGoalCount('${item.time_home}', '${item.time_away}', this.value, ${JSON.stringify(item.home_goal_counts)}, ${JSON.stringify(item.away_goal_counts)})">
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateHeadToHeadTable(data) {
+            const tableBody = document.getElementById("headToHeadTable");
+            tableBody.innerHTML = "";
+
+            if (data.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
+                return;
+            }
+
+            data.forEach(item => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${item.timehome}</td>
+                    <td>${item.timeaway}</td>
+                    <td>${item.home_average_points}</td>
+                    <td>${item.away_average_points}</td>
+                    <td>${item.total_points}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function updateGoalCount(homeTeam, awayTeam, goalValue, homeGoalCounts, awayGoalCounts) {
+            const homeCount = homeGoalCounts[goalValue] || 0;
+            const awayCount = awayGoalCounts[goalValue] || 0;
+
+            document.getElementById(`home-count-${homeTeam}`).textContent = homeCount;
+            document.getElementById(`away-count-${awayTeam}`).textContent = awayCount;
+        }
+
+        document.getElementById("fetchGames").addEventListener("click", function () {
+            const selectedLeague = document.getElementById("leagueSelect").value;
+            if (selectedLeague) {
+                const tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
+                fetchData(tableName);
+            }
         });
-    } catch (error) {
-        console.error("Erro ao buscar as médias de gols:", error);
-        document.getElementById("goalAveragesTable").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
-    }
-}
+    </script>
 
-// Chamando a função quando clicar no botão "Buscar Jogos"
-document.getElementById("fetchGames").addEventListener("click", function () {
-    const selectedLeague = document.getElementById("leagueSelect").value;
-    if (selectedLeague) {
-        const tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
-        fetchGoalAverages(tableName);
-    }
-});
-
-
-   </script>
 </body>
 </html>
