@@ -433,6 +433,9 @@ app.get('/golsemcasa', async (req, res) => {
                     .map(row => parseInt(row.resultadohome, 10))
                     .filter(score => !isNaN(score) && score > threshold);
 
+  homeAvg = homeScores.length 
+      ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
+      : 0;
                 homeHitsThreshold = homeScores.length;
             }
 
@@ -462,6 +465,9 @@ app.get('/golsemcasa', async (req, res) => {
                     .map(row => parseInt(row.resultadoaway, 10))
                     .filter(score => !isNaN(score) && score > threshold);
 
+  awayAvg = awayScores.length 
+      ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
+      : 0;
                 awayHitsThreshold = awayScores.length;
             }
 
@@ -469,6 +475,9 @@ app.get('/golsemcasa', async (req, res) => {
             results.push({
                 time_home,
                 time_away,
+              home_avg: homeAvg,
+              away_avg: awayAvg,
+              total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
                 home_hits_threshold: homeHitsThreshold,
                 away_hits_threshold: awayHitsThreshold
             });
