@@ -150,7 +150,7 @@
                     <td id="home-count-${item.time_home}">--</td>
                     <td>${item.away_avg}</td>
                     <td id="away-count-${item.time_away}">--</td>
-                    <td>${item.total_pontos}</td>
+                    <td>${item.total_gols}</td>
                     <td>
                         <input type="number" min="0" max="10" id="input-${item.time_home}" 
                             onchange="updateGoalCount('${item.time_home}', '${item.time_away}', this.value, ${JSON.stringify(item.home_goal_counts)}, ${JSON.stringify(item.away_goal_counts)})">
@@ -183,8 +183,8 @@
         }
 
         function updateGoalCount(homeTeam, awayTeam, goalValue, homeGoalCounts, awayGoalCounts) {
-            const homeCount = homeGoalCounts[goalValue] || 0;
-            const awayCount = awayGoalCounts[goalValue] || 0;
+            const homeCount = homeGoalCounts.filter(g => g == goalValue).length;
+            const awayCount = awayGoalCounts.filter(g => g == goalValue).length;
 
             document.getElementById(`home-count-${homeTeam}`).textContent = homeCount;
             document.getElementById(`away-count-${awayTeam}`).textContent = awayCount;
