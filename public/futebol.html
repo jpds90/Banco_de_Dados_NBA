@@ -89,7 +89,19 @@
          <tbody id="headToHeadTable"></tbody>
       </table>
    </div>
-   
+   <h2>Média de Gols por Time</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Casa</th>
+            <th>Visitante</th>
+            <th>Média de Gols (Casa)</th>
+            <th>Média de Gols (Fora)</th>
+            <th>Média de Gols (Total)</th>
+        </tr>
+    </thead>
+    <tbody id="goalAveragesTable"></tbody>
+</table>
    <script>
       const countries = {
          "Brasil": ["Série A", "Série B", "Série C"],
@@ -197,6 +209,48 @@
             console.error('Erro ao buscar dados de confrontos:', error);
          }
       });
+async function fetchGoalAverages(tableName) {
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
+        const data = await response.json();
+
+        const tableBody = document.getElementById("goalAveragesTable");
+        tableBody.innerHTML = ""; // Limpa a tabela antes de inserir os novos dados
+
+        if (data.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
+            return;
+        }
+
+        data.forEach(match => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${match.time_home}</td>
+                <td>${match.time_away}</td>
+                <td>${match.home_avg}</td>
+                <td>${match.away_avg}</td>
+                <td>${match.total_pontos}</td>
+            `;
+
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error("Erro ao buscar as médias de gols:", error);
+        document.getElementById("goalAveragesTable").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
+    }
+}
+
+// Chamando a função quando clicar no botão "Buscar Jogos"
+document.getElementById("fetchGames").addEventListener("click", function () {
+    const selectedLeague = document.getElementById("leagueSelect").value;
+    if (selectedLeague) {
+        const tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
+        fetchGoalAverages(tableName);
+    }
+});
+
+
    </script>
 </body>
 </html>
