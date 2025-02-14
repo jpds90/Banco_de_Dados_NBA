@@ -201,7 +201,6 @@ app.get("/buscar-times", async (req, res) => {
   }
 });
 
-// Rota para calcular as médias de gols, semelhante a /head-to-head-averages
 app.get('/confrontosfutebol', async (req, res) => {
     try {
         // Captura o nome da tabela da query string
@@ -219,9 +218,8 @@ app.get('/confrontosfutebol', async (req, res) => {
         const results = [];
 
         for (const { time_home, time_away } of oddsRows) {
-        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-
+            const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+            const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
             const confrontationResult = await pool.query(`
                 SELECT resultadohome, resultadoaway, timehome, timeaway
@@ -235,35 +233,34 @@ app.get('/confrontosfutebol', async (req, res) => {
 
             let totalHomePoints = 0;
             let totalAwayPoints = 0;
-            
+
             confrontations.forEach(row => {
                 totalHomePoints += parseInt(row.resultadohome, 10) || 0;
                 totalAwayPoints += parseInt(row.resultadoaway, 10) || 0;
             });
 
-const homeAveragePoints = confrontations.length > 0
-    ? (totalHomePoints / confrontations.length).toFixed(2)
-    : 0;
+            const homeAveragePoints = confrontations.length > 0
+                ? Math.round(totalHomePoints / confrontations.length)
+                : 0;
 
-const awayAveragePoints = confrontations.length > 0
-    ? (totalAwayPoints / confrontations.length).toFixed(2)
-    : 0;
+            const awayAveragePoints = confrontations.length > 0
+                ? Math.round(totalAwayPoints / confrontations.length)
+                : 0;
 
-const totalPoints = confrontations.length > 0
-    ? ((totalHomePoints + totalAwayPoints) / confrontations.length).toFixed(2)
-    : 0;
+            const totalPoints = confrontations.length > 0
+                ? Math.round((totalHomePoints + totalAwayPoints) / confrontations.length)
+                : 0;
 
-// Converter para inteiro, removendo o ".00" caso seja zero
-const formatPoints = (points) => points === '0.00' ? '0' : points;
+            // Converter para inteiro
+            const formatPoints = (points) => points === 0 ? '0' : points;
 
-results.push({
-    timehome: time_home,
-    timeaway: time_away,
-    home_average_points: formatPoints(homeAveragePoints),
-    away_average_points: formatPoints(awayAveragePoints),
-    total_points: formatPoints(totalPoints)
-});
-
+            results.push({
+                timehome: time_home,
+                timeaway: time_away,
+                home_average_points: formatPoints(homeAveragePoints),
+                away_average_points: formatPoints(awayAveragePoints),
+                total_points: formatPoints(totalPoints)
+            });
         }
 
         res.json(results);
@@ -272,6 +269,7 @@ results.push({
         res.status(500).send('Erro no servidor');
     }
 });
+
 
 
 app.get('/probabilidade-vitoria', async (req, res) => {
