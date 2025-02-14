@@ -377,9 +377,124 @@ app.get('/probabilidade-vitoria', async (req, res) => {
   }
 });
 
-
-
 app.get('/golsemcasa', async (req, res) => {
+    try {
+        // Captura o nome da tabela da query string
+        const tableName = req.query.tableName || 'odds';
+
+        // Log para verificar se o tableName está chegando corretamente
+        console.log(`📌 Nome da tabela recebida: ${tableName}`);
+
+        // Buscar os jogos da tabela especificada
+        const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
+        const oddsRows = oddsResult.rows;
+
+        console.log(`🔍 Qtd de registros encontrados: ${oddsRows.length}`);
+
+        const results = [];
+        console.log(`🔍 Registros encontrados: ${results}`);
+
+        for (const { time_home, time_away } of oddsRows) {
+        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+          // Verificar tabelas existentes
+          const tablesResult = await pool.query(`
+              SELECT table_name 
+              FROM information_schema.tables 
+              WHERE table_name = $1 OR table_name = $2
+          `, [homeTable, awayTable]);
+
+          const tableNames = tablesResult.rows.map(row => row.table_name);
+
+// Contar quantas vezes o time da casa fez X gols
+let homeGoalCounts = {};
+if (tableNames.includes(homeTable)) {
+    const homeScoresResult = await pool.query(`
+        SELECT resultadohome 
+        FROM ${homeTable} 
+        WHERE timehome = $1
+ORDER BY 
+  -- Prioriza registros no formato DD.MM. HH:MI
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 1
+      ELSE 2
+  END,
+  -- Ordena pela data/hora dentro de cada grupo de formatos
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 
+          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+      WHEN data_hora LIKE '__.__.____ __:__' THEN 
+          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
+  END DESC
+          LIMIT 10
+  `, [time_home]);
+
+    const homeScores = homeScoresResult.rows
+        .map(row => parseInt(row.resultadohome, 10))
+        .filter(score => !isNaN(score));
+
+    homeAvg = homeScores.length 
+        ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
+        : 0;
+
+    // Contagem de gols
+    homeGoalCounts = homeScores.reduce((acc, goals) => {
+        acc[goals] = (acc[goals] || 0) + 1;
+        return acc;
+    }, {});
+}
+
+// Contar quantas vezes o time visitante fez X gols
+let awayGoalCounts = {};
+if (tableNames.includes(awayTable)) {
+    const awayScoresResult = await pool.query(`
+        SELECT resultadoaway 
+        FROM ${awayTable} 
+        WHERE timeaway = $1
+ORDER BY 
+  -- Prioriza registros no formato DD.MM. HH:MI
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 1
+      ELSE 2
+  END,
+  -- Ordena pela data/hora dentro de cada grupo de formatos
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 
+          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+      WHEN data_hora  LIKE '__.__.____ __:__' THEN 
+          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
+  END DESC
+          LIMIT 10
+  `, [time_away]);
+    const awayScores = awayScoresResult.rows
+        .map(row => parseInt(row.resultadoaway, 10))
+        .filter(score => !isNaN(score));
+
+    awayAvg = awayScores.length 
+        ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
+        : 0;
+
+    // Contagem de gols
+    awayGoalCounts = awayScores.reduce((acc, goals) => {
+        acc[goals] = (acc[goals] || 0) + 1;
+        return acc;
+    }, {});
+}
+
+results.push({
+    time_home,
+    time_away,
+    home_avg: homeAvg,
+    away_avg: awayAvg,
+    total_pontos: homeAvg + awayAvg,
+    home_goal_counts: homeGoalCounts,
+    away_goal_counts: awayGoalCounts,
+});
+
+
+
+//app.get('/golsemcasa', async (req, res) => {
     try {
         // Captura o nome da tabela da query string
         const tableName = req.query.tableName || 'odds';
