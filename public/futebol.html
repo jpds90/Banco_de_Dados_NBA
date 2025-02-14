@@ -87,18 +87,24 @@
 
         <button id="fetchGames" style="display: none;">Buscar Jogos</button>
 
-        <h2>Odds</h2>
-        <div class="bet-options">
-            <div class="bet"><span>Casa</span> <strong id="odds-home">-</strong></div>
-            <div class="bet"><span>Empate</span> <strong id="odds-draw">-</strong></div>
-            <div class="bet"><span>Fora</span> <strong id="odds-away">-</strong></div>
-        </div>
+        <h2>Média de Gols</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Casa</th>
+            <th>Visitante</th>
+            <th>Média de Gols (Casa)</th>
+            <th>Média de Gols (Fora)</th>
+            <th>Média de Gols (Total)</th>
+        </tr>
+    </thead>
+    <tbody id="goalAveragesTable"></tbody>
+</table>
 
         <h2>Confronto Direto</h2>
         <table id="headToHeadTable">
             <thead>
                 <tr>
-                    <th>Data</th>
                     <th>Casa</th>
                     <th>Fora</th>
                     <th>Placar</th>
@@ -191,10 +197,9 @@
 
                 data.forEach(match => {
                     let row = `<tr>
-                        <td>${match.data_jogo}</td>
                         <td>${match.timehome}</td>
                         <td>${match.timeaway}</td>
-                        <td>${match.placar}</td>
+                        <td>${item.home_average_points} x ${item.away_average_points}</td>
                     </tr>`;
                     headToHeadTable.innerHTML += row;
                 });
@@ -221,6 +226,47 @@
                 console.error("Erro ao buscar últimos jogos:", error);
             }
         });
+async function fetchGoalAverages(tableName) {
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
+        const data = await response.json();
+
+        const tableBody = document.getElementById("goalAveragesTable");
+        tableBody.innerHTML = ""; // Limpa a tabela antes de inserir os novos dados
+
+        if (data.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
+            return;
+        }
+
+        data.forEach(match => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${match.time_home}</td>
+                <td>${match.time_away}</td>
+                <td>${match.home_avg}</td>
+                <td>${match.away_avg}</td>
+                <td>${match.total_pontos}</td>
+            `;
+
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error("Erro ao buscar as médias de gols:", error);
+        document.getElementById("goalAveragesTable").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
+    }
+}
+
+// Chamando a função quando clicar no botão "Buscar Jogos"
+document.getElementById("fetchGames").addEventListener("click", function () {
+    const selectedLeague = document.getElementById("leagueSelect").value;
+    if (selectedLeague) {
+        const tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
+        fetchGoalAverages(tableName);
+    }
+});
+
     </script>
 
 </body>
