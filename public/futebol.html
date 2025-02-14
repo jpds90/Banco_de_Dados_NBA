@@ -192,7 +192,7 @@
                 const data = await response.json();
                 proximojogos.innerHTML = "";
 
-                result.forEach(match => {
+                data.forEach(match => {
                     let row = `<tr>
                         <td>${match.data_jogo}</td>
                         <td>${match.time_home}</td>
