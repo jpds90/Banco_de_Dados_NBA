@@ -60,20 +60,6 @@
    
    <div class="matches" id="matches"></div>
 
-   <!-- Tabela de Médias -->
-   <table>
-      <thead>
-         <tr>
-            <th>Casa</th>
-            <th>Visitante</th>
-            <th>Média de Gols (Casa)</th>
-            <th>Média de Gols (Fora)</th>
-            <th>Média de Gols (Total)</th>
-         </tr>
-      </thead>
-      <tbody id="averagesTable"></tbody>
-   </table>
-
    <!-- Segunda Linha de Tabelas Lado a Lado -->
    <div class="side-by-side">
       <table>
@@ -88,7 +74,7 @@
          </thead>
          <tbody id="headToHeadTable"></tbody>
       </table>
-   </div>
+   
    <h2>Média de Gols por Time</h2>
 <table>
     <thead>
@@ -102,6 +88,7 @@
     </thead>
     <tbody id="goalAveragesTable"></tbody>
 </table>
+</div>
    <script>
       const countries = {
          "Brasil": ["Série A", "Série B", "Série C"],
@@ -181,19 +168,7 @@
             const averagesResponse = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`);
             const averagesData = await averagesResponse.json();
             
-            averagesTable.innerHTML = "";
             headToHeadTable.innerHTML = "";
-
-            averagesData.forEach(item => {
-               let averagesRow = document.createElement("tr");
-               averagesRow.innerHTML = `
-                  <td>${item.timehome}</td>
-                  <td>${item.timeaway}</td>
-                  <td>${item.home_average_points}</td>
-                  <td>${item.away_average_points}</td>
-                  <td>${item.total_points}</td>
-               `;
-               averagesTable.appendChild(averagesRow);
 
                let headToHeadRow = document.createElement("tr");
                headToHeadRow.innerHTML = `
