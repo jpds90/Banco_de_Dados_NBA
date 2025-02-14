@@ -191,7 +191,7 @@
                     result.data.forEach(match => {
                         let matchElement = document.createElement("div");
                         matchElement.classList.add("match");
-                        matchElement.textContent = `${match.data_jogo} - ${match.timehome} x ${match.timeaway}`;
+                        matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
                         matchesDiv.appendChild(matchElement);
                     });
                 } else {
@@ -201,7 +201,23 @@
                 console.error("Erro ao buscar os jogos:", error);
                 matchesDiv.innerHTML = "<p>Erro ao buscar os jogos. Tente novamente.</p>";
             }
+            // Buscar Confronto Direto
+            try {
+                const response = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`);
+                const data = await response.json();
+                headToHeadTable.innerHTML = "";
 
+                data.forEach(match => {
+                    let row = `<tr>
+                        <td>${match.timehome}</td>
+                        <td>${match.timeaway}</td>
+                        <td>${match.home_average_points} x ${match.away_average_points} = ${match.total_points}</td>
+                    </tr>`;
+                    headToHeadTable.innerHTML += row;
+                });
+            } catch (error) {
+                console.error("Erro ao buscar confronto direto:", error);
+            }
             fetchGoalAverages(tableName);
         });
 
