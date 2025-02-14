@@ -186,11 +186,11 @@
                // Exibir as médias de gols feitos em casa e como visitante
                let headToHeadRow = document.createElement("tr");
                headToHeadRow.innerHTML = `
-                  <td>${item.time_home}</td>
-                  <td>${item.time_away}</td>
-                  <td>${item.home_avg}</td>
-                  <td>${item.away_avg}</td>
-                  <td>${item.total_pontos}</td>
+                  <td>${item.timehome}</td>
+                  <td>${item.timeaway}</td>
+                  <td>${item.home_average_points}</td>
+                  <td>${item.away_average_points}</td>
+                  <td>${item.total_points}</td>
                `;
                headToHeadTable.appendChild(headToHeadRow);
             });
