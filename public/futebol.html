@@ -96,37 +96,18 @@
                 <tbody id="goalAveragesTable"></tbody>
             </table>
         </div>
-
-        <div class="box">
-            <h3>Head to Head (Média de Gols)</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Casa</th>
-                        <th>Visitante</th>
-                        <th>Gols Casa</th>
-                        <th>Gols Visitante</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody id="headToHeadTable"></tbody>
-            </table>
-        </div>
     </div>
+
+    <label for="goalThreshold">Filtrar por gols: </label>
+    <input type="number" id="goalThreshold" step="0.5" min="0" value="0.5">
+    <button onclick="applyFilter()">Filtrar</button>
 
     <script>
         async function fetchData(tableName) {
             try {
-                const [goalResponse, headToHeadResponse] = await Promise.all([
-                    fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`),
-                    fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`)
-                ]);
-
-                const goalData = await goalResponse.json();
-                const headToHeadData = await headToHeadResponse.json();
-
-                updateGoalAveragesTable(goalData);
-                updateHeadToHeadTable(headToHeadData);
+                const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
+                const data = await response.json();
+                updateGoalAveragesTable(data);
             } catch (error) {
                 console.error("Erro ao buscar os dados:", error);
             }
@@ -150,9 +131,9 @@
                     <td id="home-count-${item.time_home}">--</td>
                     <td>${item.away_avg}</td>
                     <td id="away-count-${item.time_away}">--</td>
-                    <td>${item.total_gols}</td>
+                    <td>${item.total_pontos}</td>
                     <td>
-                        <input type="number" min="0" max="10" id="input-${item.time_home}" 
+                        <input type="number" min="0" step="0.5" id="input-${item.time_home}" 
                             onchange="updateGoalCount('${item.time_home}', '${item.time_away}', this.value, ${JSON.stringify(item.home_goal_counts)}, ${JSON.stringify(item.away_goal_counts)})">
                     </td>
                 `;
@@ -160,34 +141,24 @@
             });
         }
 
-        function updateHeadToHeadTable(data) {
-            const tableBody = document.getElementById("headToHeadTable");
-            tableBody.innerHTML = "";
-
-            if (data.length === 0) {
-                tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
-                return;
-            }
-
-            data.forEach(item => {
-                const row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${item.timehome}</td>
-                    <td>${item.timeaway}</td>
-                    <td>${item.home_average_points}</td>
-                    <td>${item.away_average_points}</td>
-                    <td>${item.total_points}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
         function updateGoalCount(homeTeam, awayTeam, goalValue, homeGoalCounts, awayGoalCounts) {
-            const homeCount = homeGoalCounts.filter(g => g == goalValue).length;
-            const awayCount = awayGoalCounts.filter(g => g == goalValue).length;
+            const homeCount = Object.keys(homeGoalCounts).filter(g => parseFloat(g) >= goalValue).length;
+            const awayCount = Object.keys(awayGoalCounts).filter(g => parseFloat(g) >= goalValue).length;
 
             document.getElementById(`home-count-${homeTeam}`).textContent = homeCount;
             document.getElementById(`away-count-${awayTeam}`).textContent = awayCount;
+        }
+
+        function applyFilter() {
+            const goalThreshold = parseFloat(document.getElementById("goalThreshold").value);
+            document.querySelectorAll("input[id^='input-']").forEach(input => {
+                const teamHome = input.id.replace("input-", "");
+                const row = input.closest("tr");
+                const homeGoalCounts = JSON.parse(row.dataset.homeGoalCounts);
+                const awayGoalCounts = JSON.parse(row.dataset.awayGoalCounts);
+
+                updateGoalCount(teamHome, "", goalThreshold, homeGoalCounts, awayGoalCounts);
+            });
         }
 
         document.getElementById("fetchGames").addEventListener("click", function () {
