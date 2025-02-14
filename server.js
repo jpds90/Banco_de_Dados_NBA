@@ -476,21 +476,26 @@ ORDER BY
         : 0;
 
     // Contagem de gols
-    awayGoalCounts = awayScores.reduce((acc, goals) => {
-        acc[goals] = (acc[goals] || 0) + 1;
-        return acc;
-    }, {});
-}
+// Construir um dicionário que conta quantas vezes cada time fez X gols nos últimos 10 jogos
+const countGoals = (scores) => {
+    let goalCounts = {};
+    for (let i = 0; i <= 10; i++) {
+        goalCounts[i] = scores.filter(goal => goal === i).length;
+    }
+    return goalCounts;
+};
 
-          results.push({
-              time_home,
-              time_away,
-              home_avg: homeAvg,
-              away_avg: awayAvg,
-              total_pontos: homeAvg + awayAvg,
-              home_goal_counts: homeGoalCounts,
-              away_goal_counts: awayGoalCounts,
-          });
+// No código onde retornamos `results.push({ ... })`, adicione:
+results.push({
+    time_home,
+    time_away,
+    home_avg: homeAvg,
+    away_avg: awayAvg,
+    total_pontos: homeAvg + awayAvg,
+    home_goal_counts: countGoals(homeScores),
+    away_goal_counts: countGoals(awayScores)
+});
+
       }
 
       res.json(results);
