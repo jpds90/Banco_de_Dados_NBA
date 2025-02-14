@@ -447,7 +447,7 @@ if (tableNames.includes(awayTable)) {
   const awayScoresResult = await pool.query(`
       SELECT resultadoaway, data_hora 
       FROM ${awayTable} 
-      WHERE away_team = $1
+      WHERE timeaway = $1
 ORDER BY 
   -- Prioriza registros no formato DD.MM. HH:MI
   CASE
@@ -476,8 +476,8 @@ ORDER BY
 
           // Garantir soma inteira para total_pontos
           results.push({
-              time_home,
-              time_away,
+              timehome,
+              timeaway,
               home_avg: homeAvg,
               away_avg: awayAvg,
               total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
