@@ -379,12 +379,9 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 
 app.get('/golsemcasa', async (req, res) => {
     try {
-        // Captura o nome da tabela da query string
         const tableName = req.query.tableName || 'odds';
-
         console.log(`📌 Nome da tabela recebida: ${tableName}`);
 
-        // Buscar os jogos da tabela especificada
         const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
         const oddsRows = oddsResult.rows;
 
@@ -405,8 +402,7 @@ app.get('/golsemcasa', async (req, res) => {
 
             const tableNames = tablesResult.rows.map(row => row.table_name);
 
-            // Inicializar contadores e médias
-            let homeGoalCounts = {};
+            let homeGoalCounts = [];
             let homeAvg = 0;
 
             if (tableNames.includes(homeTable)) {
@@ -437,13 +433,12 @@ app.get('/golsemcasa', async (req, res) => {
                     : 0;
 
                 homeGoalCounts = homeScores.reduce((acc, goals) => {
-                    acc[goals] = (acc[goals] || 0) + 1;
+                    acc.push(goals);
                     return acc;
-                }, {});
+                }, []);
             }
 
-            // Inicializar contadores e médias do time visitante
-            let awayGoalCounts = {};
+            let awayGoalCounts = [];
             let awayAvg = 0;
 
             if (tableNames.includes(awayTable)) {
@@ -474,9 +469,9 @@ app.get('/golsemcasa', async (req, res) => {
                     : 0;
 
                 awayGoalCounts = awayScores.reduce((acc, goals) => {
-                    acc[goals] = (acc[goals] || 0) + 1;
+                    acc.push(goals);
                     return acc;
-                }, {});
+                }, []);
             }
 
             // Adiciona os dados ao array de resultados
@@ -485,7 +480,7 @@ app.get('/golsemcasa', async (req, res) => {
                 time_away,
                 home_avg: homeAvg,
                 away_avg: awayAvg,
-                total_pontos: homeAvg + awayAvg,
+                total_gols: homeAvg + awayAvg,
                 home_goal_counts: homeGoalCounts,
                 away_goal_counts: awayGoalCounts
             });
@@ -499,6 +494,7 @@ app.get('/golsemcasa', async (req, res) => {
         res.status(500).send('Erro no servidor');
     }
 });
+
 
 
 //Futebol------------------Futebol------------futebol------------------------
