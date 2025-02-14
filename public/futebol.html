@@ -66,9 +66,9 @@
          <tr>
             <th>Casa</th>
             <th>Visitante</th>
-            <th>Média de Gols (Casa)</th>
-            <th>Média de Gols (Fora)</th>
-            <th>Média de Gols (Total)</th>
+            <th>Média Gols (Casa)</th>
+            <th>Média Gols (Fora)</th>
+            <th>Total de Gol</th>
          </tr>
       </thead>
       <tbody id="averagesTable"></tbody>
@@ -183,23 +183,14 @@
             headToHeadTable.innerHTML = "";
 
             averagesData.forEach(item => {
-               let averagesRow = document.createElement("tr");
-               averagesRow.innerHTML = `
-                  <td>${item.timehome}</td>
-                  <td>${item.timeaway}</td>
-                  <td>${item.home_average_points}</td>
-                  <td>${item.away_average_points}</td>
-                  <td>${item.total_points}</td>
-               `;
-               averagesTable.appendChild(averagesRow);
-
+               // Exibir as médias de gols feitos em casa e como visitante
                let headToHeadRow = document.createElement("tr");
                headToHeadRow.innerHTML = `
-                  <td>${item.timehome}</td>
-                  <td>${item.timeaway}</td>
-                  <td>${item.home_average_points}</td>
-                  <td>${item.away_average_points}</td>
-                  <td>${item.total_points}</td>
+                  <td>${item.time_home}</td>
+                  <td>${item.time_away}</td>
+                  <td>${item.home_avg}</td>
+                  <td>${item.away_avg}</td>
+                  <td>${item.total_pontos}</td>
                `;
                headToHeadTable.appendChild(headToHeadRow);
             });
