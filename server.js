@@ -379,88 +379,116 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 
 app.get('/golsemcasa', async (req, res) => {
     try {
+        // Captura o nome da tabela da query string
         const tableName = req.query.tableName || 'odds';
+
+        // Log para verificar se o tableName está chegando corretamente
         console.log(`📌 Nome da tabela recebida: ${tableName}`);
 
-        // Buscar os jogos
+        // Buscar os jogos da tabela especificada
         const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
         const oddsRows = oddsResult.rows;
 
         console.log(`🔍 Qtd de registros encontrados: ${oddsRows.length}`);
 
         const results = [];
+        console.log(`🔍 Registros encontrados: ${results}`);
 
         for (const { time_home, time_away } of oddsRows) {
-            const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-            const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
-            // Verificar tabelas existentes
-            const tablesResult = await pool.query(`
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_name = $1 OR table_name = $2
-            `, [homeTable, awayTable]);
+          // Verificar tabelas existentes
+          const tablesResult = await pool.query(`
+              SELECT table_name 
+              FROM information_schema.tables 
+              WHERE table_name = $1 OR table_name = $2
+          `, [homeTable, awayTable]);
 
-            const tableNames = tablesResult.rows.map(row => row.table_name);
+          const tableNames = tablesResult.rows.map(row => row.table_name);
 
-            // Contar quantas vezes o time da casa fez X gols
-            let homeGoalCounts = {};
-            let homeMoreThanHalf = 0; // Contador para mais de 0,5 gols
+// Calcular média de Gols do time da casa
+let homeAvg = 0;
+if (tableNames.includes(homeTable)) {
+  const homeScoresResult = await pool.query(`
+      SELECT resultadohome, data_hora 
+      FROM ${homeTable} 
+      WHERE timehome = $1
+ORDER BY 
+  -- Prioriza registros no formato DD.MM. HH:MI
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 1
+      ELSE 2
+  END,
+  -- Ordena pela data/hora dentro de cada grupo de formatos
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 
+          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+      WHEN data_hora LIKE '__.__.____ __:__' THEN 
+          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
+  END DESC
+          LIMIT 12
+  `, [time_home]);
 
-            if (tableNames.includes(homeTable)) {
-                const homeScoresResult = await pool.query(`
-                    SELECT resultadohome 
-                    FROM ${homeTable} 
-                    WHERE timehome = $1
-                    ORDER BY 
-                      CASE
-                          WHEN data_hora LIKE '__.__. __:__' THEN 1
-                          ELSE 2
-                      END,
-                      CASE
-                          WHEN data_hora LIKE '__.__. __:__' THEN 
-                              TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                          WHEN data_hora LIKE '__.__.____ __:__' THEN 
-                              TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
-                      END DESC
-                    LIMIT 10
-                `, [time_home]);
+  const homeScores = homeScoresResult.rows
+      .map(row => parseInt(row.resultadohome, 10))
+      .filter(score => !isNaN(score));
 
-                const homeScores = homeScoresResult.rows
-                    .map(row => parseInt(row.resultadohome, 10))
-                    .filter(score => !isNaN(score));
+  homeAvg = homeScores.length 
+      ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
+      : 0;
+}
 
-                // Média de gols do time da casa
-                homeAvg = homeScores.length 
-                    ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
-                    : 0;
+// Calcular média de Gols do time visitante
+let awayAvg = 0;
+if (tableNames.includes(awayTable)) {
+  const awayScoresResult = await pool.query(`
+      SELECT resultadoaway, data_hora 
+      FROM ${awayTable} 
+      WHERE timeaway = $1
+ORDER BY 
+  -- Prioriza registros no formato DD.MM. HH:MI
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 1
+      ELSE 2
+  END,
+  -- Ordena pela data/hora dentro de cada grupo de formatos
+  CASE
+      WHEN data_hora  LIKE '__.__. __:__' THEN 
+          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+      WHEN data_hora  LIKE '__.__.____ __:__' THEN 
+          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
+  END DESC
+          LIMIT 12
+  `, [time_away]);
 
-                // Contagem de gols
-                homeGoalCounts = homeScores.reduce((acc, goals) => {
-                    acc[goals] = (acc[goals] || 0) + 1;
-                    return acc;
-                }, {});
+  const awayScores = awayScoresResult.rows
+      .map(row => parseInt(row.resultadoaway, 10))
+      .filter(score => !isNaN(score));
 
-                // Conta quantas vezes o time fez mais de 0,5 gols
-                homeMoreThanHalf = homeScores.filter(gols => gols > 0.5).length;
-            }
+  awayAvg = awayScores.length 
+      ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
+      : 0;
+}
 
-            // Criar o objeto final para enviar ao frontend
-            results.push({
-                time_home,
-                time_away,
-                home_avg: homeAvg,
-                home_goal_counts: homeGoalCounts,
-                home_more_than_half: homeMoreThanHalf // <- Essa é a informação nova que retorna
-            });
-        }
 
-        res.json(results);
-    } catch (error) {
-        console.error('Erro ao processar os dados:', error);
-        res.status(500).send('Erro no servidor');
-    }
+          // Garantir soma inteira para total_pontos
+          results.push({
+              time_home,
+              time_away,
+              home_avg: homeAvg,
+              away_avg: awayAvg,
+              total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
+          });
+      }
+
+      res.json(results);
+  } catch (error) {
+      console.error('Erro ao processar os dados:', error);
+      res.status(500).send('Erro no servidor');
+  }
 });
+
 
 
 
