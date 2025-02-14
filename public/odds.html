@@ -1,174 +1,1237 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estatísticas de Futebol</title>
+    <title>Analise Bask</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
             background-color: #f4f4f4;
         }
-        h2 {
+        h1 {
             text-align: center;
+            margin-top: 20px;
+            color: #333;
+            font-size: 1.5em; /* Tamanho menor */
         }
-        .container {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 20px;
+        form {
+            text-align: center;
+            margin: 20px;
         }
-        .box {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            overflow-x: auto;
+        form label {
+            margin-right: 10px;
+            font-size: 0.9em; /* Fonte menor */
         }
+        input {
+            padding: 6px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        /* Layout das Tabelas */
+        .table-container {
+            margin: 0 10px; /* Menos margem */
+        }
+        .table-main {
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 0.9em; /* Fonte menor */
+        }
+        .side-by-side {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px; /* Menor espaço entre as tabelas */
+            margin-bottom: 20px;
+        }
+           /* Estilo do "X" em destaque */
+        .highlight-x {
+           font-weight: bold;
+           text-transform: uppercase;
+           font-size: 1.6em; /* Tamanho ligeiramente maior */
+           color: #ff5733; /* Cor personalizada para o "X" */
+        }
+
+
+        /* Estilos das Tabelas */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 8px; /* Menos padding */
             text-align: center;
+            font-size: 0.9em; /* Fonte menor */
         }
         th {
             background-color: #007bff;
             color: white;
         }
-        input {
-            width: 60px;
-            padding: 5px;
-            text-align: center;
+        td {
+            background-color: #f9f9f9;
         }
-        button {
-            padding: 10px 15px;
-            background: #28a745;
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .side-by-side {
+                grid-template-columns: 1fr; /* Empilha as tabelas em uma coluna */
+            }
+        }
+    /* Estilo do contêiner dos cards */
+    .card-container {
+        display: flex;
+        justify-content: space-between; /* Espaçamento igual entre os cards */
+        gap: 15px; /* Espaçamento horizontal entre os cards */
+        margin: 20px auto; /* Centraliza o contêiner na página */
+        max-width: 900px; /* Limita a largura máxima */
+    }
+
+    /* Estilo geral dos cards */
+    .card {
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        flex: 1; /* Faz com que ambos os cards tenham o mesmo tamanho */
+        max-width: 400px; /* Largura máxima de cada card */
+    }
+
+    .card-header {
+        background-color: #007bff;
+        color: white;
+        padding: 10px;
+        text-align: center;
+        font-weight: bold;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        font-size: 14px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    button {
+            padding: 8px 16px;
+            background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
+            margin-top: 10px;
             display: block;
-            margin: 10px auto;
-        }
-        button:hover {
-            background: #218838;
-        }
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 4px;
+            font-size: 0.9em; /* Fonte menor */
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    .results {
+        margin-top: 10px;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+</style>
+
     </style>
 </head>
 <body>
+    <h1>NBA - 2025</h1>
+    <form id="date-form">
+        <label for="start-date">Data Início:</label>
+        <input type="text" id="start-date" value="01/01" placeholder="Ex: 08.12" required>
+        
+        <label for="end-date">Data Fim:</label>
+        <input type="text" id="end-date" value="31/12" placeholder="Ex: 15.12" required>
+        
+        
+        <button type="submit">Buscar Confrontos</button>
+        <!-- Parte da página principal (index.html) -->
+        <button onclick="window.location.href='jogadores.html';">Jogadores</button>
+        <button onclick="window.location.href='principal.html';">Home</button>
 
-    <h2>Estatísticas de Futebol</h2>
+    </form>
 
-    <div class="container">
-        <div class="box">
-            <h3>Escolha a Liga</h3>
-            <select id="leagueSelect">
-                <option value="laliga">La Liga</option>
-                <option value="premier">Premier League</option>
-                <option value="seriea">Série A</option>
-            </select>
-            <button id="fetchGames">Buscar Jogos</button>
-        </div>
-    </div>
+    <div class="table-container">
+        <!-- Tabela Principal -->
+        <table class="table-main">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all" /></th>
+                    <th>Data do Jogo</th>
+                    <th>Casa</th>
+                    <th>Visitante</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>Odds Mais/Menos</th>
+                    <th>Mais/Menos</th>
+                    <th>Handicap</th>
+                </tr>
+            </thead>
+            <tbody id="oddsTable">
+                <!-- Linha Interativa -->
+                <tr>
+                    <td></td>
+                    <td><input type="date" id="game-date" /></td>
+                    <td>
+                        <select id="team-home">
+                            <option value="">Selecione o time</option>
+                            <option value="Atlanta Hawks">Atlanta Hawks</option>
+                            <option value="Boston Celtics">Boston Celtics</option>
+                            <option value="Brooklyn Nets">Brooklyn Nets</option>
+                            <option value="Charlotte Hornets">Charlotte Hornets</option>
+                            <option value="Chicago Bulls">Chicago Bulls</option>
+                            <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                            <option value="Dallas Mavericks">Dallas Mavericks</option>
+                            <option value="Denver Nuggets">Denver Nuggets</option>
+                            <option value="Detroit Pistons">Detroit Pistons</option>
+                            <option value="Golden State Warriors">Golden State Warriors</option>
+                            <option value="Houston Rockets">Houston Rockets</option>
+                            <option value="Indiana Pacers">Indiana Pacers</option>
+                            <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                            <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                            <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                            <option value="Miami Heat">Miami Heat</option>
+                            <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                            <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                            <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                            <option value="New York Knicks">New York Knicks</option>
+                            <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                            <option value="Orlando Magic">Orlando Magic</option>
+                            <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                            <option value="Phoenix Suns">Phoenix Suns</option>
+                            <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                            <option value="Sacramento Kings">Sacramento Kings</option>
+                            <option value="San Antonio Spurs">San Antonio Spurs</option>
+                            <option value="Toronto Raptors">Toronto Raptors</option>
+                            <option value="Utah Jazz">Utah Jazz</option>
+                            <option value="Washington Wizards">Washington Wizards</option>
+                            <!-- Adicione mais times conforme necessário -->
+                        </select>
+                    </td>
+                    <td>
+                        <select id="team-away">
+                            <option value="">Selecione o time</option>
+                            <option value="Atlanta Hawks">Atlanta Hawks</option>
+                            <option value="Boston Celtics">Boston Celtics</option>
+                            <option value="Brooklyn Nets">Brooklyn Nets</option>
+                            <option value="Charlotte Hornets">Charlotte Hornets</option>
+                            <option value="Chicago Bulls">Chicago Bulls</option>
+                            <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                            <option value="Dallas Mavericks">Dallas Mavericks</option>
+                            <option value="Denver Nuggets">Denver Nuggets</option>
+                            <option value="Detroit Pistons">Detroit Pistons</option>
+                            <option value="Golden State Warriors">Golden State Warriors</option>
+                            <option value="Houston Rockets">Houston Rockets</option>
+                            <option value="Indiana Pacers">Indiana Pacers</option>
+                            <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                            <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                            <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                            <option value="Miami Heat">Miami Heat</option>
+                            <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                            <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                            <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                            <option value="New York Knicks">New York Knicks</option>
+                            <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                            <option value="Orlando Magic">Orlando Magic</option>
+                            <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                            <option value="Phoenix Suns">Phoenix Suns</option>
+                            <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                            <option value="Sacramento Kings">Sacramento Kings</option>
+                            <option value="San Antonio Spurs">San Antonio Spurs</option>
+                            <option value="Toronto Raptors">Toronto Raptors</option>
+                            <option value="Utah Jazz">Utah Jazz</option>
+                            <option value="Washington Wizards">Washington Wizards</option>
+                            <!-- Adicione mais times conforme necessário -->
+                        </select>
+                    </td>
+                    <td><input type="number" step="0.01" id="odds-1" placeholder="Ex: 2.6" /></td>
+                    <td><input type="number" step="0.01" id="odds-2" placeholder="Ex: 1.53" /></td>
+                    <td><input type="number" step="0.01" id="odds-over-under" placeholder="Ex: 1.04" /></td>
+                    <td><input type="number" step="1" id="over-under-value" placeholder="Ex: 202" />
+                    </td><td><button id="save-row">Salvar</button></td>
+                </tr>
+            </tbody>
+        </table>
 
-    <div class="container">
-        <div class="box">
-            <h3>Média de Gols</h3>
+        <!-- Tabelas Lado a Lado (2 em 2) -->
+        <div class="side-by-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>Vitórias Casa (1)</th>
+                        <th>Vitórias Fora (1)</th>
+                        <th>Vitórias Casa (2)</th>
+                        <th>Vitórias Fora (2)</th>
+                        <th>Total Vitórias (1)</th>
+                        <th>Total Vitórias (2)</th>
+                        <th>Total Vitórias Casa (1)</th>
+                        <th>% Vitória Casa (1)</th>
+                        <th>Total V.Geral Casa (1)</th>
+                        <th>% V.Geral Casa (1)</th>
+                        <th>Total Vitórias Fora (2)</th>
+                        <th>% Vitórias Fora (2)</th>
+                        <th>Total V.Geral Fora (2)</th>
+                        <th>% V.Geral Fora (2)</th>
+                        <th>% (1)</th>
+                        <th>% (2)</th>
+                        <th>Handicap</th>
+                        <th>Cobrir Handicap</th>
+                        <th>Handicap Apost.</th>
+                        <th>Cobrir Handicap Apost.</th>
+                    </tr>
+                </thead>
+                <tbody id="confrontationTable"></tbody>
+            </table>
+
             <table>
                 <thead>
                     <tr>
                         <th>Casa</th>
                         <th>Visitante</th>
-                        <th>Média Casa</th>
-                        <th>Qtd. vezes fez gols casa</th>
-                        <th>Média Fora</th>
-                        <th>Qtd. vezes fez gols fora</th>
-                        <th>Total</th>
-                        <th>Filtrar</th>
+                        <th>Média (Casa)</th>
+                        <th>Média (Fora)</th>
+                        <th>Média (Total)</th>
                     </tr>
                 </thead>
-                <tbody id="goalAveragesTable"></tbody>
+                <tbody id="averagesTable"></tbody>
             </table>
         </div>
+
+        <!-- Segunda Linha de Tabelas Lado a Lado (2 em 2) -->
+        <div class="side-by-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Casa</th>
+                        <th>Visitante</th>
+                        <th>Média Confronto (Casa)</th>
+                        <th>Média Confronto (Visitante)</th>
+                        <th>Total de Pontos</th>
+                    </tr>
+                </thead>
+                <tbody id="headToHeadTable"></tbody>
+            </table>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Casa</th>
+                        <th>Time Visitante</th>
+                        <th>Classificação (Casa)</th>
+                        <th>Classificação (Visitante)</th>
+                    </tr>
+                </thead>
+                <tbody id="pointsAnalysisTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Terceira Linha de Tabelas Lado a Lado (2 em 2) -->
+        <div class="side-by-side">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Time Casa</th>
+                        <th>Time Visitante</th>
+                        <th>OverOdds/2</th>
+                        <th>Superações (Casa)</th>
+                        <th>Superações (Visitante)</th>
+                        <th>% Pontos 1+2</th>
+                    </tr>
+                </thead>
+                <tbody id="overOddsTable"></tbody>
+            </table>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time da Casa</th>
+                                <th>Lesionados (Casa)</th>
+                                <th>Time Visitante</th>
+                                <th>Lesionados (Visitante)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="injuryTableBody">
+                        </tbody>
+                    </table>
+                </div>
     </div>
+    <div class="side-by-side">
+        <!-- Tabela de Resultados -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Time Casa "Casa V/D"</th>
+                    <th><span class="highlight-x">X</span></th>
+                    <th>Time Visitante "Vistante V/D"</th>
+                </tr>
+            </thead>
+            <tbody id="resultados"></tbody>
+        </table>
+    
 
-    <label for="goalThreshold">Filtrar por gols: </label>
-    <input type="number" id="goalThreshold" step="0.5" min="0" value="0.5">
-    <button onclick="applyFilter()">Filtrar</button>
+        <div class="card-container">
+            <!-- Card Esquerda -->
+            <div class="card" id="card-esquerda">
+                <div class="card-header">Casa</div>
+                <div class="card-body">
+                    <select id="team-select-left">
+                        <option value="">Selecione um time para ver os resultados</option>
+                        <!-- Lista de times -->
+                        <option value="Atlanta Hawks">Atlanta Hawks</option>
+                        <option value="Boston Celtics">Boston Celtics</option>
+                        <option value="Brooklyn Nets">Brooklyn Nets</option>
+                        <option value="Charlotte Hornets">Charlotte Hornets</option>
+                        <option value="Chicago Bulls">Chicago Bulls</option>
+                        <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                        <option value="Dallas Mavericks">Dallas Mavericks</option>
+                        <option value="Denver Nuggets">Denver Nuggets</option>
+                        <option value="Detroit Pistons">Detroit Pistons</option>
+                        <option value="Golden State Warriors">Golden State Warriors</option>
+                        <option value="Houston Rockets">Houston Rockets</option>
+                        <option value="Indiana Pacers">Indiana Pacers</option>
+                        <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                        <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                        <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                        <option value="Miami Heat">Miami Heat</option>
+                        <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                        <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                        <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                        <option value="New York Knicks">New York Knicks</option>
+                        <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                        <option value="Orlando Magic">Orlando Magic</option>
+                        <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                        <option value="Phoenix Suns">Phoenix Suns</option>
+                        <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                        <option value="Sacramento Kings">Sacramento Kings</option>
+                        <option value="San Antonio Spurs">San Antonio Spurs</option>
+                        <option value="Toronto Raptors">Toronto Raptors</option>
+                        <option value="Utah Jazz">Utah Jazz</option>
+                        <option value="Washington Wizards">Washington Wizards</option>
+                    </select>
+                    <button id="fetch-results-left">Ver Resultados</button>
+                    <div class="results" id="results-left"></div>
+                </div>
+            </div>
+    
+            <!-- Card Direita -->
+            <div class="card" id="card-direita">
+                <div class="card-header">Visitante</div>
+                <div class="card-body">
+                    <select id="team-select-right">
+                        <option value="">Selecione um time para ver os resultados</option>
+                        <!-- Mesma lista de times -->
+                        <option value="Atlanta Hawks">Atlanta Hawks</option>
+                        <option value="Boston Celtics">Boston Celtics</option>
+                        <option value="Brooklyn Nets">Brooklyn Nets</option>
+                        <option value="Charlotte Hornets">Charlotte Hornets</option>
+                        <option value="Chicago Bulls">Chicago Bulls</option>
+                        <option value="Cleveland Cavaliers">Cleveland Cavaliers</option>
+                        <option value="Dallas Mavericks">Dallas Mavericks</option>
+                        <option value="Denver Nuggets">Denver Nuggets</option>
+                        <option value="Detroit Pistons">Detroit Pistons</option>
+                        <option value="Golden State Warriors">Golden State Warriors</option>
+                        <option value="Houston Rockets">Houston Rockets</option>
+                        <option value="Indiana Pacers">Indiana Pacers</option>
+                        <option value="Los Angeles Clippers">Los Angeles Clippers</option>
+                        <option value="Los Angeles Lakers">Los Angeles Lakers</option>
+                        <option value="Memphis Grizzlies">Memphis Grizzlies</option>
+                        <option value="Miami Heat">Miami Heat</option>
+                        <option value="Minnesota Timberwolves">Minnesota Timberwolves</option>
+                        <option value="Milwaukee Bucks">Milwaukee Bucks</option>
+                        <option value="New Orleans Pelicans">New Orleans Pelicans</option>
+                        <option value="New York Knicks">New York Knicks</option>
+                        <option value="Oklahoma City Thunder">Oklahoma City Thunder</option>
+                        <option value="Orlando Magic">Orlando Magic</option>
+                        <option value="Philadelphia 76ers">Philadelphia 76ers</option>
+                        <option value="Phoenix Suns">Phoenix Suns</option>
+                        <option value="Portland Trail Blazers">Portland Trail Blazers</option>
+                        <option value="Sacramento Kings">Sacramento Kings</option>
+                        <option value="San Antonio Spurs">San Antonio Spurs</option>
+                        <option value="Toronto Raptors">Toronto Raptors</option>
+                        <option value="Utah Jazz">Utah Jazz</option>
+                        <option value="Washington Wizards">Washington Wizards</option>
+                    </select>
+                    <button id="fetch-results-right">Ver Resultados</button>
+                    <div class="results" id="results-right"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 
+    
+
+    <button id="deleteButton">Excluir Selecionados</button>
+</body>
+    
+            
+    
     <script>
-        async function fetchData(tableName) {
-            try {
-                const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
-                const data = await response.json();
-                updateGoalAveragesTable(data);
-            } catch (error) {
-                console.error("Erro ao buscar os dados:", error);
-            }
-        }
+// Verifica se os dados do handicap estão no localStorage
+if (!localStorage.getItem("handicapData")) {
+    // Se não houver dados, redireciona para handicap.html primeiro
+    window.location.href = "handicap.html";
+}
 
-        function updateGoalAveragesTable(data) {
-            const tableBody = document.getElementById("goalAveragesTable");
-            tableBody.innerHTML = "";
+        document.getElementById('date-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    fetchResults();
+    fetchResults1();
 
-            if (data.length === 0) {
-                tableBody.innerHTML = "<tr><td colspan='8'>Nenhum dado encontrado</td></tr>";
+
+
+
+// Função para buscar dados de jogadores lesionados
+function fetchInjuredPlayers() {
+    console.log('Buscando jogadores lesionados...');
+    return fetch('/jogadoreslesionados')
+        .then(response => response.json())
+        .then(data => {
+            console.log('Jogadores lesionados recebidos:', data);
+            handleInjuredPlayersData(data); // Manipula os dados de jogadores lesionados
+            return data; // Retorna os dados dos jogadores lesionados
+        })
+        .catch(error => {
+            console.error('Erro ao buscar jogadores lesionados:', error);
+            return []; // Retorna um array vazio em caso de erro
+        });
+}
+
+// Função para "normalizar" o nome
+function normalizePlayerName(playerName) {
+    console.log('Normalizando nome do jogador:', playerName);
+    const nameParts = playerName.split(' ');
+    const firstName = nameParts[0];
+    const lastName = nameParts[1];
+    const abbreviatedLastName = lastName.charAt(0) + '.';
+    const normalizedName = firstName + ' ' + abbreviatedLastName;
+    console.log('Nome normalizado:', normalizedName);
+    return normalizedName;
+}
+
+// Função para pegar os jogadores lesionados de um time específico
+function getInjuredPlayers(teamName, injuredPlayersData) {
+    console.log(`Buscando jogadores lesionados para o time: ${teamName}`);
+    const injuredPlayers = injuredPlayersData.filter(game => game.team_home === teamName || game.team_away === teamName);
+    const injuredHomePlayers = injuredPlayers.flatMap(game => game.team_home === teamName ? game.homePlayers : []);
+    const injuredAwayPlayers = injuredPlayers.flatMap(game => game.team_away === teamName ? game.awayPlayers : []);
+    const allInjuredPlayers = [...injuredHomePlayers, ...injuredAwayPlayers].map(normalizePlayerName);
+    console.log(`Jogadores lesionados encontrados para o time ${teamName}:`, allInjuredPlayers);
+    return allInjuredPlayers;
+}
+
+// Função para contar quantos dos 5 jogadores com mais pontos estão lesionados
+function countInjuredPlayers(topPlayers, injuredPlayersData) {
+    console.log('Contando jogadores lesionados entre os 5 melhores jogadores:', topPlayers);
+
+    // Normaliza os nomes dos jogadores com mais pontos
+    const normalizedTopPlayers = topPlayers.map(player => normalizePlayerName(player.player_name));
+
+    // Conta quantos dos 5 melhores jogadores estão lesionados
+    const injuredCount = normalizedTopPlayers.filter(player => injuredPlayersData.includes(player)).length;
+
+    console.log(`Jogadores lesionados encontrados: ${injuredCount}`);
+    return injuredCount;
+}
+
+// Função para processar os dados de total_contribution
+function fetchPointsData(injuredPlayersData) {
+    console.log('Buscando dados de total_contribution dos jogadores...');
+    fetch('/jogadoresprarb') // Endpoint deve retornar total_contribution já calculado
+        .then(response => response.json())
+        .then(data => {
+            console.log('Dados de total_contribution dos jogadores recebidos:', data);
+
+            const injuryTableBody = document.getElementById('injuryTableBody');
+            injuryTableBody.innerHTML = ''; // Limpa o conteúdo da tabela antes de preenchê-la novamente
+            console.log('Tabela limpa e pronta para preenchimento.');
+
+            data.forEach(game => {
+                console.log(`Processando jogo: ${game.homeTeam} vs ${game.awayTeam}`);
+
+                // Busca jogadores lesionados para os times
+                const injuredHomePlayers = getInjuredPlayers(game.homeTeam, injuredPlayersData);
+                const injuredAwayPlayers = getInjuredPlayers(game.awayTeam, injuredPlayersData);
+
+                // Conta lesionados nos jogadores com maior total_contribution
+                const homeInjuredCount = countInjuredPlayers(game.topHomePlayers, injuredHomePlayers);
+                const awayInjuredCount = countInjuredPlayers(game.topAwayPlayers, injuredAwayPlayers);
+
+                console.log(`Lesionados (Casa): ${homeInjuredCount}, Lesionados (Visitante): ${awayInjuredCount}`);
+
+                // Preenche a tabela com os dados
+                injuryTableBody.innerHTML += 
+                    `<tr>
+                        <td>${game.homeTeam}</td>
+                        <td>${homeInjuredCount}</td>
+                        <td>${game.awayTeam}</td>
+                        <td>${awayInjuredCount}</td>
+                    </tr>`;
+            });
+        })
+        .catch(error => {
+            console.error('Erro ao buscar dados de total_contribution:', error);
+        });
+}
+
+
+// Função para manipular os dados dos jogadores lesionados e chamar a função de pontos
+let injuredPlayersData = []; // Para armazenar os dados dos jogadores lesionados
+function handleInjuredPlayersData(data) {
+    injuredPlayersData = data;
+    // Após buscar os dados de jogadores lesionados, agora busca os pontos
+    fetchPointsData(injuredPlayersData);
+}
+
+// Chama a função para buscar os dados de lesões
+fetchInjuredPlayers();
+
+
+
+    // Captura as datas de início e fim (no formato DD.MM)
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+
+    // Validação simples para garantir que as datas foram fornecidas
+    if (!startDate || !endDate) {
+        alert("Por favor, insira as duas datas.");
+        return;
+    }
+
+    // Verifica e loga o formato das datas antes de enviar
+    console.log(`Início da data: ${startDate}`);
+    console.log(`Fim da data: ${endDate}`);
+
+        // Excluir Odds Selecionadas
+        document.getElementById('deleteButton').addEventListener('click', () => {
+            const selectedIds = Array.from(document.querySelectorAll('.select-checkbox:checked'))
+                .map(checkbox => checkbox.dataset.id);
+
+            if (selectedIds.length === 0) {
+                alert('Nenhuma linha selecionada para exclusão.');
                 return;
             }
 
-            data.forEach(item => {
-                const row = document.createElement("tr");
+            fetch('/delete-odds', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: selectedIds })
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Odds excluídas com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro ao excluir odds.');
+                }
+            })
+            .catch(error => console.error('Erro ao excluir odds:', error));
+        });
+
+        // Selecionar e desmarcar todos os checkboxes
+        document.getElementById("select-all").addEventListener("change", function() {
+            const checkboxes = document.querySelectorAll(".select-checkbox");
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // Atualiza a caixa "Selecionar tudo" se todas as caixas individuais forem selecionadas ou desmarcadas
+        document.querySelectorAll(".select-checkbox").forEach(checkbox => {
+            checkbox.addEventListener("change", function() {
+                const allCheckboxes = document.querySelectorAll(".select-checkbox");
+                const selectAllCheckbox = document.getElementById("select-all");
+                selectAllCheckbox.checked = allCheckboxes.length === Array.from(allCheckboxes).filter(cb => cb.checked).length;
+            });
+        });
+
+        // Análise de Pontos
+        fetch('/team-points-analysis')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('pointsAnalysisTable');
+                data.forEach(analysis => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${analysis.time_home}</td>
+                        <td>${analysis.time_away}</td>
+                        <td>${analysis.home_classification}</td>
+                        <td>${analysis.away_classification}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar análise de pontos:', error));
+
+
+
+
+// Usar Promise.all para requisições paralelas
+Promise.all([
+    fetch('/odds').then(response => response.json()),
+    fetch(`/team-averages?start_date=${startDate}&end_date=${endDate}`).then(response => response.json()),
+    fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`).then(response => response.json()),
+    fetch('/over-odds-analysis').then(response => response.json())
+])
+.then(([oddsData, averagesData, confrontationData, overOddsData]) => {
+    // Carregar Odds
+    const tableBody = document.getElementById('oddsTable');
+    oddsData.forEach(odd => {
+        const gameDateTime = new Date(odd.data_jogo); // Converter para objeto Date
+        const formattedDate = gameDateTime.toLocaleString('pt-BR', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'UTC' // Ajuste se necessário para o fuso horário correto
+        });
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="checkbox" class="select-checkbox" data-id="${odd.id}"></td>
+            <td>${formattedDate}</td> <!-- Data formatada -->
+            <td>${odd.time_home}</td>
+            <td>${odd.time_away}</td>
+            <td>${odd.home_odds}</td>
+            <td>${odd.away_odds}</td>
+            <td>${odd.over_dois_meio}</td>
+            <td>${odd.over_odds}</td>
+            <td>${odd.handicap}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    // Carregar Médias de Pontos
+    const tableBodyAverages = document.getElementById('averagesTable');
+    averagesData.forEach(average => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${average.time_home}</td>
+            <td>${average.time_away}</td>
+            <td>${average.home_avg}</td>
+            <td>${average.away_avg}</td>
+            <td>${average.total_pontos}</td>
+        `;
+        tableBodyAverages.appendChild(row);
+    });
+
+    // Carregar Confrontos Diretos
+    const tableBodyHeadToHead = document.getElementById('headToHeadTable');
+    confrontationData.forEach(confrontation => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${confrontation.time_home}</td>
+            <td>${confrontation.time_away}</td>
+            <td>${confrontation.total_home_Average_Points}</td>
+            <td>${confrontation.total_away_Average_Points}</td>
+            <td>${confrontation.total_media_Average_Points}</td>
+        `;
+        tableBodyHeadToHead.appendChild(row);
+    });
+
+    // Carregar Análise de Over Odds
+    const tableBodyOverOdds = document.getElementById('overOddsTable');
+    overOddsData.forEach((analysis, index) => {
+        const odd = oddsData[index]; // Associando as odds à análise
+        const confrontation = confrontationData[index]; // Associando os confrontos à análise
+        const average = averagesData[index]; // Associando as médias de pontos à análise
+
+        // Calcular a diferença considerando a fórmula solicitada
+        const difference = (confrontation.total_media_Average_Points + average.total_pontos / 2) - odd.over_odds;
+
+        // Ajuste na porcentagem, 1% por ponto acima de 5
+        let adjustedPercentage = parseFloat(analysis.percentage);
+        if (difference > 5) {
+            adjustedPercentage += (difference - 5); // Acrescenta 1% por ponto acima de 5
+        }
+
+        // Garantir que a porcentagem ajustada tenha 2 casas decimais
+        adjustedPercentage = parseFloat(adjustedPercentage).toFixed(2);
+
+        // Definir cor baseado na porcentagem ajustada
+        const porcentagemColor = adjustedPercentage > 55 ? 'green' : 'red';
+
+        // Criar a linha da tabela
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${analysis.time_home}</td>
+            <td>${analysis.time_away}</td>
+            <td>${analysis.overThreshold}</td>
+            <td>${analysis.homeExceedCount} (${analysis.homeIdCount})</td>
+            <td>${analysis.awayExceedCount} (${analysis.awayIdCount})</td>
+            <td style="background-color: ${porcentagemColor}">${adjustedPercentage}% (${odd.over_odds})</td>
+        `;
+        tableBodyOverOdds.appendChild(row);
+    });
+})
+.catch(error => console.error('Erro ao carregar dados:', error));
+
+
+
+
+
+
+
+// Função para determinar o peso com base no ranking
+function getRankWeight(rank) {
+    if (rank === 1) return 10;
+    if (rank === 2) return 9.5;
+    if (rank === 3) return 9;
+    if (rank === 4) return 8;
+    if (rank === 5) return 7;
+    if (rank === 6) return 6.5;
+    if (rank === 7) return 6;
+    if (rank === 8) return 5.5;
+    if (rank === 9) return 5;
+    if (rank === 10) return 5;
+    if (rank === 11) return 2.5;
+    if (rank === 12) return 2.5;
+    if (rank === 13) return 2;
+    if (rank === 14) return 1;
+    if (rank === 15) return 1;
+    return 0;  // Se o rank não for de 1 a 15
+}
+
+// Recupera os dados do handicap antigo do localStorage
+const handicapOldData = JSON.parse(localStorage.getItem("handicapData")) || [];
+
+// Inicia a cadeia de requisições para buscar os demais dados
+fetch(`/confrontations1?start_date=${startDate}&end_date=${endDate}`)
+    .then(response => response.json())
+    .then(confrontationData => {
+        console.log('Confrontation Data:', confrontationData);
+        fetch('/odds-nba')
+            .then(response => response.json())
+            .then(oddsnbaData => {
+                console.log('Odds NBA Data:', oddsnbaData);
+                fetch('/ultimosjogos')
+                    .then(response => response.json())
+                    .then(ultimosJogosData => {
+                        console.log('Ultimos Jogos Data:', ultimosJogosData);
+                        // Busca os dados do novo handicap a partir do endpoint /handicap
+                        fetch('/handicap')
+                            .then(response => response.json())
+                            .then(handicapNewData => {
+                                console.log('Handicap New Data:', handicapNewData);
+                                const tableBody = document.getElementById('confrontationTable');
+
+                                confrontationData.forEach(confrontation => {
+                                    const row = document.createElement('tr');
+
+                                    // Buscar os dados de handicap antigo a partir do localStorage
+                                    const oldItem = handicapOldData.find(h =>
+                                        h.time_home === confrontation.time_home &&
+                                        h.time_away === confrontation.time_away
+                                    );
+                                    const handicapValueOld = oldItem ? oldItem.handicap : 'N/A';
+                                    const jogosPerdidosHandicapOld = oldItem ? oldItem.jogos_perdidos_handicap : 'N/A';
+
+                                    // Busca os dados do novo handicap a partir do endpoint /handicap (já carregados em handicapNewData)
+                                    const newItem = handicapNewData.find(h =>
+                                        h.time_home === confrontation.time_home &&
+                                        h.time_away === confrontation.time_away
+                                    );
+                                    // Caso não encontre, usamos valor vazio para o input
+                                    const handicapValueNew = newItem ? newItem.handicap : '';
+                                    const jogosPerdidosHandicapNew = newItem ? newItem.jogos_perdidos_handicap : 'N/A';
+
+                                    // Busca as classificações e outros dados (como no seu código)
+                                    const homeClassification = oddsnbaData.find(oddsnba => oddsnba.time_home === confrontation.time_home)?.home_classification || 'N/A';
+                                    const awayClassification = oddsnbaData.find(oddsnba => oddsnba.time_away === confrontation.time_away)?.away_classification || 'N/A';
+
+                                    const homeRank = parseInt(homeClassification);
+                                    const awayRank = parseInt(awayClassification);
+                                    const homeRankWeight = getRankWeight(homeRank);
+                                    const awayRankWeight = getRankWeight(awayRank);
+
+                                    const homeUltimos = ultimosJogosData.find(jogo => jogo.time_home === confrontation.time_home);
+                                    const awayUltimos = ultimosJogosData.find(jogo => jogo.time_away === confrontation.time_away);
+
+                                    const homeWins = homeUltimos && !isNaN(homeUltimos.home_wins_last_10) ? homeUltimos.home_wins_last_10 : 0;
+                                    const awayWins = awayUltimos && !isNaN(awayUltimos.away_wins_last_10) ? awayUltimos.away_wins_last_10 : 0;
+
+                                    const homeWinPercentage1 = ((homeWins / 10) * 100) || 0;
+                                    const awayWinPercentage2 = ((awayWins / 10) * 100) || 0;
+
+                                    const homeHomeWins = parseFloat(confrontation.home_home_wins) || 0;
+                                    const homeWinPercentage = parseFloat(confrontation.home_win_percentage) || 0;
+                                    const awayAwayWins = parseFloat(confrontation.away_away_wins) || 0;
+                                    const awayWinPercentage = parseFloat(confrontation.away_win_percentage) || 0;
+                                    const homeWinsGeral = parseFloat(confrontation.total_home_general_wins) || 0;
+                                    const awayWinsGeral = parseFloat(confrontation.total_away_general_wins) || 0;
+
+                                    const homeWinWeight = (homeHomeWins * 3) + (homeWinPercentage * 0.3) + (homeWinPercentage1 * 0.10) + homeRankWeight;
+                                    const awayWinWeight = (awayAwayWins * 4) + (awayWinPercentage * 0.2) + (awayWinPercentage2 * 0.15) + awayRankWeight;
+
+                                    const homeTotal = homeRankWeight + homeWinPercentage + homeWinPercentage1 + homeWinWeight;
+                                    const awayTotal = awayRankWeight + awayWinPercentage + awayWinPercentage2 + awayWinWeight;
+                                    const totalSum = homeTotal + awayTotal;
+
+                                    const homePercentage = totalSum !== 0 ? ((homeTotal / totalSum) * 100).toFixed(0) : 50;
+                                    const awayPercentage = totalSum !== 0 ? ((awayTotal / totalSum) * 100).toFixed(0) : 50;
+
+                                    // Debug: verificar os valores carregados
+                                    console.log({
+                                        homeWins, awayWins, homeWinPercentage1, awayWinPercentage2,
+                                        homeHomeWins, homeWinPercentage, awayAwayWins, awayWinPercentage,
+                                        homeWinsGeral, awayWinsGeral, homeRankWeight, awayRankWeight,
+                                        homeWinWeight, awayWinWeight, homeTotal, awayTotal, totalSum,
+                                        homePercentage, awayPercentage,
+                                        handicapValueOld, jogosPerdidosHandicapOld,
+                                        handicapValueNew, jogosPerdidosHandicapNew
+                                    });
+
+                                    let homeColor = homePercentage > awayPercentage ? 'green' : 'red';
+                                    let awayColor = awayPercentage > homePercentage ? 'green' : 'red';
+
+                                    row.innerHTML = `
+                                        <td style="background-color: ${homeColor}">${confrontation.time_home} (${homeClassification})</td>
+                                        <td style="background-color: ${awayColor}">${confrontation.time_away} (${awayClassification})</td>
+                                        <td>${confrontation.home_home_wins}</td>
+                                        <td>${confrontation.home_away_wins}</td>
+                                        <td>${confrontation.away_home_wins}</td>
+                                        <td>${awayAwayWins}</td>
+                                        <td>${confrontation.total_home_wins}</td>
+                                        <td>${confrontation.total_away_wins}</td>
+                                        <td>${homeWins} (10)</td>
+                                        <td>${homeWinPercentage1}%</td>
+                                        <td>${homeWinsGeral} (10)</td>
+                                        <td>${homeWinPercentage}%</td>
+                                        <td>${awayWins} (10)</td>
+                                        <td>${awayWinPercentage2}%</td>
+                                        <td>${awayWinsGeral} (10)</td>
+                                        <td>${awayWinPercentage}%</td>
+                                        <td>${homePercentage}%</td>
+                                        <td>${awayPercentage}%</td>
+                                        <!-- Handicap antigo -->
+                                        <td>${handicapValueOld}</td>
+                                        <td>${jogosPerdidosHandicapOld}</td>
+                                        <!-- Novo handicap -->
+                                        <!-- Novo handicap: input para edição e célula para resultado -->
+                                        <td>
+                                            <input type="number" class="new-handicap-input" value="${handicapValueNew}" />
+                                        </td>
+                                        <td class="new-handicap-result">${jogosPerdidosHandicapNew}</td>
+                                    `;
+                                    tableBody.appendChild(row);
+
+const newHandicapInput = row.querySelector('.new-handicap-input');
+const newHandicapResultCell = row.querySelector('.new-handicap-result');
+
+newHandicapInput.addEventListener('input', async function() {
+    const novoValor = parseFloat(this.value);
+    if (isNaN(novoValor)) {
+        newHandicapResultCell.textContent = 'N/A';
+        return;
+    }
+    
+    // Cria o objeto "avg" com base nos dados do confronto atual
+    const avg = {
+        time_home: confrontation.time_home,
+        time_away: confrontation.time_away
+    };
+
+    try {
+        // Usa o novo valor e o handicap antigo para calcular as derrotas
+        const jogosCalculados = await calcularDerrotasPorMaisQueHandicap(novoValor, handicapValueOld, avg);
+        newHandicapResultCell.textContent = jogosCalculados;
+    } catch (error) {
+        console.error('Erro ao calcular derrotas:', error);
+        newHandicapResultCell.textContent = 'Erro';
+    }
+});
+
+                                });
+                            })
+                            .catch(error => console.error('Erro ao carregar dados de novo handicap:', error));
+                    })
+                    .catch(error => console.error('Erro ao carregar ultimosjogos:', error));
+            })
+            .catch(error => console.error('Erro ao carregar odds-nba:', error));
+    })
+    .catch(error => console.error('Erro ao carregar confrontos:', error));
+
+async function calcularDerrotasPorMaisQueHandicap(novoHandicap, handicapValueOld, avg) {
+    // Usa o handicapValueOld para determinar qual time consultar e a localização
+    const timeParaConsulta = handicapValueOld < 0 ? avg.time_home : avg.time_away;
+    const campoLocal = handicapValueOld < 0 ? 'home' : 'away';
+    
+    // Para o cálculo, usa o novo valor digitado
+    const handicapAbsoluto = Math.abs(novoHandicap);
+
+    // Busca os últimos 10 jogos do time na localização determinada
+    const response = await fetch(`/ultimos-10-jogos?time=${encodeURIComponent(timeParaConsulta)}&location=${campoLocal}`);
+    const ultimosJogos = await response.json();
+
+    // Filtra os jogos onde o time perdeu e a diferença de pontos (em valor absoluto) é maior que o novo handicap
+    const derrotas = ultimosJogos.filter(jogo => {
+        const diferencaPontos = campoLocal === 'home'
+            ? jogo.home_score - jogo.away_score
+            : jogo.away_score - jogo.home_score;
+        return diferencaPontos < 0 && Math.abs(diferencaPontos) > handicapAbsoluto;
+    }).length;
+
+    return derrotas;
+}
+
+
+
+
+
+        // Seleciona todas as caixas de seleção
+        document.getElementById("select-all").addEventListener("change", function() {
+            const checkboxes = document.querySelectorAll(".select-row");
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+        
+        // Funcionalidade para garantir que "Selecionar tudo" está correto quando uma caixa é desmarcada
+        document.querySelectorAll(".select-row").forEach(checkbox => {
+            checkbox.addEventListener("change", function() {
+                const allCheckboxes = document.querySelectorAll(".select-row");
+                const selectAllCheckbox = document.getElementById("select-all");
+                selectAllCheckbox.checked = allCheckboxes.length === Array.from(allCheckboxes).filter(cb => cb.checked).length;
+            });
+        });
+
+
+        // Função para puxar os dados da API
+        async function fetchResults() {
+            const response = await fetch('https://analise-jpnba.onrender.com/ultimosjogos1');  // Endereço da sua API
+            const data = await response.json();
+            displayResults(data);
+        }
+    
+        // Função para exibir os resultados na página
+        function displayResults(data) {
+            const container = document.getElementById('resultados');
+            container.innerHTML = ''; // Limpar resultados anteriores
+    
+            data.forEach((gameData) => {
+                const { time_home, home_last_games, time_away, away_last_games } = gameData;
+    
+                // Mapear resultados para emojis mantendo a ordem
+                const homeResults = home_last_games.map(game => 
+                    game.status.includes('Venceu') ? '✅' : '❌'
+                ).join('');
+    
+                const awayResults = away_last_games.map(game => 
+                    game.status.includes('Venceu') ? '✅' : '❌'
+                ).join('');
+    
+                // Criar a linha da tabela
+                const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${item.time_home}</td>
-                    <td>${item.time_away}</td>
-                    <td>${item.home_avg}</td>
-                    <td id="home-count-${item.time_home}">--</td>
-                    <td>${item.away_avg}</td>
-                    <td id="away-count-${item.time_away}">--</td>
-                    <td>${item.total_pontos}</td>
-                    <td>
-                        <input type="number" min="0" step="0.5" id="input-${item.time_home}" 
-                            onchange="updateGoalCount('${item.time_home}', '${item.time_away}', this.value, ${JSON.stringify(item.home_goal_counts)}, ${JSON.stringify(item.away_goal_counts)})">
-                    </td>
+                    <td>${time_home}: ${homeResults}</td>
+                    <td><span class="highlight-x">X</span></td>
+                    <td>${time_away}: ${awayResults}</td>
                 `;
-                tableBody.appendChild(row);
+    
+                // Adicionar a linha na tabela
+                container.appendChild(row);
             });
         }
-
-        function updateGoalCount(homeTeam, awayTeam, goalValue, homeGoalCounts, awayGoalCounts) {
-            const homeCount = Object.keys(homeGoalCounts).filter(g => parseFloat(g) >= goalValue).length;
-            const awayCount = Object.keys(awayGoalCounts).filter(g => parseFloat(g) >= goalValue).length;
-
-            document.getElementById(`home-count-${homeTeam}`).textContent = homeCount;
-            document.getElementById(`away-count-${awayTeam}`).textContent = awayCount;
+        async function fetchResults1(team, resultsContainer) {
+    if (!team) {
+        return;
+    }
+    try {
+        const response = await fetch(`/ultimosjogos2?time=${encodeURIComponent(team)}`);
+        if (!response.ok) throw new Error('Erro ao buscar resultados');
+        const jogos = await response.json();
+        resultsContainer.innerHTML = ''; // Limpa resultados anteriores
+        if (jogos.length === 0) {
+            resultsContainer.innerHTML = '<p>Nenhum jogo encontrado.</p>';
+            return;
         }
+        jogos.forEach(jogo => {
+            const resultItem = document.createElement('div');
+            resultItem.classList.add('result-item');
+            resultItem.innerHTML = `
+                <p><strong>Data:</strong> ${jogo.data}</p>
+                <p><strong>Hora:</strong> ${jogo.hora}</p>
+                <p><strong>Placar:</strong> ${jogo.timeA} ${jogo.pontosA} x ${jogo.pontosB} ${jogo.timeB}</p>
+                <p><strong>Resultado:</strong> ${jogo.resultado}</p>
+                <p><strong>---------------------</strong> </p>
+            `;
+            resultsContainer.appendChild(resultItem);
+        });
+    } catch (error) {
+        console.error(error);
+        alert('Erro ao buscar resultados.');
+    }
+}
 
-        function applyFilter() {
-            const goalThreshold = parseFloat(document.getElementById("goalThreshold").value);
-            document.querySelectorAll("input[id^='input-']").forEach(input => {
-                const teamHome = input.id.replace("input-", "");
-                const row = input.closest("tr");
-                const homeGoalCounts = JSON.parse(row.dataset.homeGoalCounts);
-                const awayGoalCounts = JSON.parse(row.dataset.awayGoalCounts);
 
-                updateGoalCount(teamHome, "", goalThreshold, homeGoalCounts, awayGoalCounts);
+
+        document.getElementById('fetch-results-left').addEventListener('click', () => {
+            const team = document.getElementById('team-select-left').value;
+            const resultsContainer = document.getElementById('results-left');
+            fetchResults1(team, resultsContainer);
+        });
+
+        document.getElementById('fetch-results-right').addEventListener('click', () => {
+            const team = document.getElementById('team-select-right').value;
+            const resultsContainer = document.getElementById('results-right');
+            fetchResults1(team, resultsContainer);
+        });
+
+
+});
+        // Token gerado (copiado diretamente)
+        const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoianBzb2ZpY2lhbDFAZ21haWwuY29tIiwiaWF0IjoxNzM4NTI2MTExLCJleHAiOjE3Mzg1Mjk3MTF9.-_byky7kUHDZlL2nCDjc2yVnhRFcDG7Gzy29WfxGmz0";
+
+        // Adicionando um ouvinte de evento para o botão
+        document.querySelector('#save-row').addEventListener('click', async () => {
+            // Coleta os valores dos inputs
+            const inputDate = document.querySelector('#game-date').value;
+            const timeHome = document.querySelector('#team-home').value;
+            const timeAway = document.querySelector('#team-away').value;
+            const homeOdds = parseFloat(document.querySelector('#odds-1').value);
+            const awayOdds = parseFloat(document.querySelector('#odds-2').value);
+            const overDoisMeioOdds = parseFloat(document.querySelector('#odds-over-under').value);
+            const overOdds = parseFloat(document.querySelector('#over-under-value').value);
+
+            // Exibe os dados no console para verificar
+            console.log('Dados coletados:', {
+                inputDate,
+                timeHome,
+                timeAway,
+                homeOdds,
+                awayOdds,
+                overDoisMeioOdds,
+                overOdds
             });
-        }
 
-        document.getElementById("fetchGames").addEventListener("click", function () {
-            const selectedLeague = document.getElementById("leagueSelect").value;
-            if (selectedLeague) {
-                const tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
-                fetchData(tableName);
+            const data = {
+                dataJogo: inputDate,
+                timeHome,
+                timeAway,
+                homeOdds,
+                awayOdds,
+                overDoisMeioOdds,
+                overOdds
+            };
+
+            try {
+                const response = await fetch('https://analise-jpnba.onrender.com/save-odds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` // Adicionando o token no cabeçalho
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Dados salvos com sucesso:', result);
+                    alert('Dados salvos no banco de dados!');
+                } else {
+                    console.error('Erro ao salvar os dados:', response.statusText);
+                    alert('Erro ao salvar os dados. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Erro na solicitação:', error);
+                alert('Erro ao comunicar com o servidor.');
             }
         });
-    </script>
 
+
+document.addEventListener("DOMContentLoaded", async function() {
+    const handicapData = localStorage.getItem("handicapData");
+    const lastUpdate = localStorage.getItem("handicapAtualizado");
+    const tempoMaxAtualizacao = 5 * 60 * 1000; // 5 minutos
+
+    // Se os dados não existirem ou forem antigos, buscar do handicap.html
+    if (!handicapData || (Date.now() - lastUpdate > tempoMaxAtualizacao)) {
+        console.log("Buscando dados do handicap.html...");
+
+        try {
+            // Fazer uma requisição para handicap.html e extrair os dados sem recarregar a página
+            const response = await fetch("handicap.html");
+            const text = await response.text();
+            
+            // Criar um DOM temporário para pegar os dados
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, "text/html");
+            
+            // Supondo que os dados estejam dentro de um <script> ou elemento específico no handicap.html
+            const scriptTag = doc.querySelector("script[data-handicap]");
+            if (scriptTag) {
+                const data = JSON.parse(scriptTag.textContent);
+                
+                // Salvar os dados no localStorage
+                localStorage.setItem("handicapData", JSON.stringify(data));
+                localStorage.setItem("handicapAtualizado", Date.now());
+
+                console.log("Dados do handicap salvos no localStorage.");
+                carregarTabelaOdds(data);
+            } else {
+                console.error("Não foi possível encontrar os dados do handicap.");
+            }
+        } catch (error) {
+            console.error("Erro ao buscar dados do handicap.html:", error);
+        }
+    } else {
+        console.log("Carregando dados do handicap do localStorage...");
+        carregarTabelaOdds(JSON.parse(handicapData));
+    }
+});
+
+// Função para exibir os dados na tabela
+function carregarTabelaOdds(data) {
+    const tabelaOdds = document.getElementById("tabelaOdds");
+    tabelaOdds.innerHTML = data.map(row => `
+        <tr>
+            <td>${row.time_home}</td>
+            <td>${row.time_away}</td>
+            <td>${row.handicap}</td>
+            <td>${row.jogos_perdidos_handicap}</td>
+        </tr>
+    `).join('');
+}
+
+
+
+    </script>
 </body>
 </html>
