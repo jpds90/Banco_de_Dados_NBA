@@ -156,6 +156,7 @@
             leagueSelect.innerHTML = "<option value=''>Escolha uma liga</option>";
             leagueSelect.style.display = "none";
             fetchGamesButton.style.display = "none";
+            matchesDiv.innerHTML = "";
 
             if (this.value) {
                 countries[this.value].forEach(league => {
