@@ -241,25 +241,29 @@ app.get('/confrontosfutebol', async (req, res) => {
                 totalAwayPoints += parseInt(row.resultadoaway, 10) || 0;
             });
 
-            const homeAveragePoints = confrontations.length > 0
-                ? (totalHomePoints / confrontations.length).toFixed(2)
-                : 0;
+const homeAveragePoints = confrontations.length > 0
+    ? (totalHomePoints / confrontations.length).toFixed(2)
+    : 0;
 
-            const awayAveragePoints = confrontations.length > 0
-                ? (totalAwayPoints / confrontations.length).toFixed(2)
-                : 0;
+const awayAveragePoints = confrontations.length > 0
+    ? (totalAwayPoints / confrontations.length).toFixed(2)
+    : 0;
 
-            const totalPoints = confrontations.length > 0
-                ? ((totalHomePoints + totalAwayPoints) / confrontations.length).toFixed(2)
-                : 0;
+const totalPoints = confrontations.length > 0
+    ? ((totalHomePoints + totalAwayPoints) / confrontations.length).toFixed(2)
+    : 0;
 
-            results.push({
-                timehome: time_home,
-                timeaway: time_away,
-                home_average_points: homeAveragePoints,
-                away_average_points: awayAveragePoints,
-                total_points: totalPoints
-            });
+// Converter para inteiro, removendo o ".00" caso seja zero
+const formatPoints = (points) => points === '0.00' ? '0' : points;
+
+results.push({
+    timehome: time_home,
+    timeaway: time_away,
+    home_average_points: formatPoints(homeAveragePoints),
+    away_average_points: formatPoints(awayAveragePoints),
+    total_points: formatPoints(totalPoints)
+});
+
         }
 
         res.json(results);
