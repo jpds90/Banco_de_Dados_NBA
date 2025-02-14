@@ -181,7 +181,7 @@
 
             // Buscar Proximos Jogos
          try {
-            const response = await fetch(https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName});
+            const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
             const result = await response.json();
             
             matchesDiv.innerHTML = "";
