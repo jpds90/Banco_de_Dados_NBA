@@ -496,7 +496,6 @@ app.get('/golsemcasa', async (req, res) => {
 
 app.get("/ultimos10jogos", async (req, res) => {
   try {
-    const tableName = req.query.tableName || "odds";
     const timeHome = req.query.timeHome;
     const timeAway = req.query.timeAway;
 
@@ -504,7 +503,6 @@ app.get("/ultimos10jogos", async (req, res) => {
       return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
     }
 
-    console.log(`📌 Nome da tabela: ${tableName}`);
     console.log(`🏠 Time mandante consultado: ${timeHome}`);
     console.log(`🚀 Time visitante consultado: ${timeAway}`);
 
@@ -515,17 +513,15 @@ app.get("/ultimos10jogos", async (req, res) => {
     console.log(`🏠 Tabela do time da casa: ${homeTable}`);
     console.log(`🚀 Tabela do time visitante: ${awayTable}`);
 
-    // Verificar tabelas existentes
-    const tablesResult = await pool.query(
-      `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
-      [homeTable, awayTable]
-    );
-
-    const tableNames = tablesResult.rows.map((row) => row.table_name);
+    // Buscar jogos dos dois times
     let jogos = [];
 
     const buscarJogos = async (table, column, team) => {
-      if (tableNames.includes(table)) {
+      const tablesResult = await pool.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
+        [table]
+      );
+      if (tablesResult.rows.length > 0) {
         const querySQL = `
           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
           FROM ${table} 
@@ -541,8 +537,10 @@ app.get("/ultimos10jogos", async (req, res) => {
       return [];
     };
 
-    jogos = jogos.concat(await buscarJogos(homeTable, "timehome", timeHome));
-    jogos = jogos.concat(await buscarJogos(awayTable, "timeaway", timeAway));
+    const jogosHome = await buscarJogos(homeTable, "timehome", timeHome);
+    const jogosAway = await buscarJogos(awayTable, "timeaway", timeAway);
+
+    jogos = [...jogosHome, ...jogosAway];
 
     console.log(`📊 Jogos retornados pela query:`, jogos);
 
@@ -587,7 +585,7 @@ app.get("/ultimos10jogos", async (req, res) => {
       };
     });
 
-    results = jogosFormatados.filter((j) => j !== null);
+    const results = jogosFormatados.filter((j) => j !== null);
 
     console.log("📢 Jogos processados finalizados:", results);
     res.json(results);
@@ -596,6 +594,7 @@ app.get("/ultimos10jogos", async (req, res) => {
     res.status(500).send("Erro no servidor");
   }
 });
+
 
 
 //Futebol------------------Futebol------------futebol------------------------//Futebol------------------Futebol------------futebol------------------------//Futebol------------------Futebol------------futebol------------------------
