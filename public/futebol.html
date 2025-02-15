@@ -166,126 +166,154 @@
         </div>
     </div>
 
-    <script>
-        const countries = {
-            "Brasil": ["Série A", "Série B", "Série C"],
-            "Portugal": ["Primeira Liga", "Segunda Liga"],
-            "Espanha": ["LaLiga", "Taça do Rei de Espanha"]
-        };
+   <script>
+    const countries = {
+        "Brasil": ["Série A", "Série B", "Série C"],
+        "Portugal": ["Primeira Liga", "Segunda Liga"],
+        "Espanha": ["LaLiga", "Taça do Rei de Espanha"]
+    };
 
-        const countrySelect = document.getElementById("countrySelect");
-        const leagueSelect = document.getElementById("leagueSelect");
-        const fetchGamesButton = document.getElementById("fetchGames");
-        const matchesDiv = document.getElementById("matches");
-        const headToHeadTable = document.querySelector("#headToHeadTable tbody");
-        const lastMatchesTable = document.querySelector("#lastMatchesTable tbody");
+    const countrySelect = document.getElementById("countrySelect");
+    const leagueSelect = document.getElementById("leagueSelect");
+    const fetchGamesButton = document.getElementById("fetchGames");
+    const matchesDiv = document.getElementById("matches");
+    const headToHeadTable = document.querySelector("#headToHeadTable tbody");
+    const lastMatchesTable = document.querySelector("#lastMatchesTable tbody");
 
-        for (let country in countries) {
-            let option = document.createElement("option");
-            option.value = country;
-            option.textContent = country;
-            countrySelect.appendChild(option);
+    for (let country in countries) {
+        let option = document.createElement("option");
+        option.value = country;
+        option.textContent = country;
+        countrySelect.appendChild(option);
+    }
+
+    countrySelect.addEventListener("change", function() {
+        leagueSelect.innerHTML = "<option value=''>Escolha uma liga</option>";
+        leagueSelect.style.display = "none";
+        fetchGamesButton.style.display = "none";
+        matchesDiv.innerHTML = "";
+
+        if (this.value) {
+            countries[this.value].forEach(league => {
+                let option = document.createElement("option");
+                option.value = league;
+                option.textContent = league;
+                leagueSelect.appendChild(option);
+            });
+            leagueSelect.style.display = "block";
         }
+    });
 
-        countrySelect.addEventListener("change", function() {
-            leagueSelect.innerHTML = "<option value=''>Escolha uma liga</option>";
-            leagueSelect.style.display = "none";
-            fetchGamesButton.style.display = "none";
+    leagueSelect.addEventListener("change", function() {
+        fetchGamesButton.style.display = this.value ? "block" : "none";
+    });
+
+    fetchGamesButton.addEventListener("click", async function() {
+        const selectedLeague = leagueSelect.value;
+        if (!selectedLeague) return;
+
+        let tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
+        console.log(`Buscando dados para a tabela: ${tableName}`);
+
+        matchesDiv.innerHTML = "Carregando...";
+        
+        try {
+            const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
+            const result = await response.json();
+            
             matchesDiv.innerHTML = "";
 
-            if (this.value) {
-                countries[this.value].forEach(league => {
-                    let option = document.createElement("option");
-                    option.value = league;
-                    option.textContent = league;
-                    leagueSelect.appendChild(option);
-                });
-                leagueSelect.style.display = "block";
-            }
-        });
-
-        leagueSelect.addEventListener("change", function() {
-            fetchGamesButton.style.display = this.value ? "block" : "none";
-        });
-
-        fetchGamesButton.addEventListener("click", async function() {
-            const selectedLeague = leagueSelect.value;
-            if (!selectedLeague) return;
-
-            let tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
-            console.log(`Buscando dados para a tabela: ${tableName}`);
-
-            matchesDiv.innerHTML = "Carregando...";
-            
-            try {
-                const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
-                const result = await response.json();
-                
-                matchesDiv.innerHTML = "";
-
-                if (result.success && result.data.length > 0) {
-                    result.data.forEach(match => {
-                        let matchElement = document.createElement("div");
-                        matchElement.classList.add("match");
-                        matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
-                        matchesDiv.appendChild(matchElement);
+            if (result.success && result.data.length > 0) {
+                result.data.forEach(match => {
+                    let matchElement = document.createElement("button");
+                    matchElement.classList.add("match-button");
+                    matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
+                    
+                    // Adiciona o evento de clique para chamar a API de últimos 10 jogos
+                    matchElement.addEventListener("click", function() {
+                        fetchLast10Matches(match.time_home, match.time_away);
                     });
-                } else {
-                    matchesDiv.innerHTML = "<p>Nenhum jogo encontrado.</p>";
-                }
-            } catch (error) {
-                console.error("Erro ao buscar os jogos:", error);
-                matchesDiv.innerHTML = "<p>Erro ao buscar os jogos. Tente novamente.</p>";
-            }
-            // Buscar Confronto Direto
-            try {
-                const response = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`);
-                const data = await response.json();
-                headToHeadTable.innerHTML = "";
 
-                data.forEach(match => {
-                    let row = `<tr>
-                        <td>${match.timehome}</td>
-                        <td>${match.timeaway}</td>
-                        <td>${match.home_average_points} x ${match.away_average_points} = ${match.total_points}</td>
-                    </tr>`;
-                    headToHeadTable.innerHTML += row;
+                    matchesDiv.appendChild(matchElement);
                 });
-            } catch (error) {
-                console.error("Erro ao buscar confronto direto:", error);
+            } else {
+                matchesDiv.innerHTML = "<p>Nenhum jogo encontrado.</p>";
             }
-            fetchGoalAverages(tableName);
-        });
-
-        async function fetchGoalAverages(tableName) {
-            try {
-                const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
-                const data = await response.json();
-                const tableBody = document.getElementById("goalAveragesTable");
-                tableBody.innerHTML = "";
-
-                if (data.length === 0) {
-                    tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
-                    return;
-                }
-
-                data.forEach(match => {
-                    const row = document.createElement("tr");
-                    row.innerHTML = `
-                        <td>${match.time_home}</td>
-                        <td>${match.time_away}</td>
-                        <td>${match.home_avg}</td>
-                        <td>${match.away_avg}</td>
-                        <td>${match.total_pontos}</td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-            } catch (error) {
-                console.error("Erro ao buscar as médias de gols:", error);
-                document.getElementById("goalAveragesTable").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
-            }
+        } catch (error) {
+            console.error("Erro ao buscar os jogos:", error);
+            matchesDiv.innerHTML = "<p>Erro ao buscar os jogos. Tente novamente.</p>";
         }
-    </script>
 
+        // Buscar Confronto Direto
+        try {
+            const response = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?tableName=${tableName}`);
+            const data = await response.json();
+            headToHeadTable.innerHTML = "";
+
+            data.forEach(match => {
+                let row = `<tr>
+                    <td>${match.timehome}</td>
+                    <td>${match.timeaway}</td>
+                    <td>${match.home_average_points} x ${match.away_average_points} = ${match.total_points}</td>
+                </tr>`;
+                headToHeadTable.innerHTML += row;
+            });
+        } catch (error) {
+            console.error("Erro ao buscar confronto direto:", error);
+        }
+        fetchGoalAverages(tableName);
+    });
+
+    async function fetchGoalAverages(tableName) {
+        try {
+            const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?tableName=${tableName}`);
+            const data = await response.json();
+            const tableBody = document.getElementById("goalAveragesTable");
+            tableBody.innerHTML = "";
+
+            if (data.length === 0) {
+                tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
+                return;
+            }
+
+            data.forEach(match => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${match.time_home}</td>
+                    <td>${match.time_away}</td>
+                    <td>${match.home_avg}</td>
+                    <td>${match.away_avg}</td>
+                    <td>${match.total_pontos}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Erro ao buscar as médias de gols:", error);
+            document.getElementById("goalAveragesTable").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
+        }
+    }
+
+    // Função para buscar os últimos 10 jogos
+    async function fetchLast10Matches(timeHome, timeAway) {
+        try {
+            const response = await fetch(`https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`);
+            const data = await response.json();
+
+            lastMatchesTable.innerHTML = "";
+
+            data.forEach(match => {
+                let row = `<tr>
+                    <td>${match.data_hora}</td>
+                    <td>${match.timeA}</td>
+                    <td>${match.timeB}</td>
+                    <td>${match.pontosA} x ${match.pontosB} (${match.resultado})</td>
+                </tr>`;
+                lastMatchesTable.innerHTML += row;
+            });
+        } catch (error) {
+            console.error("Erro ao buscar os últimos 10 jogos:", error);
+        }
+    }
+</script>
 </body>
 </html>
