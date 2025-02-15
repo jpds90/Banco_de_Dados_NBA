@@ -294,12 +294,19 @@
     }
 
     // Função para buscar os últimos 10 jogos
+    // Função para buscar os últimos 10 jogos e preencher as tabelas corretas
     async function fetchLast10Matches(timeHome, timeAway) {
         try {
             const response = await fetch(`https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`);
             const data = await response.json();
 
-            lastMatchesTable.innerHTML = "";
+            // Identifica as tabelas de cada time
+            const homeTableBody = document.querySelector("#santosLastMatchesTable tbody");
+            const awayTableBody = document.querySelector("#palmeirasLastMatchesTable tbody");
+
+            // Limpa as tabelas antes de preencher
+            homeTableBody.innerHTML = "";
+            awayTableBody.innerHTML = "";
 
             data.forEach(match => {
                 let row = `<tr>
@@ -308,7 +315,14 @@
                     <td>${match.timeB}</td>
                     <td>${match.pontosA} x ${match.pontosB} (${match.resultado})</td>
                 </tr>`;
-                lastMatchesTable.innerHTML += row;
+
+                // Adiciona na tabela correta
+                if (match.timeA === timeHome || match.timeB === timeHome) {
+                    homeTableBody.innerHTML += row;
+                }
+                if (match.timeA === timeAway || match.timeB === timeAway) {
+                    awayTableBody.innerHTML += row;
+                }
             });
         } catch (error) {
             console.error("Erro ao buscar os últimos 10 jogos:", error);
