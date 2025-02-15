@@ -500,133 +500,94 @@ app.get("/ultimos10jogos", async (req, res) => {
     const timeHome = req.query.timeHome;
     const timeAway = req.query.timeAway;
 
-    if (!timeHome && !timeAway) {
-      return res.status(400).json({ error: "Parâmetros 'timeHome' ou 'timeAway' são obrigatórios." });
+    if (!timeHome || !timeAway) {
+      return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
     }
 
     console.log(`📌 Nome da tabela: ${tableName}`);
     console.log(`🏠 Time mandante consultado: ${timeHome}`);
     console.log(`🚀 Time visitante consultado: ${timeAway}`);
 
-    // Construindo query dinâmica para buscar os times corretos
-    let queryOdds = `SELECT time_home, time_away FROM ${tableName} WHERE 1=1`;
-    let queryParams = [];
+    // Transformar nomes para formato de tabela
+    const homeTable = timeHome.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+    const awayTable = timeAway.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
 
-    if (timeHome) {
-      queryOdds += ` AND LOWER(time_home) = LOWER($${queryParams.length + 1})`;
-      queryParams.push(timeHome);
-    }
+    console.log(`🏠 Tabela do time da casa: ${homeTable}`);
+    console.log(`🚀 Tabela do time visitante: ${awayTable}`);
 
-    if (timeAway) {
-      queryOdds += ` AND LOWER(time_away) = LOWER($${queryParams.length + 1})`;
-      queryParams.push(timeAway);
-    }
+    // Verificar tabelas existentes
+    const tablesResult = await pool.query(
+      `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
+      [homeTable, awayTable]
+    );
 
-    const oddsResult = await pool.query(queryOdds, queryParams);
-    const oddsRows = oddsResult.rows;
+    const tableNames = tablesResult.rows.map((row) => row.table_name);
+    let jogos = [];
 
-    console.log(`🔍 Qtd de registros encontrados: ${oddsRows.length}`);
+    const buscarJogos = async (table, column, team) => {
+      if (tableNames.includes(table)) {
+        const querySQL = `
+          SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+          FROM ${table} 
+          WHERE ${column} = $1
+          ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+          LIMIT 10
+        `;
 
-    const results = [];
+        console.log(`📄 Executando query para ${table}: ${querySQL}`);
+        const jogosResult = await pool.query(querySQL, [team]);
+        return jogosResult.rows;
+      }
+      return [];
+    };
 
-    for (const row of oddsRows) {
-      const { time_home, time_away } = row;
+    jogos = jogos.concat(await buscarJogos(homeTable, "timehome", timeHome));
+    jogos = jogos.concat(await buscarJogos(awayTable, "timeaway", timeAway));
 
-      if (!time_home || !time_away) {
-        console.error("❌ ERRO: time_home ou time_away está indefinido!", row);
-        continue;
+    console.log(`📊 Jogos retornados pela query:`, jogos);
+
+    const jogosFormatados = jogos.map((row) => {
+      const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
+      let timeA, timeB, pontosA, pontosB;
+
+      if (timeHome.toLowerCase() === timehome.toLowerCase()) {
+        timeA = timehome;
+        timeB = timeaway;
+        pontosA = resultadohome;
+        pontosB = resultadoaway;
+      } else if (timeAway.toLowerCase() === timeaway.toLowerCase()) {
+        timeB = timeaway;
+        timeA = timehome;
+        pontosB = resultadoaway;
+        pontosA = resultadohome;
+      } else {
+        return null;
       }
 
-      const homeTable = time_home.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
-      const awayTable = time_away.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+      let statusResultado;
+      if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
+        statusResultado = `${timeA} ✅`;
+      } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
+        statusResultado = `${timeA} ❌`;
+      } else {
+        statusResultado = "Empate";
+      }
 
-      console.log(`🏠 Tabela do time da casa: ${homeTable}`);
-      console.log(`🚀 Tabela do time visitante: ${awayTable}`);
+      const [data, hora] = data_hora.split(" ");
+      const dataFormatada = data.replace(".", "/").slice(0, -1);
 
-      // Verificar tabelas existentes
-      const tablesResult = await pool.query(
-        `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
-        [homeTable, awayTable]
-      );
-
-      const tableNames = tablesResult.rows.map((row) => row.table_name);
-      let jogos = [];
-
-      // Buscar os jogos na tabela correspondente
-      const buscarJogos = async (table, column, team) => {
-        if (tableNames.includes(table)) {
-          const querySQL = `
-            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
-            FROM ${table} 
-            WHERE ${column} = $1
-                    ORDER BY 
-                      -- Prioriza registros no formato DD.MM. HH:MI
-                      CASE
-                          WHEN data_hora  LIKE '__.__. __:__' THEN 1
-                          ELSE 2
-                      END,
-                      -- Ordena pela data/hora dentro de cada grupo de formatos
-                      CASE
-                          WHEN data_hora  LIKE '__.__. __:__' THEN 
-                              TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                          WHEN data_hora  LIKE '__.__.____ __:__' THEN 
-                              TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
-                      END DESC
-                    LIMIT 10
-          `;
-
-          console.log(`📄 Executando query para ${table}: ${querySQL}`);
-          const jogosResult = await pool.query(querySQL, [team]);
-          return jogosResult.rows;
-        }
-        return [];
+      return {
+        timeA,
+        timeB,
+        pontosA,
+        pontosB,
+        resultado: statusResultado,
+        data_hora: dataFormatada,
+        hora,
       };
+    });
 
-      jogos = jogos.concat(await buscarJogos(homeTable, "timehome", time_home));
-      jogos = jogos.concat(await buscarJogos(awayTable, "timeaway", time_away));
-
-      console.log(`📊 Jogos retornados pela query:`, jogos);
-
-      const jogosFormatados = jogos.map((row) => {
-        const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
-
-        let timeA, timeB, pontosA, pontosB;
-
-        if (timeHome && timeHome.toLowerCase() === timehome.toLowerCase()) {
-          timeA = timehome;
-          timeB = timeaway;
-          pontosA = resultadohome;
-          pontosB = resultadoaway;
-        } else if (timeAway && timeAway.toLowerCase() === timeaway.toLowerCase()) {
-          timeA = timehome;
-          timeB = timeaway;
-          pontosA = resultadohome;
-          pontosB = resultadoaway;
-        } else {
-          return null;
-        }
-
-        let statusResultado;
-        if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
-          statusResultado = `${timeA} ✅`;
-        } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
-          statusResultado = `${timeA} ❌`;
-        } else {
-          statusResultado = "Empate";
-        }
-
-        return {
-          timeA,
-          timeB,
-          pontosA,
-          pontosB,
-          resultado: statusResultado,
-          data_hora,
-        };
-      });
-
-      results.push(...jogosFormatados.filter((j) => j !== null));
-    }
+    results = jogosFormatados.filter((j) => j !== null);
 
     console.log("📢 Jogos processados finalizados:", results);
     res.json(results);
@@ -637,7 +598,7 @@ app.get("/ultimos10jogos", async (req, res) => {
 });
 
 
-//Futebol------------------Futebol------------futebol------------------------
+//Futebol------------------Futebol------------futebol------------------------//Futebol------------------Futebol------------futebol------------------------//Futebol------------------Futebol------------futebol------------------------
 //NBA
 
 // Rota para exibir links únicos
