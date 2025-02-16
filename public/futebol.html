@@ -232,7 +232,7 @@
                     matchElement.addEventListener("click", function() {
                         fetchLast10Matches(match.time_home, match.time_away);
                         fetchHeadToHead(match.time_home, match.time_away);
-                        fetchGoalAverages(match.time_home);
+                        fetchGoalAverages(match.time_home, match.time_away);
                     });
 
                     matchesDiv.appendChild(matchElement);
