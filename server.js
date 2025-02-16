@@ -201,92 +201,6 @@ app.get("/buscar-times", async (req, res) => {
   }
 });
 
-app.get('/confrontosfutebol1', async (req, res) => {
-    try {
-        const time_home = req.query.time_home;
-        const time_away = req.query.time_away;
-
-        if (!time_home || !time_away) {
-            return res.status(400).json({ error: "Parâmetros 'time_home' e 'time_away' são obrigatórios" });
-        }
-
-        console.log(`📌 Buscando confrontos entre: ${time_home} e ${time_away}`);
-
-        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-
-        // Verifica se pelo menos uma das tabelas existe
-        const tablesResult = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_name = $1 OR table_name = $2
-        `, [homeTable, awayTable]);
-
-        const tableNames = tablesResult.rows.map(row => row.table_name);
-
-        if (!tableNames.includes(homeTable) && !tableNames.includes(awayTable)) {
-            return res.status(404).json({ error: "Nenhuma tabela encontrada para os times especificados" });
-        }
-
-        let confrontations = [];
-
-        // Buscar confrontos entre os dois times
-        if (tableNames.includes(homeTable)) {
-            const confrontationResult = await pool.query(`
-                SELECT data_hora, resultadohome, resultadoaway, timehome, timeaway
-                FROM ${homeTable}
-                WHERE (timehome = $1 AND timeaway = $2)
-                   OR (timehome = $2 AND timeaway = $1)
-                ORDER BY 
-                    CASE
-                        WHEN data_hora LIKE '__.__. __:__' THEN 
-                            TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                        WHEN data_hora LIKE '__.__.____ __:__' THEN 
-                            TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
-                    END DESC
-                LIMIT 10
-            `, [time_home, time_away]);
-
-            confrontations = confrontationResult.rows;
-        }
-
-        let totalHomePoints = 0;
-        let totalAwayPoints = 0;
-
-        confrontations.forEach(row => {
-            totalHomePoints += parseInt(row.resultadohome, 10) || 0;
-            totalAwayPoints += parseInt(row.resultadoaway, 10) || 0;
-        });
-
-        const homeAveragePoints = confrontations.length > 0
-            ? Math.round(totalHomePoints / confrontations.length)
-            : 0;
-
-        const awayAveragePoints = confrontations.length > 0
-            ? Math.round(totalAwayPoints / confrontations.length)
-            : 0;
-
-        const totalPoints = confrontations.length > 0
-            ? Math.round((totalHomePoints + totalAwayPoints) / confrontations.length)
-            : 0;
-
-        // Retornar os confrontos individuais junto com as médias
-        res.json({
-            confrontations,
-            averages: {
-                timehome: time_home,
-                timeaway: time_away,
-                home_average_points: homeAveragePoints,
-                away_average_points: awayAveragePoints,
-                total_points: totalPoints
-            }
-        });
-
-    } catch (error) {
-        console.error('Erro ao processar os confrontos:', error);
-        res.status(500).send('Erro no servidor');
-    }
-});
 
 
 
@@ -399,117 +313,128 @@ app.get('/probabilidade-vitoria', async (req, res) => {
   }
 });
 
+// 🔹 Endpoint para buscar a média de gols dos dois times
 app.get('/golsemcasa1', async (req, res) => {
     try {
-        const time_home = req.query.time_home;
-        const time_away = req.query.time_away;
-        const threshold = parseFloat(req.query.threshold) || 0.5;
+        const timeHome = req.query.timeHome;
+        const timeAway = req.query.timeAway;
 
-        if (!time_home || !time_away) {
-            return res.status(400).json({ error: "Parâmetros 'time_home' e 'time_away' são obrigatórios" });
+        if (!timeHome || !timeAway) {
+            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
-        console.log(`📌 Buscando dados para os times: ${time_home} e ${time_away}`);
-        console.log(`🔍 Filtro de gol: ${threshold}`);
+        console.log(`🏠 Time Home consultado: ${timeHome}`);
+        console.log(`🚀 Time Away consultado: ${timeAway}`);
 
-        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        // Buscar os jogos de ambos os times
+        const jogosHome = await buscarJogos(timeHome);
+        const jogosAway = await buscarJogos(timeAway);
 
-        // Verificar se as tabelas dos times existem
-        const tablesResult = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_name = $1 OR table_name = $2
-        `, [homeTable, awayTable]);
+        let totalHome = 0, totalAway = 0;
 
-        const tableNames = tablesResult.rows.map(row => row.table_name);
+        jogosHome.forEach(jogo => totalHome += parseInt(jogo.resultadohome) || 0);
+        jogosAway.forEach(jogo => totalAway += parseInt(jogo.resultadoaway) || 0);
 
-        let homeAvg = 0;
-        let awayAvg = 0;
-        let homeHitsThreshold = 0;
-        let awayHitsThreshold = 0;
+        const homeAvg = jogosHome.length ? Math.round(totalHome / jogosHome.length) : 0;
+        const awayAvg = jogosAway.length ? Math.round(totalAway / jogosAway.length) : 0;
 
-        // Buscar os últimos 10 jogos e calcular a média de gols do time da casa
-        if (tableNames.includes(homeTable)) {
-            const homeScoresResult = await pool.query(`
-                SELECT resultadohome 
-                FROM ${homeTable} 
-                WHERE timehome = $1
-                ORDER BY 
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 1
-                      ELSE 2
-                  END,
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 
-                          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
-                          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
-                  END DESC
-                LIMIT 10
-            `, [time_home]);
+        const response = {
+            time_home: timeHome,
+            time_away: timeAway,
+            home_avg: homeAvg,
+            away_avg: awayAvg,
+            total_pontos: homeAvg + awayAvg
+        };
 
-            const homeScores = homeScoresResult.rows
-                .map(row => parseInt(row.resultadohome, 10))
-                .filter(score => !isNaN(score) && score > threshold);
-
-            homeAvg = homeScores.length
-                ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length)
-                : 0;
-
-            homeHitsThreshold = homeScores.length;
-        }
-
-        // Buscar os últimos 10 jogos e calcular a média de gols do time visitante
-        if (tableNames.includes(awayTable)) {
-            const awayScoresResult = await pool.query(`
-                SELECT resultadoaway 
-                FROM ${awayTable} 
-                WHERE timeaway = $1
-                ORDER BY 
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 1
-                      ELSE 2
-                  END,
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 
-                          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
-                          TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
-                  END DESC
-                LIMIT 10
-            `, [time_away]);
-
-            const awayScores = awayScoresResult.rows
-                .map(row => parseInt(row.resultadoaway, 10))
-                .filter(score => !isNaN(score) && score > threshold);
-
-            awayAvg = awayScores.length
-                ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length)
-                : 0;
-
-            awayHitsThreshold = awayScores.length;
-        }
-
-        // Retorna os dados dos dois times
-        res.json([
-            {
-                time: time_home,
-                avg_gols: homeAvg,
-                gols_threshold: homeHitsThreshold
-            },
-            {
-                time: time_away,
-                avg_gols: awayAvg,
-                gols_threshold: awayHitsThreshold
-            }
-        ]);
+        console.log("📊 Média de gols calculada:", response);
+        res.json([response]);
 
     } catch (error) {
-        console.error('Erro ao processar os dados:', error);
-        res.status(500).send('Erro no servidor');
+        console.error("🔥 Erro ao calcular a média de gols:", error);
+        res.status(500).send("Erro no servidor");
     }
 });
+
+// 🔹 Endpoint para buscar confrontos diretos entre dois times
+app.get('/confrontosfutebol1', async (req, res) => {
+    try {
+        const timeHome = req.query.timeHome;
+        const timeAway = req.query.timeAway;
+
+        if (!timeHome || !timeAway) {
+            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+        }
+
+        console.log(`🏠 Time Home consultado: ${timeHome}`);
+        console.log(`🚀 Time Away consultado: ${timeAway}`);
+
+        const tableHome = timeHome.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+
+        // Verifica se a tabela existe no banco
+        const tablesResult = await pool.query(
+            `SELECT table_name FROM information_schema.tables WHERE table_name = $1`, 
+            [tableHome]
+        );
+
+        if (tablesResult.rows.length === 0) {
+            console.log("❌ Nenhuma tabela encontrada para os times informados.");
+            return res.json([]);
+        }
+
+        // Busca os confrontos diretos
+        const confrontationsQuery = `
+            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+            FROM ${tableHome} 
+            WHERE (timehome = $1 AND timeaway = $2) OR (timehome = $2 AND timeaway = $1)
+            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+            LIMIT 10
+        `;
+
+        console.log(`📄 Executando query de confrontos diretos: ${confrontationsQuery}`);
+        const confrontationsResult = await pool.query(confrontationsQuery, [timeHome, timeAway]);
+
+        const response = confrontationsResult.rows.map(row => ({
+            timehome: row.timehome,
+            timeaway: row.timeaway,
+            resultadohome: parseInt(row.resultadohome) || 0,
+            resultadoaway: parseInt(row.resultadoaway) || 0,
+            total_pontos: (parseInt(row.resultadohome) || 0) + (parseInt(row.resultadoaway) || 0),
+            data_hora: row.data_hora
+        }));
+
+        console.log("📊 Confrontos diretos encontrados:", response);
+        res.json(response);
+    } catch (error) {
+        console.error("🔥 Erro ao buscar confrontos diretos:", error);
+        res.status(500).send("Erro no servidor");
+    }
+});
+
+// 🔹 Função para buscar jogos do time no banco
+const buscarJogos = async (team) => {
+    const table = team.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+
+    const tablesResult = await pool.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`, 
+        [table]
+    );
+
+    if (tablesResult.rows.length > 0) {
+        const querySQL = `
+            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+            FROM ${table} 
+            WHERE timehome = $1 OR timeaway = $1
+            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+            LIMIT 10
+        `;
+
+        console.log(`📄 Executando query para ${table}: ${querySQL}`);
+        const jogosResult = await pool.query(querySQL, [team]);
+        return jogosResult.rows;
+    }
+
+    return [];
+};
 
 
 
