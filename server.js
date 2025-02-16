@@ -556,61 +556,68 @@ ORDER BY
 
     console.log(`📊 Jogos retornados pela query:`, jogos);
 
-    const jogosFormatados = jogos.map((row) => {
-      const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
-      let timeA, timeB, pontosA, pontosB;
-        
-      if (timehome.toLowerCase() === timeHome.toLowerCase()) {
-          // Time é mandante
-          timeA = timehome; // Time do lado esquerdo
-          timeB = timeaway; // Adversário
-          pontosA = resultadohome; // Pontos do time mandante
-          pontosB = resultadoaway; // Pontos do adversário
-        } else if (timeaway.toLowerCase() === timeAway.toLowerCase()) {
-          // Time é visitante
-          timeB = timeaway; // Time consultado no lado direito
-          timeA = timehome; // Adversário
-          pontosB = resultadoaway; // Pontos do time visitante
-          pontosA = resultadohome; // Pontos do adversário
-      } else {
-          throw new Error('O time escolhido não participou deste jogo.');
-      }
-  
-      // Calculando o resultado baseado no time consultado
-      let statusResultado;
-      if (timeHome.toLowerCase() === timeA.toLowerCase() || timeAway.toLowerCase() === timeA.toLowerCase()) {
-          // Time consultado é o mandante
-          if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
-              statusResultado = `${timeA} ✅`; // Venceu
-          } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
-              statusResultado = `${timeA} ❌`; // Perdeu
-          } else {
-              statusResultado = 'Empate';
-          }
-        } else if (timeHome.toLowerCase() === timeB.toLowerCase() || timeAway.toLowerCase() === timeB.toLowerCase()) {
-          // Time consultado é o visitante
-          if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
-              statusResultado = `${timeB} ✅`; // Venceu
-          } else if (parseInt(pontosB, 10) < parseInt(pontosA, 10)) {
-              statusResultado = `${timeB} ❌`; // Perdeu
-          } else {
-              statusResultado = 'Empate';
-          }
-      }
+const jogosFormatados = jogos.map((row) => {
+    const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
+    let timeA = timehome;
+    let timeB = timeaway;
+    let pontosA = resultadohome;
+    let pontosB = resultadoaway;
 
-      const [data, hora] = data_hora.split(" ");
-      const dataFormatada = data.replace(".", "/").slice(0, -1);
+    let statusResultadoHome, statusResultadoAway;
 
-      return {
+    // Verificando resultado para o timeHome
+    if (timeHome.toLowerCase() === timehome.toLowerCase()) {
+        if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
+            statusResultadoHome = `${timeHome} ✅`; // Venceu
+        } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
+            statusResultadoHome = `${timeHome} ❌`; // Perdeu
+        } else {
+            statusResultadoHome = 'Empate';
+        }
+    } else if (timeHome.toLowerCase() === timeaway.toLowerCase()) {
+        if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
+            statusResultadoHome = `${timeHome} ✅`; // Venceu
+        } else if (parseInt(pontosB, 10) < parseInt(pontosA, 10)) {
+            statusResultadoHome = `${timeHome} ❌`; // Perdeu
+        } else {
+            statusResultadoHome = 'Empate';
+        }
+    }
+
+    // Verificando resultado para o timeAway
+    if (timeAway.toLowerCase() === timehome.toLowerCase()) {
+        if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
+            statusResultadoAway = `${timeAway} ✅`; // Venceu
+        } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
+            statusResultadoAway = `${timeAway} ❌`; // Perdeu
+        } else {
+            statusResultadoAway = 'Empate';
+        }
+    } else if (timeAway.toLowerCase() === timeaway.toLowerCase()) {
+        if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
+            statusResultadoAway = `${timeAway} ✅`; // Venceu
+        } else if (parseInt(pontosB, 10) < parseInt(pontosA, 10)) {
+            statusResultadoAway = `${timeAway} ❌`; // Perdeu
+        } else {
+            statusResultadoAway = 'Empate';
+        }
+    }
+
+    const [data, hora] = data_hora.split(" ");
+    const dataFormatada = data.replace(/\./g, "/");
+
+    return {
         timeA,
         timeB,
         pontosA,
         pontosB,
-        resultado: statusResultado,
+        resultadoHome: statusResultadoHome || "N/A",
+        resultadoAway: statusResultadoAway || "N/A",
         data_hora: dataFormatada,
         hora,
-      };
-    });
+    };
+});
+
 
     const results = jogosFormatados.filter((j) => j !== null);
 
