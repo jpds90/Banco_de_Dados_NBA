@@ -120,7 +120,9 @@
             <thead>
                 <tr>
                     <th>Casa</th>
-                    <th>Fora</th>
+                    <th>Gols</th>
+                    <th>Visitante</th>
+                    <th>Gols</th>
                     <th>Placar</th>
                 </tr>
             </thead>
@@ -254,21 +256,33 @@ async function fetchHeadToHead(timeHome, timeAway) {
         const headToHeadTable = document.getElementById("headToHeadTable");
         headToHeadTable.innerHTML = "";
 
-        if (!data || data.length === 0) {
-            headToHeadTable.innerHTML = "<tr><td colspan='3'>Nenhum confronto encontrado</td></tr>";
+        // Verifica se há dados válidos
+        if (!data || !data.confrontations || data.confrontations.length === 0) {
+            headToHeadTable.innerHTML = "<tr><td colspan='5'>Nenhum confronto encontrado</td></tr>";
             return;
         }
 
-        data.forEach(match => {
+        // Exibe os confrontos diretos
+        data.confrontations.forEach(match => {
             let row = `<tr>
                 <td>${match.timehome}</td>
+                <td>${match.resultadohome}</td>
                 <td>${match.timeaway}</td>
-                <td>${match.home_average_points} x ${match.away_average_points} = ${match.total_points}</td>
+                <td>${match.resultadoaway}</td>
+                <td>${match.total_pontos}</td>
             </tr>`;
             headToHeadTable.innerHTML += row;
         });
+
+        // Exibe as médias de gols nos confrontos diretos
+        const averagesRow = `<tr class="average-row">
+            <td colspan="5"><strong>Média de Gols:</strong> ${data.home_average_points} x ${data.away_average_points} = ${data.total_points}</td>
+        </tr>`;
+        headToHeadTable.innerHTML += averagesRow;
+
     } catch (error) {
         console.error("Erro ao buscar confrontos diretos:", error);
+        headToHeadTable.innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
     }
 }
 
