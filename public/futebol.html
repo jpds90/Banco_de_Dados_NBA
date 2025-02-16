@@ -276,7 +276,7 @@
     // 🔹 Nova função para buscar a média de gols apenas do time clicado
     async function fetchGoalAverages(timeHome) {
         try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?time=${timeHome}`);
+            const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa1?timeHome=${timeHome}&timeAway=${timeAway}`);
             const data = await response.json();
             const tableBody = document.getElementById("goalAveragesTable");
             tableBody.innerHTML = "";
