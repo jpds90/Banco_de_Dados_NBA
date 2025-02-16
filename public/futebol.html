@@ -249,7 +249,7 @@
     // 🔹 Nova função para buscar confronto direto apenas do time clicado
     async function fetchHeadToHead(timeHome, timeAway) {
         try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol?time=${timeHome}`);
+            const response = await fetch(`https://analise-jpnba.onrender.com/confrontosfutebol1?timeHome=${timeHome}&timeAway=${timeAway}`);
             const data = await response.json();
             headToHeadTable.innerHTML = "";
 
