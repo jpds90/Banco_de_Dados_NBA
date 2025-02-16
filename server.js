@@ -547,28 +547,43 @@ app.get("/ultimos10jogos", async (req, res) => {
     const jogosFormatados = jogos.map((row) => {
       const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
       let timeA, timeB, pontosA, pontosB;
-
-      if (timeHome.toLowerCase() === timehome.toLowerCase()) {
-        timeA = timehome;
-        timeB = timeaway;
-        pontosA = resultadohome;
-        pontosB = resultadoaway;
-      } else if (timeAway.toLowerCase() === timeaway.toLowerCase()) {
-        timeB = timeaway;
-        timeA = timehome;
-        pontosB = resultadoaway;
-        pontosA = resultadohome;
+        
+      if (timehome.toLowerCase() === team.toLowerCase()) {
+          // Time é mandante
+          timeA = timehome; // Time do lado esquerdo
+          timeB = timeaway; // Adversário
+          pontosA = resultadohome; // Pontos do time mandante
+          pontosB = resultadoaway; // Pontos do adversário
+      } else if (timeaway.toLowerCase() === team.toLowerCase()) {
+          // Time é visitante
+          timeB = timeaway; // Time consultado no lado direito
+          timeA = timehome; // Adversário
+          pontosB = resultadoaway; // Pontos do time visitante
+          pontosA = resultadohome; // Pontos do adversário
       } else {
-        return null;
+          throw new Error('O time escolhido não participou deste jogo.');
       }
-
+  
+      // Calculando o resultado baseado no time consultado
       let statusResultado;
-      if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
-        statusResultado = `${timeA} ✅`;
-      } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
-        statusResultado = `${timeA} ❌`;
-      } else {
-        statusResultado = "Empate";
+      if (team.toLowerCase() === timeA.toLowerCase()) {
+          // Time consultado é o mandante
+          if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
+              statusResultado = `${timeA} ✅`; // Venceu
+          } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
+              statusResultado = `${timeA} ❌`; // Perdeu
+          } else {
+              statusResultado = 'Empate';
+          }
+      } else if (team.toLowerCase() === timeB.toLowerCase()) {
+          // Time consultado é o visitante
+          if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
+              statusResultado = `${timeB} ✅`; // Venceu
+          } else if (parseInt(pontosB, 10) < parseInt(pontosA, 10)) {
+              statusResultado = `${timeB} ❌`; // Perdeu
+          } else {
+              statusResultado = 'Empate';
+          }
       }
 
       const [data, hora] = data_hora.split(" ");
