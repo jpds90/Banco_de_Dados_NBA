@@ -410,34 +410,6 @@ app.get('/confrontosfutebol1', async (req, res) => {
     }
 });
 
-// 🔹 Função para buscar jogos do time no banco
-const buscarJogos = async (team) => {
-    const table = team.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
-
-    const tablesResult = await pool.query(
-        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`, 
-        [table]
-    );
-
-    if (tablesResult.rows.length > 0) {
-        const querySQL = `
-            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
-            FROM ${table} 
-            WHERE timehome = $1 OR timeaway = $1
-            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-            LIMIT 10
-        `;
-
-        console.log(`📄 Executando query para ${table}: ${querySQL}`);
-        const jogosResult = await pool.query(querySQL, [team]);
-        return jogosResult.rows;
-    }
-
-    return [];
-};
-
-
-
 
 
 app.get("/ultimos10jogos", async (req, res) => {
