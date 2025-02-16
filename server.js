@@ -562,54 +562,64 @@ const buscarJogos = async (team) => {
 const processarJogos = (jogos, team) => {
     return jogos.map(row => {
         const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
-        let timeA, timeB, pontosA, pontosB;
+        let timeA, timeB, pontosA, pontosB, statusResultado;
 
-        if (timehome.toLowerCase() === team.toLowerCase()) {
-            timeA = timehome;
-            timeB = timeaway;
-            pontosA = resultadohome;
-            pontosB = resultadoaway;
-        } else if (timeaway.toLowerCase() === team.toLowerCase()) {
-            timeA = timeaway; 
-            timeB = timehome; 
-            pontosA = resultadoaway; 
-            pontosB = resultadohome;
+        // Definir corretamente quem jogou em casa e quem jogou fora
+        const mandante = timehome;
+        const visitante = timeaway;
+        const golsMandante = resultadohome;
+        const golsVisitante = resultadoaway;
+
+        // Verificar se o time consultado jogou como mandante ou visitante
+        if (mandante.toLowerCase() === team.toLowerCase()) {
+            // Time jogou em casa
+            timeA = mandante;
+            timeB = visitante;
+            pontosA = golsMandante;
+            pontosB = golsVisitante;
+        } else if (visitante.toLowerCase() === team.toLowerCase()) {
+            // Time jogou fora
+            timeA = visitante;
+            timeB = mandante;
+            pontosA = golsVisitante;
+            pontosB = golsMandante;
         } else {
-            throw new Error('O time escolhido não participou deste jogo.');
+            throw new Error("O time consultado não participou deste jogo.");
         }
 
-        // Determinar o resultado do jogo
-        let statusResultado;
-        if (team.toLowerCase() === timeA.toLowerCase()) {
-            if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
-                statusResultado = `${timeA} ✅`; // Venceu
-            } else if (parseInt(pontosA, 10) < parseInt(pontosB, 10)) {
-                statusResultado = `${timeA} ❌`; // Perdeu
+        // Definir o resultado correto para o time consultado
+        if (team.toLowerCase() === mandante.toLowerCase()) {
+            // Time jogou como mandante
+            if (parseInt(golsMandante, 10) > parseInt(golsVisitante, 10)) {
+                statusResultado = `${mandante} ✅`; // Vitória do mandante
+            } else if (parseInt(golsMandante, 10) < parseInt(golsVisitante, 10)) {
+                statusResultado = `${mandante} ❌`; // Derrota do mandante
             } else {
-                statusResultado = 'Empate';
+                statusResultado = "Empate";
             }
-        } else if (team.toLowerCase() === timeB.toLowerCase()) {
-            if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
-                statusResultado = `${timeB} ✅`; // Venceu
-            } else if (parseInt(pontosB, 10) < parseInt(pontosA, 10)) {
-                statusResultado = `${timeB} ❌`; // Perdeu
+        } else if (team.toLowerCase() === visitante.toLowerCase()) {
+            // Time jogou como visitante
+            if (parseInt(golsVisitante, 10) > parseInt(golsMandante, 10)) {
+                statusResultado = `${visitante} ✅`; // Vitória do visitante
+            } else if (parseInt(golsVisitante, 10) < parseInt(golsMandante, 10)) {
+                statusResultado = `${visitante} ❌`; // Derrota do visitante
             } else {
-                statusResultado = 'Empate';
+                statusResultado = "Empate";
             }
         }
 
-        // Ajuste na formatação da data para evitar erros
+        // Processar data e hora corretamente
         const [data, hora] = data_hora.split(" ");
-        const dataFormatada = data.replace(/\.$/, "").replace(/\./g, "/"); 
+        const dataFormatada = data.replace(".", "/").slice(0, -1);
 
         return {
-            timeA,
-            timeB,
-            pontosA,
-            pontosB,
-            resultado: statusResultado,
             data_hora: dataFormatada,
             hora,
+            timeA: mandante, // Sempre mostrar o mandante primeiro
+            timeB: visitante, // Sempre mostrar o visitante depois
+            pontosA: golsMandante,
+            pontosB: golsVisitante,
+            resultado: statusResultado,
         };
     });
 };
