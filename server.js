@@ -526,7 +526,19 @@ app.get("/ultimos10jogos", async (req, res) => {
           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
           FROM ${table} 
           WHERE ${column} = $1
-          ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+ORDER BY 
+    -- Prioriza registros no formato DD.MM. HH:MI
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 1
+        ELSE 2
+    END,
+    -- Ordena pela data/hora dentro de cada grupo de formatos
+    CASE
+        WHEN datahora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
+        WHEN datahora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+    END DESC
           LIMIT 10
         `;
 
@@ -548,13 +560,13 @@ app.get("/ultimos10jogos", async (req, res) => {
       const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
       let timeA, timeB, pontosA, pontosB;
         
-      if (timehome.toLowerCase() === team.toLowerCase()) {
+      if (timehome.toLowerCase() === timeHome.toLowerCase()) {
           // Time é mandante
           timeA = timehome; // Time do lado esquerdo
           timeB = timeaway; // Adversário
           pontosA = resultadohome; // Pontos do time mandante
           pontosB = resultadoaway; // Pontos do adversário
-      } else if (timeaway.toLowerCase() === team.toLowerCase()) {
+        } else if (timeaway.toLowerCase() === timeAway.toLowerCase()) {
           // Time é visitante
           timeB = timeaway; // Time consultado no lado direito
           timeA = timehome; // Adversário
@@ -566,7 +578,7 @@ app.get("/ultimos10jogos", async (req, res) => {
   
       // Calculando o resultado baseado no time consultado
       let statusResultado;
-      if (team.toLowerCase() === timeA.toLowerCase()) {
+      if (timeHome.toLowerCase() === timeA.toLowerCase() || timeAway.toLowerCase() === timeA.toLowerCase()) {
           // Time consultado é o mandante
           if (parseInt(pontosA, 10) > parseInt(pontosB, 10)) {
               statusResultado = `${timeA} ✅`; // Venceu
@@ -575,7 +587,7 @@ app.get("/ultimos10jogos", async (req, res) => {
           } else {
               statusResultado = 'Empate';
           }
-      } else if (team.toLowerCase() === timeB.toLowerCase()) {
+        } else if (timeHome.toLowerCase() === timeB.toLowerCase() || timeAway.toLowerCase() === timeB.toLowerCase()) {
           // Time consultado é o visitante
           if (parseInt(pontosB, 10) > parseInt(pontosA, 10)) {
               statusResultado = `${timeB} ✅`; // Venceu
