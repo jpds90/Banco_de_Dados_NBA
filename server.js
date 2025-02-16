@@ -201,6 +201,94 @@ app.get("/buscar-times", async (req, res) => {
   }
 });
 
+app.get('/confrontosfutebol1', async (req, res) => {
+    try {
+        const time_home = req.query.time_home;
+        const time_away = req.query.time_away;
+
+        if (!time_home || !time_away) {
+            return res.status(400).json({ error: "Parâmetros 'time_home' e 'time_away' são obrigatórios" });
+        }
+
+        console.log(`📌 Buscando confrontos entre: ${time_home} e ${time_away}`);
+
+        const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+        // Verifica se pelo menos uma das tabelas existe
+        const tablesResult = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = $1 OR table_name = $2
+        `, [homeTable, awayTable]);
+
+        const tableNames = tablesResult.rows.map(row => row.table_name);
+
+        if (!tableNames.includes(homeTable) && !tableNames.includes(awayTable)) {
+            return res.status(404).json({ error: "Nenhuma tabela encontrada para os times especificados" });
+        }
+
+        let confrontations = [];
+
+        // Buscar confrontos entre os dois times
+        if (tableNames.includes(homeTable)) {
+            const confrontationResult = await pool.query(`
+                SELECT data_hora, resultadohome, resultadoaway, timehome, timeaway
+                FROM ${homeTable}
+                WHERE (timehome = $1 AND timeaway = $2)
+                   OR (timehome = $2 AND timeaway = $1)
+                ORDER BY 
+                    CASE
+                        WHEN data_hora LIKE '__.__. __:__' THEN 
+                            TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                        WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                            TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                    END DESC
+                LIMIT 10
+            `, [time_home, time_away]);
+
+            confrontations = confrontationResult.rows;
+        }
+
+        let totalHomePoints = 0;
+        let totalAwayPoints = 0;
+
+        confrontations.forEach(row => {
+            totalHomePoints += parseInt(row.resultadohome, 10) || 0;
+            totalAwayPoints += parseInt(row.resultadoaway, 10) || 0;
+        });
+
+        const homeAveragePoints = confrontations.length > 0
+            ? Math.round(totalHomePoints / confrontations.length)
+            : 0;
+
+        const awayAveragePoints = confrontations.length > 0
+            ? Math.round(totalAwayPoints / confrontations.length)
+            : 0;
+
+        const totalPoints = confrontations.length > 0
+            ? Math.round((totalHomePoints + totalAwayPoints) / confrontations.length)
+            : 0;
+
+        // Retornar os confrontos individuais junto com as médias
+        res.json({
+            confrontations,
+            averages: {
+                timehome: time_home,
+                timeaway: time_away,
+                home_average_points: homeAveragePoints,
+                away_average_points: awayAveragePoints,
+                total_points: totalPoints
+            }
+        });
+
+    } catch (error) {
+        console.error('Erro ao processar os confrontos:', error);
+        res.status(500).send('Erro no servidor');
+    }
+});
+
+
 app.get('/confrontosfutebol', async (req, res) => {
     try {
         // Captura o nome da tabela da query string
