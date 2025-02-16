@@ -127,44 +127,44 @@
             <tbody></tbody>
         </table>
 
-        <h2>Últimos Jogos</h2>
-        <!-- Estrutura para mostrar tabelas lado a lado -->
-        <div class="last-matches">
-            <div class="team-table">
-                <h3>Santos</h3>
-                <table id="santosLastMatchesTable">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Casa</th>
-                            <th>Fora</th>
-                            <th>Placar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Preencher com dados dos jogos do Santos -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="team-table">
-                <h3>Palmeiras</h3>
-                <table id="palmeirasLastMatchesTable">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Casa</th>
-                            <th>Fora</th>
-                            <th>Placar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Preencher com dados dos jogos do Palmeiras -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+<h2>Últimos Jogos</h2>
+<!-- Estrutura para mostrar tabelas lado a lado -->
+<div class="last-matches">
+    <div class="team-table">
+        <h3 id="teamHomeName"></h3> <!-- Nome do primeiro time -->
+        <table id="teamHomeTable">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Casa</th>
+                    <th>Fora</th>
+                    <th>Placar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preencher com dados dos jogos do time mandante -->
+            </tbody>
+        </table>
     </div>
+
+    <div class="team-table">
+        <h3 id="teamAwayName"></h3> <!-- Nome do segundo time -->
+        <table id="teamAwayTable">
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Casa</th>
+                    <th>Fora</th>
+                    <th>Placar</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preencher com dados dos jogos do time visitante -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
 
    <script>
     const countries = {
@@ -295,39 +295,46 @@
 
     // Função para buscar os últimos 10 jogos
     // Função para buscar os últimos 10 jogos e preencher as tabelas corretas
-    async function fetchLast10Matches(timeHome, timeAway) {
-        try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`);
-            const data = await response.json();
+async function fetchLast10Matches(timeHome, timeAway) {
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`);
+        const data = await response.json();
 
-            // Identifica as tabelas de cada time
-            const homeTableBody = document.querySelector("#santosLastMatchesTable tbody");
-            const awayTableBody = document.querySelector("#palmeirasLastMatchesTable tbody");
+        // Identifica os elementos das tabelas e títulos
+        const homeTableBody = document.querySelector("#teamHomeTable tbody");
+        const awayTableBody = document.querySelector("#teamAwayTable tbody");
+        const teamHomeTitle = document.querySelector("#teamHomeName");
+        const teamAwayTitle = document.querySelector("#teamAwayName");
 
-            // Limpa as tabelas antes de preencher
-            homeTableBody.innerHTML = "";
-            awayTableBody.innerHTML = "";
+        // Define os nomes dos times dinamicamente
+        teamHomeTitle.textContent = timeHome;
+        teamAwayTitle.textContent = timeAway;
 
-            data.forEach(match => {
-                let row = `<tr>
-                    <td>${match.data_hora}</td>
-                    <td>${match.timeA}</td>
-                    <td>${match.timeB}</td>
-                    <td>${match.pontosA} x ${match.pontosB} (${match.resultado})</td>
-                </tr>`;
+        // Limpa as tabelas antes de preencher
+        homeTableBody.innerHTML = "";
+        awayTableBody.innerHTML = "";
 
-                // Adiciona na tabela correta
-                if (match.timeA === timeHome || match.timeB === timeHome) {
-                    homeTableBody.innerHTML += row;
-                }
-                if (match.timeA === timeAway || match.timeB === timeAway) {
-                    awayTableBody.innerHTML += row;
-                }
-            });
-        } catch (error) {
-            console.error("Erro ao buscar os últimos 10 jogos:", error);
-        }
+        data.forEach(match => {
+            let row = `<tr>
+                <td>${match.data_hora}</td>
+                <td>${match.timeA}</td>
+                <td>${match.timeB}</td>
+                <td>${match.pontosA} x ${match.pontosB} (${match.resultado})</td>
+            </tr>`;
+
+            // Adiciona na tabela correta
+            if (match.timeA === timeHome || match.timeB === timeHome) {
+                homeTableBody.innerHTML += row;
+            }
+            if (match.timeA === timeAway || match.timeB === timeAway) {
+                awayTableBody.innerHTML += row;
+            }
+        });
+    } catch (error) {
+        console.error("Erro ao buscar os últimos 10 jogos:", error);
     }
+}
+
 </script>
 </body>
 </html>
