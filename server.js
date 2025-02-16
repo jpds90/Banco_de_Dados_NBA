@@ -529,15 +529,15 @@ app.get("/ultimos10jogos", async (req, res) => {
 ORDER BY 
     -- Prioriza registros no formato DD.MM. HH:MI
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 1
+        WHEN data_hora LIKE '__.__. __:__' THEN 1
         ELSE 2
     END,
     -- Ordena pela data/hora dentro de cada grupo de formatos
     CASE
-        WHEN datahora LIKE '__.__. __:__' THEN 
-            TO_TIMESTAMP(CONCAT('2025.', datahora), 'YYYY.DD.MM HH24:MI')
-        WHEN datahora LIKE '__.__.____ __:__' THEN 
-            TO_TIMESTAMP(datahora, 'DD.MM.YYYY')
+        WHEN data_hora LIKE '__.__. __:__' THEN 
+            TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+        WHEN data_hora LIKE '__.__.____ __:__' THEN 
+            TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
     END DESC
           LIMIT 10
         `;
