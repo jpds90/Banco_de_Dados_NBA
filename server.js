@@ -393,22 +393,53 @@ app.get('/confrontosfutebol1', async (req, res) => {
         console.log(`📄 Executando query de confrontos diretos: ${confrontationsQuery}`);
         const confrontationsResult = await pool.query(confrontationsQuery, [timeHome, timeAway]);
 
-        const response = confrontationsResult.rows.map(row => ({
-            timehome: row.timehome,
-            timeaway: row.timeaway,
-            resultadohome: parseInt(row.resultadohome) || 0,
-            resultadoaway: parseInt(row.resultadoaway) || 0,
-            total_pontos: (parseInt(row.resultadohome) || 0) + (parseInt(row.resultadoaway) || 0),
-            data_hora: row.data_hora
-        }));
+        // Inicializa as variáveis para cálculo da média
+        let totalHomePoints = 0;
+        let totalAwayPoints = 0;
+        let countGames = 0;
+
+        // Processa os confrontos
+        const response = confrontationsResult.rows.map(row => {
+            const homePoints = row.resultadohome !== null ? parseInt(row.resultadohome, 10) : 0;
+            const awayPoints = row.resultadoaway !== null ? parseInt(row.resultadoaway, 10) : 0;
+
+            if (!isNaN(homePoints) && !isNaN(awayPoints)) {
+                totalHomePoints += homePoints;
+                totalAwayPoints += awayPoints;
+                countGames++;
+            }
+
+            return {
+                timehome: row.timehome,
+                timeaway: row.timeaway,
+                resultadohome: homePoints,
+                resultadoaway: awayPoints,
+                total_pontos: homePoints + awayPoints,
+                data_hora: row.data_hora
+            };
+        });
+
+        // Calcula as médias
+        const homeAveragePoints = countGames > 0 ? (totalHomePoints / countGames).toFixed(2) : "0";
+        const awayAveragePoints = countGames > 0 ? (totalAwayPoints / countGames).toFixed(2) : "0";
+        const totalPoints = countGames > 0 ? ((totalHomePoints + totalAwayPoints) / countGames).toFixed(2) : "0";
 
         console.log("📊 Confrontos diretos encontrados:", response);
-        res.json(response);
+        console.log(`📢 Média de pontos - Home: ${homeAveragePoints}, Away: ${awayAveragePoints}, Total: ${totalPoints}`);
+
+        res.json({
+            confrontations: response,
+            home_average_points: homeAveragePoints,
+            away_average_points: awayAveragePoints,
+            total_points: totalPoints
+        });
+
     } catch (error) {
         console.error("🔥 Erro ao buscar confrontos diretos:", error);
         res.status(500).send("Erro no servidor");
     }
 });
+
 
 
 
