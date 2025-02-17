@@ -322,12 +322,18 @@ app.get('/golsemcasa', async (req, res) => {
             return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
-        console.log(`📌 Time da casa recebido: ${timeHome}`);
-        console.log(`📌 Time visitante recebido: ${timeAway}`);
+        // Remover "Segue em frente" do nome dos times
+        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+
+        const timeHomeFormatted = formatarNomeTime(timeHome);
+        const timeAwayFormatted = formatarNomeTime(timeAway);
+
+        console.log(`📌 Time da casa recebido: ${timeHomeFormatted}`);
+        console.log(`📌 Time visitante recebido: ${timeAwayFormatted}`);
         console.log(`🔍 Filtro de gol: ${threshold}`);
 
-        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const homeTable = timeHomeFormatted.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = timeAwayFormatted.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
         // Verificar se as tabelas existem
         const tablesResult = await pool.query(`
@@ -360,7 +366,7 @@ app.get('/golsemcasa', async (req, res) => {
                           TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                   END DESC
                 LIMIT 10
-            `, [timeHome]);
+            `, [timeHomeFormatted]);
 
             const homeScores = homeScoresResult.rows
                 .map(row => parseInt(row.resultadohome, 10))
@@ -388,7 +394,7 @@ app.get('/golsemcasa', async (req, res) => {
                           TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                   END DESC
                 LIMIT 10
-            `, [timeAway]);
+            `, [timeAwayFormatted]);
 
             const awayScores = awayScoresResult.rows
                 .map(row => parseInt(row.resultadoaway, 10))
@@ -399,8 +405,8 @@ app.get('/golsemcasa', async (req, res) => {
         }
 
         res.json({
-            time_home: timeHome,
-            time_away: timeAway,
+            time_home: timeHomeFormatted,
+            time_away: timeAwayFormatted,
             home_avg: homeAvg,
             away_avg: awayAvg,
             total_pontos: homeAvg + awayAvg,
@@ -417,10 +423,11 @@ app.get('/golsemcasa', async (req, res) => {
 
 
 // 🔹 Endpoint para buscar a média de gols dos dois times
+// 🔹 Endpoint para buscar a média de gols dos dois times
 app.get('/golsemcasa1', async (req, res) => {
     try {
-        const timeHome = req.query.timeHome;
-        const timeAway = req.query.timeAway;
+        let timeHome = req.query.timeHome;
+        let timeAway = req.query.timeAway;
 
         if (!timeHome || !timeAway) {
             return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
@@ -428,6 +435,16 @@ app.get('/golsemcasa1', async (req, res) => {
 
         console.log(`🏠 Time Home consultado: ${timeHome}`);
         console.log(`🚀 Time Away consultado: ${timeAway}`);
+
+        // Função para remover "Segue em frente" do nome do time
+        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+
+        // Removendo "Segue em frente" dos nomes dos times
+        timeHome = formatarNomeTime(timeHome);
+        timeAway = formatarNomeTime(timeAway);
+
+        console.log(`🏠 Time Home após formatação: ${timeHome}`);
+        console.log(`🚀 Time Away após formatação: ${timeAway}`);
 
         // Buscar os jogos de ambos os times
         const jogosHome = await buscarJogos(timeHome);
@@ -458,11 +475,12 @@ app.get('/golsemcasa1', async (req, res) => {
     }
 });
 
+
 // 🔹 Endpoint para buscar confrontos diretos entre dois times
 app.get('/confrontosfutebol1', async (req, res) => {
     try {
-        const timeHome = req.query.timeHome;
-        const timeAway = req.query.timeAway;
+        let timeHome = req.query.timeHome;
+        let timeAway = req.query.timeAway;
 
         if (!timeHome || !timeAway) {
             return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
@@ -471,6 +489,14 @@ app.get('/confrontosfutebol1', async (req, res) => {
         console.log(`🏠 Time Home consultado: ${timeHome}`);
         console.log(`🚀 Time Away consultado: ${timeAway}`);
 
+        // Função para remover "Segue em frente" de qualquer time
+        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+
+        // Formata os nomes dos times
+        timeHome = formatarNomeTime(timeHome);
+        timeAway = formatarNomeTime(timeAway);
+
+        // Agora os nomes estão limpos, vamos prosseguir
         const tableHome = timeHome.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
 
         // Verifica se a tabela existe no banco
@@ -546,6 +572,7 @@ app.get('/confrontosfutebol1', async (req, res) => {
 
 
 
+
 app.get("/ultimos10jogos", async (req, res) => {
     try {
         const timeHome = req.query.timeHome;
@@ -557,6 +584,9 @@ app.get("/ultimos10jogos", async (req, res) => {
 
         console.log(`🏠 Time 1 consultado: ${timeHome}`);
         console.log(`🚀 Time 2 consultado: ${timeAway}`);
+
+        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+
 
         // Buscar os jogos dos dois times (mandante e visitante)
         const jogosHome = await buscarJogos(timeHome);
@@ -586,7 +616,8 @@ app.get("/ultimos10jogos", async (req, res) => {
 
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team) => {
-    const table = team.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+    const formattedTeam = formatarNomeTime(team);  // Remove "Segue em frente" do nome do time
+    const table = formattedTeam.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
 
     const tablesResult = await pool.query(
         `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
@@ -603,34 +634,35 @@ const buscarJogos = async (team) => {
         `;
 
         console.log(`📄 Executando query para ${table}: ${querySQL}`);
-        const jogosResult = await pool.query(querySQL, [team]);
+        const jogosResult = await pool.query(querySQL, [formattedTeam]);  // Usa o nome do time formatado
         return jogosResult.rows;
     }
 
     return [];
 };
 
+
 // Função para processar os jogos e determinar os resultados
 const processarJogos = (jogos, team) => {
+    const formattedTeam = formatarNomeTime(team);  // Remove "Segue em frente" do nome do time
+
     return jogos.map(row => {
         const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
         let timeA, timeB, pontosA, pontosB, statusResultado;
 
-        // Definir corretamente quem jogou em casa e quem jogou fora
-        const mandante = timehome;
-        const visitante = timeaway;
+        // Verificar se o time consultado jogou como mandante ou visitante
+        const mandante = formatarNomeTime(timehome);  // Formatar nome do time mandante
+        const visitante = formatarNomeTime(timeaway);  // Formatar nome do time visitante
         const golsMandante = resultadohome;
         const golsVisitante = resultadoaway;
 
         // Verificar se o time consultado jogou como mandante ou visitante
-        if (mandante.toLowerCase() === team.toLowerCase()) {
-            // Time jogou em casa
+        if (mandante.toLowerCase() === formattedTeam.toLowerCase()) {
             timeA = mandante;
             timeB = visitante;
             pontosA = golsMandante;
             pontosB = golsVisitante;
-        } else if (visitante.toLowerCase() === team.toLowerCase()) {
-            // Time jogou fora
+        } else if (visitante.toLowerCase() === formattedTeam.toLowerCase()) {
             timeA = visitante;
             timeB = mandante;
             pontosA = golsVisitante;
@@ -640,21 +672,19 @@ const processarJogos = (jogos, team) => {
         }
 
         // Definir o resultado correto para o time consultado
-        if (team.toLowerCase() === mandante.toLowerCase()) {
-            // Time jogou como mandante
+        if (formattedTeam.toLowerCase() === mandante.toLowerCase()) {
             if (parseInt(golsMandante, 10) > parseInt(golsVisitante, 10)) {
-                statusResultado = `${mandante} ✅`; // Vitória do mandante
+                statusResultado = `${mandante} ✅`;
             } else if (parseInt(golsMandante, 10) < parseInt(golsVisitante, 10)) {
-                statusResultado = `${mandante} ❌`; // Derrota do mandante
+                statusResultado = `${mandante} ❌`;
             } else {
                 statusResultado = "Empate";
             }
-        } else if (team.toLowerCase() === visitante.toLowerCase()) {
-            // Time jogou como visitante
+        } else if (formattedTeam.toLowerCase() === visitante.toLowerCase()) {
             if (parseInt(golsVisitante, 10) > parseInt(golsMandante, 10)) {
-                statusResultado = `${visitante} ✅`; // Vitória do visitante
+                statusResultado = `${visitante} ✅`;
             } else if (parseInt(golsVisitante, 10) < parseInt(golsMandante, 10)) {
-                statusResultado = `${visitante} ❌`; // Derrota do visitante
+                statusResultado = `${visitante} ❌`;
             } else {
                 statusResultado = "Empate";
             }
@@ -667,14 +697,15 @@ const processarJogos = (jogos, team) => {
         return {
             data_hora: dataFormatada,
             hora,
-            timeA: mandante, // Sempre mostrar o mandante primeiro
-            timeB: visitante, // Sempre mostrar o visitante depois
+            timeA: mandante,
+            timeB: visitante,
             pontosA: golsMandante,
             pontosB: golsVisitante,
             resultado: statusResultado,
         };
     });
 };
+
 
 
 
