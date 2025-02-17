@@ -225,8 +225,9 @@
     });
 
 function formatarNomeTime(nome) {
-    return nome.split(/(?=[A-Z][a-z])/)[0].trim();  
+    return nome.replace("Segue em frente", "").trim();
 }
+
 
 
 fetchGamesButton.addEventListener("click", async function() {
