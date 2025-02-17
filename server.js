@@ -317,19 +317,19 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 app.get("/golsemcasa0", async (req, res) => {
     try {
         let { timeHome, timeAway, threshold } = req.query;
-
-        // Converte threshold para número, garantindo que seja um número válido
-        threshold = threshold ? parseInt(threshold) : 0;
+        threshold = threshold ? parseInt(threshold) : 0; // Converte threshold para número
 
         const query = `
-            SELECT time_home, time_away, 
-                   SUM(CASE WHEN total_gols_home >= $1 THEN 1 ELSE 0 END) AS home_hits_threshold,
-                   SUM(CASE WHEN total_gols_away >= $1 THEN 1 ELSE 0 END) AS away_hits_threshold,
-                   COUNT(*) AS total_home_games,
-                   COUNT(*) AS total_away_games
+            SELECT 
+                timehome, resultadohome, 
+                timeaway, resultadoaway,
+                SUM(CASE WHEN resultadohome >= $1 THEN 1 ELSE 0 END) AS home_hits_threshold,
+                SUM(CASE WHEN resultadoaway >= $1 THEN 1 ELSE 0 END) AS away_hits_threshold,
+                COUNT(*) AS total_home_games,
+                COUNT(*) AS total_away_games
             FROM sua_tabela
-            WHERE time_home = $2 OR time_away = $3
-            GROUP BY time_home, time_away;
+            WHERE timehome = $2 OR timeaway = $3
+            GROUP BY timehome, resultadohome, timeaway, resultadoaway;
         `;
 
         const result = await db.query(query, [threshold, timeHome, timeAway]);
@@ -340,6 +340,7 @@ app.get("/golsemcasa0", async (req, res) => {
         res.status(500).json({ error: "Erro interno do servidor" });
     }
 });
+
 
 
 // 🔹 Endpoint para buscar a média de gols dos dois times
