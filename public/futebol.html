@@ -100,14 +100,12 @@
 
         <h2>Próximos Jogos</h2>
         <div class="matches" id="matches"></div>
-<input type="number" id="goalThresholdInput" placeholder="Digite o limite de gols">
-<button id="fetchGoalButton">Buscar Dados</button>
 
 <table border="1">
     <thead>
         <tr>
             <th>Casa</th>
-            <th>Qtd Gols</th>
+            <th>Qtd Gols <br> <input type="number" id="goalThresholdInput" placeholder="Digite o limite"></th>
             <th>% de Gols feito em X partidas dentro de casa</th>
             <th>Fora</th>
             <th>Qtd Gols</th>
@@ -116,6 +114,7 @@
     </thead>
     <tbody id="goalResultsTable"></tbody>
 </table>
+
 
         <h2>Média de Gols</h2>
         <table>
@@ -424,9 +423,7 @@ async function fetchGoalData() {
     }
 }
 
-
-    // Evento para buscar dados quando clicar no botão
-    document.getElementById("fetchGoalButton").addEventListener("click", fetchGoalData);
+    document.getElementById("goalThresholdInput").addEventListener("input", fetchGoalData);
 
 </script>
 </body>
