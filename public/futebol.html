@@ -106,10 +106,10 @@
         <tr>
             <th>Casa</th>
             <th>Qtd Gols <br> <input type="number" id="goalThresholdInput" placeholder="Digite o limite"></th>
-            <th>% de Gols feito em X partidas dentro de casa</th>
+            <th>% de Gols feitos em X partidas dentro de casa</th>
             <th>Fora</th>
             <th>Qtd Gols</th>
-            <th>% de Gols feito em X partidas fora de casa</th>
+            <th>% de Gols feitos em X partidas fora de casa</th>
         </tr>
     </thead>
     <tbody id="goalResultsTable"></tbody>
@@ -384,46 +384,57 @@ async function fetchLast10Matches(timeHome, timeAway) {
 
 
 
+// Função para buscar os dados de gols feitos em casa e fora
+// Função para fazer a requisição para a API e preencher a tabela
 async function fetchGoalData() {
-    const goalThresholdInput = document.getElementById("goalThresholdInput");
-    const goalResultsTable = document.getElementById("goalResultsTable");
-    const threshold = goalThresholdInput.value;
+    const threshold = parseFloat(goalThresholdInput.value); // Pega o valor do threshold do input
+    if (isNaN(threshold) || threshold <= 0) {
+        goalResultsTable.innerHTML = "<tr><td colspan='6'>Por favor, insira um valor válido para o limite de gols.</td></tr>";
+        return;
+    }
 
     try {
+        // Realiza a requisição para a API com os parâmetros
         const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa0?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
-        const result = await response.json();
-        goalResultsTable.innerHTML = ""; // Limpa os resultados anteriores
+        const data = await response.json();
 
-        if (result.length > 0) {
-            result.forEach(item => {
-                const homeGoals = item.home_hits_threshold || 0;
-                const awayGoals = item.away_hits_threshold || 0;
-                const totalHomeGames = item.total_home_games || 1; // Evita divisão por zero
-                const totalAwayGames = item.total_away_games || 1;
+        // Limpar a tabela antes de adicionar os novos dados
+        goalResultsTable.innerHTML = "";
 
-                const homePercentage = ((homeGoals / totalHomeGames) * 100).toFixed(2);
-                const awayPercentage = ((awayGoals / totalAwayGames) * 100).toFixed(2);
+        if (data.length > 0) {
+            data.forEach(item => {
+                // Calcula as porcentagens de gols feitos em casa e fora
+                const homeGoalsPercentage = item.home_hits_threshold ? ((item.home_hits_threshold / 10) * 100).toFixed(2) : "0%"; // Considera 10 como total de partidas, ajuste conforme necessário
+                const awayGoalsPercentage = item.away_hits_threshold ? ((item.away_hits_threshold / 10) * 100).toFixed(2) : "0%"; // Considera 10 como total de partidas, ajuste conforme necessário
 
-                let row = `<tr>
+                // Cria uma nova linha da tabela com os dados
+                let row = document.createElement("tr");
+                row.innerHTML = `
                     <td>${item.time_home}</td>
-                    <td>${homeGoals}</td>
-                    <td>${homePercentage}% (${totalHomeGames})</td>
+                    <td>${item.home_hits_threshold}</td>
+                    <td>${homeGoalsPercentage}</td>
                     <td>${item.time_away}</td>
-                    <td>${awayGoals}</td>
-                    <td>${awayPercentage}% (${totalAwayGames})</td>
-                </tr>`;
-                goalResultsTable.innerHTML += row;
+                    <td>${item.away_hits_threshold}</td>
+                    <td>${awayGoalsPercentage}</td>
+                `;
+                goalResultsTable.appendChild(row);
             });
         } else {
-            goalResultsTable.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado.</td></tr>";
+            goalResultsTable.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado para os critérios especificados.</td></tr>";
         }
     } catch (error) {
-        console.error('Erro ao buscar dados de gols:', error);
+        console.error("Erro ao buscar dados de gols:", error);
         goalResultsTable.innerHTML = "<tr><td colspan='6'>Erro ao buscar os dados. Tente novamente.</td></tr>";
     }
 }
 
-    document.getElementById("goalThresholdInput").addEventListener("input", fetchGoalData);
+// Adiciona o evento de clique para chamar a função de buscar dados
+matchElement.addEventListener("click", function() {
+    selectedTimeHome = match.time_home;  // Atualiza o time da casa
+    selectedTimeAway = match.time_away;  // Atualiza o time visitante
+    fetchGoalData();  // Chama a função de buscar os dados de gols
+});
+
 
 </script>
 </body>
