@@ -395,7 +395,7 @@ async function fetchLast10Matches(timeHome, timeAway) {
         }
 
         try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa1?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
+            const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa1?timeHome=${timeHome}&timeAway=${timeAway}&threshold=${threshold}`);
             const result = await response.json();
             goalResultsTable.innerHTML = ""; // Limpa os resultados anteriores
 
