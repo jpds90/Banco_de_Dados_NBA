@@ -388,26 +388,37 @@ async function fetchLast10Matches(timeHome, timeAway) {
 
 // Função para buscar os dados de gols feitos em casa e fora
 // Função para fazer a requisição para a API e preencher a tabela
+document.getElementById("goalThresholdInput").addEventListener("input", function () {
+    fetchGoalData();
+});
+
 async function fetchGoalData() {
     const threshold = parseFloat(document.getElementById("goalThresholdInput").value);
+    
+    // Verifica se o threshold é um número válido antes de buscar
     if (isNaN(threshold) || threshold <= 0) {
-        return alert("Digite um limite válido.");
+        return;
     }
 
-    const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
-    const data = await response.json();
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
+        const data = await response.json();
 
-    document.getElementById("goalResultsTable").innerHTML = `
-        <tr>
-            <td>${data.time_home}</td>
-            <td>${data.home_hits_threshold}</td>
-            <td>${(data.home_hits_threshold / 10 * 100).toFixed(2)}%</td>
-            <td>${data.time_away}</td>
-            <td>${data.away_hits_threshold}</td>
-            <td>${(data.away_hits_threshold / 10 * 100).toFixed(2)}%</td>
-        </tr>
-    `;
+        document.getElementById("goalResultsTable").innerHTML = `
+            <tr>
+                <td>${data.time_home}</td>
+                <td>${data.home_hits_threshold}</td>
+                <td>${(data.home_hits_threshold / 10 * 100).toFixed(2)}%</td>
+                <td>${data.time_away}</td>
+                <td>${data.away_hits_threshold}</td>
+                <td>${(data.away_hits_threshold / 10 * 100).toFixed(2)}%</td>
+            </tr>
+        `;
+    } catch (error) {
+        console.error("Erro ao buscar os dados:", error);
+    }
 }
+
 
 
 
