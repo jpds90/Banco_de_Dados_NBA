@@ -315,400 +315,366 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 
 
 app.get('/golsemcasa', async (req, res) => {
-    try {
-        const { timeHome, timeAway, threshold = 0.5 } = req.query;
+   try {
+       const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
-        if (!timeHome || !timeAway) {
-            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
-        }
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
 
-        // Remover "Segue em frente" do nome dos times
-        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+       console.log(`📌 Time da casa recebido: ${timeHome}`);
+       console.log(`📌 Time visitante recebido: ${timeAway}`);
+       console.log(`🔍 Filtro de gol: ${threshold}`);
 
-        const timeHomeFormatted = formatarNomeTime(timeHome);
-        const timeAwayFormatted = formatarNomeTime(timeAway);
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
-        console.log(`📌 Time da casa recebido: ${timeHomeFormatted}`);
-        console.log(`📌 Time visitante recebido: ${timeAwayFormatted}`);
-        console.log(`🔍 Filtro de gol: ${threshold}`);
+       // Verificar se as tabelas existem
+       const tablesResult = await pool.query(`
+           SELECT table_name 
+           FROM information_schema.tables 
+           WHERE table_name = $1 OR table_name = $2
+       `, [homeTable, awayTable]);
 
-        const homeTable = timeHomeFormatted.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = timeAwayFormatted.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       const tableNames = tablesResult.rows.map(row => row.table_name);
+       let homeHitsThreshold = 0;
+       let awayHitsThreshold = 0;
+       let homeAvg = 0;
+       let awayAvg = 0;
 
-        // Verificar se as tabelas existem
-        const tablesResult = await pool.query(`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_name = $1 OR table_name = $2
-        `, [homeTable, awayTable]);
+       // Verificar e calcular os gols em casa
+       if (tableNames.includes(homeTable)) {
+           const homeScoresResult = await pool.query(`
+               SELECT resultadohome 
+               FROM ${homeTable} 
+               WHERE timehome = $1
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+               LIMIT 10
+           `, [timeHome]);
 
-        const tableNames = tablesResult.rows.map(row => row.table_name);
-        let homeHitsThreshold = 0;
-        let awayHitsThreshold = 0;
-        let homeAvg = 0;
-        let awayAvg = 0;
+           const homeScores = homeScoresResult.rows
+               .map(row => parseInt(row.resultadohome, 10))
+               .filter(score => !isNaN(score) && score > threshold);
 
-        // Verificar e calcular os gols em casa
-        if (tableNames.includes(homeTable)) {
-            const homeScoresResult = await pool.query(`
-                SELECT resultadohome 
-                FROM ${homeTable} 
-                WHERE timehome = $1
-                ORDER BY 
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 1
-                      ELSE 2
-                  END,
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 
-                          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
-                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
-                  END DESC
-                LIMIT 10
-            `, [timeHomeFormatted]);
+           homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
+           homeHitsThreshold = homeScores.length;
+       }
 
-            const homeScores = homeScoresResult.rows
-                .map(row => parseInt(row.resultadohome, 10))
-                .filter(score => !isNaN(score) && score > threshold);
+       // Verificar e calcular os gols fora de casa
+       if (tableNames.includes(awayTable)) {
+           const awayScoresResult = await pool.query(`
+               SELECT resultadoaway 
+               FROM ${awayTable} 
+               WHERE timeaway = $1
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+               LIMIT 10
+           `, [timeAway]);
 
-            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
-            homeHitsThreshold = homeScores.length;
-        }
+           const awayScores = awayScoresResult.rows
+               .map(row => parseInt(row.resultadoaway, 10))
+               .filter(score => !isNaN(score) && score > threshold);
 
-        // Verificar e calcular os gols fora de casa
-        if (tableNames.includes(awayTable)) {
-            const awayScoresResult = await pool.query(`
-                SELECT resultadoaway 
-                FROM ${awayTable} 
-                WHERE timeaway = $1
-                ORDER BY 
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 1
-                      ELSE 2
-                  END,
-                  CASE
-                      WHEN data_hora LIKE '__.__. __:__' THEN 
-                          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
-                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
-                  END DESC
-                LIMIT 10
-            `, [timeAwayFormatted]);
+           awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
+           awayHitsThreshold = awayScores.length;
+       }
 
-            const awayScores = awayScoresResult.rows
-                .map(row => parseInt(row.resultadoaway, 10))
-                .filter(score => !isNaN(score) && score > threshold);
+       res.json({
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg,
+           home_hits_threshold: homeHitsThreshold,
+           away_hits_threshold: awayHitsThreshold
+       });
 
-            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
-            awayHitsThreshold = awayScores.length;
-        }
-
-        res.json({
-            time_home: timeHomeFormatted,
-            time_away: timeAwayFormatted,
-            home_avg: homeAvg,
-            away_avg: awayAvg,
-            total_pontos: homeAvg + awayAvg,
-            home_hits_threshold: homeHitsThreshold,
-            away_hits_threshold: awayHitsThreshold
-        });
-
-    } catch (error) {
-        console.error('Erro ao processar os dados:', error);
-        res.status(500).json({ error: 'Erro no servidor' });
-    }
+   } catch (error) {
+       console.error('Erro ao processar os dados:', error);
+       res.status(500).json({ error: 'Erro no servidor' });
+   }
 });
 
 
 
-// 🔹 Endpoint para buscar a média de gols dos dois times
 // 🔹 Endpoint para buscar a média de gols dos dois times
 app.get('/golsemcasa1', async (req, res) => {
-    try {
-        let timeHome = req.query.timeHome;
-        let timeAway = req.query.timeAway;
+   try {
+       const timeHome = req.query.timeHome;
+       const timeAway = req.query.timeAway;
 
-        if (!timeHome || !timeAway) {
-            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
-        }
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
 
-        console.log(`🏠 Time Home consultado: ${timeHome}`);
-        console.log(`🚀 Time Away consultado: ${timeAway}`);
+       console.log(`🏠 Time Home consultado: ${timeHome}`);
+       console.log(`🚀 Time Away consultado: ${timeAway}`);
 
-        // Função para remover "Segue em frente" do nome do time
-        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+       // Buscar os jogos de ambos os times
+       const jogosHome = await buscarJogos(timeHome);
+       const jogosAway = await buscarJogos(timeAway);
 
-        // Removendo "Segue em frente" dos nomes dos times
-        timeHome = formatarNomeTime(timeHome);
-        timeAway = formatarNomeTime(timeAway);
+       let totalHome = 0, totalAway = 0;
 
-        console.log(`🏠 Time Home após formatação: ${timeHome}`);
-        console.log(`🚀 Time Away após formatação: ${timeAway}`);
+       jogosHome.forEach(jogo => totalHome += parseInt(jogo.resultadohome) || 0);
+       jogosAway.forEach(jogo => totalAway += parseInt(jogo.resultadoaway) || 0);
 
-        // Buscar os jogos de ambos os times
-        const jogosHome = await buscarJogos(timeHome);
-        const jogosAway = await buscarJogos(timeAway);
+       const homeAvg = jogosHome.length ? Math.round(totalHome / jogosHome.length) : 0;
+       const awayAvg = jogosAway.length ? Math.round(totalAway / jogosAway.length) : 0;
 
-        let totalHome = 0, totalAway = 0;
+       const response = {
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg
+       };
 
-        jogosHome.forEach(jogo => totalHome += parseInt(jogo.resultadohome) || 0);
-        jogosAway.forEach(jogo => totalAway += parseInt(jogo.resultadoaway) || 0);
+       console.log("📊 Média de gols calculada:", response);
+       res.json([response]);
 
-        const homeAvg = jogosHome.length ? Math.round(totalHome / jogosHome.length) : 0;
-        const awayAvg = jogosAway.length ? Math.round(totalAway / jogosAway.length) : 0;
-
-        const response = {
-            time_home: timeHome,
-            time_away: timeAway,
-            home_avg: homeAvg,
-            away_avg: awayAvg,
-            total_pontos: homeAvg + awayAvg
-        };
-
-        console.log("📊 Média de gols calculada:", response);
-        res.json([response]);
-
-    } catch (error) {
-        console.error("🔥 Erro ao calcular a média de gols:", error);
-        res.status(500).send("Erro no servidor");
-    }
+   } catch (error) {
+       console.error("🔥 Erro ao calcular a média de gols:", error);
+       res.status(500).send("Erro no servidor");
+   }
 });
-
 
 // 🔹 Endpoint para buscar confrontos diretos entre dois times
 app.get('/confrontosfutebol1', async (req, res) => {
-    try {
-        let timeHome = req.query.timeHome;
-        let timeAway = req.query.timeAway;
+   try {
+       const timeHome = req.query.timeHome;
+       const timeAway = req.query.timeAway;
 
-        if (!timeHome || !timeAway) {
-            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
-        }
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
 
-        console.log(`🏠 Time Home consultado: ${timeHome}`);
-        console.log(`🚀 Time Away consultado: ${timeAway}`);
+       console.log(`🏠 Time Home consultado: ${timeHome}`);
+       console.log(`🚀 Time Away consultado: ${timeAway}`);
 
-        // Função para remover "Segue em frente" de qualquer time
-        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+       const tableHome = timeHome.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
 
-        // Formata os nomes dos times
-        timeHome = formatarNomeTime(timeHome);
-        timeAway = formatarNomeTime(timeAway);
+       // Verifica se a tabela existe no banco
+       const tablesResult = await pool.query(
+           `SELECT table_name FROM information_schema.tables WHERE table_name = $1`, 
+           [tableHome]
+       );
 
-        // Agora os nomes estão limpos, vamos prosseguir
-        const tableHome = timeHome.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+       if (tablesResult.rows.length === 0) {
+           console.log("❌ Nenhuma tabela encontrada para os times informados.");
+           return res.json([]);
+       }
 
-        // Verifica se a tabela existe no banco
-        const tablesResult = await pool.query(
-            `SELECT table_name FROM information_schema.tables WHERE table_name = $1`, 
-            [tableHome]
-        );
+       // Busca os confrontos diretos
+       const confrontationsQuery = `
+           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+           FROM ${tableHome} 
+           WHERE (timehome = $1 AND timeaway = $2) OR (timehome = $2 AND timeaway = $1)
+           ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+           LIMIT 10
+       `;
 
-        if (tablesResult.rows.length === 0) {
-            console.log("❌ Nenhuma tabela encontrada para os times informados.");
-            return res.json([]);
-        }
+       console.log(`📄 Executando query de confrontos diretos: ${confrontationsQuery}`);
+       const confrontationsResult = await pool.query(confrontationsQuery, [timeHome, timeAway]);
 
-        // Busca os confrontos diretos
-        const confrontationsQuery = `
-            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
-            FROM ${tableHome} 
-            WHERE (timehome = $1 AND timeaway = $2) OR (timehome = $2 AND timeaway = $1)
-            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-            LIMIT 10
-        `;
+       // Inicializa as variáveis para cálculo da média
+       let totalHomePoints = 0;
+       let totalAwayPoints = 0;
+       let countGames = 0;
 
-        console.log(`📄 Executando query de confrontos diretos: ${confrontationsQuery}`);
-        const confrontationsResult = await pool.query(confrontationsQuery, [timeHome, timeAway]);
+       // Processa os confrontos
+       const response = confrontationsResult.rows.map(row => {
+           const homePoints = row.resultadohome !== null ? parseInt(row.resultadohome, 10) : 0;
+           const awayPoints = row.resultadoaway !== null ? parseInt(row.resultadoaway, 10) : 0;
 
-        // Inicializa as variáveis para cálculo da média
-        let totalHomePoints = 0;
-        let totalAwayPoints = 0;
-        let countGames = 0;
+           if (!isNaN(homePoints) && !isNaN(awayPoints)) {
+               totalHomePoints += homePoints;
+               totalAwayPoints += awayPoints;
+               countGames++;
+           }
 
-        // Processa os confrontos
-        const response = confrontationsResult.rows.map(row => {
-            const homePoints = row.resultadohome !== null ? parseInt(row.resultadohome, 10) : 0;
-            const awayPoints = row.resultadoaway !== null ? parseInt(row.resultadoaway, 10) : 0;
+           return {
+               timehome: row.timehome,
+               timeaway: row.timeaway,
+               resultadohome: homePoints,
+               resultadoaway: awayPoints,
+               total_pontos: homePoints + awayPoints,
+               data_hora: row.data_hora
+           };
+       });
 
-            if (!isNaN(homePoints) && !isNaN(awayPoints)) {
-                totalHomePoints += homePoints;
-                totalAwayPoints += awayPoints;
-                countGames++;
-            }
+       // Calcula as médias
+       const homeAveragePoints = countGames > 0 ? (totalHomePoints / countGames).toFixed(2) : "0";
+       const awayAveragePoints = countGames > 0 ? (totalAwayPoints / countGames).toFixed(2) : "0";
+       const totalPoints = countGames > 0 ? ((totalHomePoints + totalAwayPoints) / countGames).toFixed(2) : "0";
 
-            return {
-                timehome: row.timehome,
-                timeaway: row.timeaway,
-                resultadohome: homePoints,
-                resultadoaway: awayPoints,
-                total_pontos: homePoints + awayPoints,
-                data_hora: row.data_hora
-            };
-        });
+       console.log("📊 Confrontos diretos encontrados:", response);
+       console.log(`📢 Média de pontos - Home: ${homeAveragePoints}, Away: ${awayAveragePoints}, Total: ${totalPoints}`);
 
-        // Calcula as médias
-        const homeAveragePoints = countGames > 0 ? (totalHomePoints / countGames).toFixed(2) : "0";
-        const awayAveragePoints = countGames > 0 ? (totalAwayPoints / countGames).toFixed(2) : "0";
-        const totalPoints = countGames > 0 ? ((totalHomePoints + totalAwayPoints) / countGames).toFixed(2) : "0";
+       res.json({
+           confrontations: response,
+           home_average_points: homeAveragePoints,
+           away_average_points: awayAveragePoints,
+           total_points: totalPoints
+       });
 
-        console.log("📊 Confrontos diretos encontrados:", response);
-        console.log(`📢 Média de pontos - Home: ${homeAveragePoints}, Away: ${awayAveragePoints}, Total: ${totalPoints}`);
-
-        res.json({
-            confrontations: response,
-            home_average_points: homeAveragePoints,
-            away_average_points: awayAveragePoints,
-            total_points: totalPoints
-        });
-
-    } catch (error) {
-        console.error("🔥 Erro ao buscar confrontos diretos:", error);
-        res.status(500).send("Erro no servidor");
-    }
+   } catch (error) {
+       console.error("🔥 Erro ao buscar confrontos diretos:", error);
+       res.status(500).send("Erro no servidor");
+   }
 });
-
 
 
 
 
 app.get("/ultimos10jogos", async (req, res) => {
-    try {
-        const timeHome = req.query.timeHome;
-        const timeAway = req.query.timeAway;
+   try {
+       const timeHome = req.query.timeHome;
+       const timeAway = req.query.timeAway;
 
-        if (!timeHome || !timeAway) {
-            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
-        }
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
 
-        console.log(`🏠 Time 1 consultado: ${timeHome}`);
-        console.log(`🚀 Time 2 consultado: ${timeAway}`);
+       console.log(`🏠 Time 1 consultado: ${timeHome}`);
+       console.log(`🚀 Time 2 consultado: ${timeAway}`);
 
-        const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
+       // Buscar os jogos dos dois times (mandante e visitante)
+       const jogosHome = await buscarJogos(timeHome);
+       const jogosAway = await buscarJogos(timeAway);
 
-        // Formata os nomes dos times
-        timeHome = formatarNomeTime(timeHome);
-        timeAway = formatarNomeTime(timeAway);
+       let jogos = [...jogosHome, ...jogosAway];
+       console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
 
-        // Buscar os jogos dos dois times (mandante e visitante)
-        const jogosHome = await buscarJogos(timeHome);
-        const jogosAway = await buscarJogos(timeAway);
+       // Processar os jogos corretamente, garantindo que não haja erros com times sem registros
+       const jogosFormatados = [
+           ...(jogosHome.length ? processarJogos(jogosHome, timeHome) : []),
+           ...(jogosAway.length ? processarJogos(jogosAway, timeAway) : [])
+       ];
 
-        let jogos = [...jogosHome, ...jogosAway];
-        console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
+       // Ordenar os jogos pela data mais recente primeiro
+       const jogosOrdenados = jogosFormatados.sort((a, b) => {
+           return new Date(b.data_hora + " " + b.hora) - new Date(a.data_hora + " " + a.hora);
+       });
 
-        // Processar os jogos corretamente, garantindo que não haja erros com times sem registros
-        const jogosFormatados = [
-            ...(jogosHome.length ? processarJogos(jogosHome, timeHome) : []),
-            ...(jogosAway.length ? processarJogos(jogosAway, timeAway) : [])
-        ];
-
-        // Ordenar os jogos pela data mais recente primeiro
-        const jogosOrdenados = jogosFormatados.sort((a, b) => {
-            return new Date(b.data_hora + " " + b.hora) - new Date(a.data_hora + " " + a.hora);
-        });
-
-        console.log("📢 Jogos processados finalizados:", jogosOrdenados);
-        res.json(jogosOrdenados);
-    } catch (error) {
-        console.error("🔥 Erro ao processar os dados:", error);
-        res.status(500).send("Erro no servidor");
-    }
+       console.log("📢 Jogos processados finalizados:", jogosOrdenados);
+       res.json(jogosOrdenados);
+   } catch (error) {
+       console.error("🔥 Erro ao processar os dados:", error);
+       res.status(500).send("Erro no servidor");
+   }
 });
 
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team) => {
-    const formattedTeam = formatarNomeTime(team);  // Remove "Segue em frente" do nome do time
-    const table = formattedTeam.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+   const table = team.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
 
-    const tablesResult = await pool.query(
-        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
-        [table]
-    );
+   const tablesResult = await pool.query(
+       `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
+       [table]
+   );
 
-    if (tablesResult.rows.length > 0) {
-        const querySQL = `
-            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
-            FROM ${table} 
-            WHERE timehome = $1 OR timeaway = $1
-            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-            LIMIT 10
-        `;
+   if (tablesResult.rows.length > 0) {
+       const querySQL = `
+           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+           FROM ${table} 
+           WHERE timehome = $1 OR timeaway = $1
+           ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+           LIMIT 10
+       `;
 
-        console.log(`📄 Executando query para ${table}: ${querySQL}`);
-        const jogosResult = await pool.query(querySQL, [formattedTeam]);  // Usa o nome do time formatado
-        return jogosResult.rows;
-    }
+       console.log(`📄 Executando query para ${table}: ${querySQL}`);
+       const jogosResult = await pool.query(querySQL, [team]);
+       return jogosResult.rows;
+   }
 
-    return [];
+   return [];
 };
-
 
 // Função para processar os jogos e determinar os resultados
 const processarJogos = (jogos, team) => {
-    const formattedTeam = formatarNomeTime(team);  // Remove "Segue em frente" do nome do time
+   return jogos.map(row => {
+       const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
+       let timeA, timeB, pontosA, pontosB, statusResultado;
 
-    return jogos.map(row => {
-        const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
-        let timeA, timeB, pontosA, pontosB, statusResultado;
+       // Definir corretamente quem jogou em casa e quem jogou fora
+       const mandante = timehome;
+       const visitante = timeaway;
+       const golsMandante = resultadohome;
+       const golsVisitante = resultadoaway;
 
-        // Verificar se o time consultado jogou como mandante ou visitante
-        const mandante = formatarNomeTime(timehome);  // Formatar nome do time mandante
-        const visitante = formatarNomeTime(timeaway);  // Formatar nome do time visitante
-        const golsMandante = resultadohome;
-        const golsVisitante = resultadoaway;
+       // Verificar se o time consultado jogou como mandante ou visitante
+       if (mandante.toLowerCase() === team.toLowerCase()) {
+           // Time jogou em casa
+           timeA = mandante;
+           timeB = visitante;
+           pontosA = golsMandante;
+           pontosB = golsVisitante;
+       } else if (visitante.toLowerCase() === team.toLowerCase()) {
+           // Time jogou fora
+           timeA = visitante;
+           timeB = mandante;
+           pontosA = golsVisitante;
+           pontosB = golsMandante;
+       } else {
+           throw new Error("O time consultado não participou deste jogo.");
+       }
 
-        // Verificar se o time consultado jogou como mandante ou visitante
-        if (mandante.toLowerCase() === formattedTeam.toLowerCase()) {
-            timeA = mandante;
-            timeB = visitante;
-            pontosA = golsMandante;
-            pontosB = golsVisitante;
-        } else if (visitante.toLowerCase() === formattedTeam.toLowerCase()) {
-            timeA = visitante;
-            timeB = mandante;
-            pontosA = golsVisitante;
-            pontosB = golsMandante;
-        } else {
-            throw new Error("O time consultado não participou deste jogo.");
-        }
+       // Definir o resultado correto para o time consultado
+       if (team.toLowerCase() === mandante.toLowerCase()) {
+           // Time jogou como mandante
+           if (parseInt(golsMandante, 10) > parseInt(golsVisitante, 10)) {
+               statusResultado = `${mandante} ✅`; // Vitória do mandante
+           } else if (parseInt(golsMandante, 10) < parseInt(golsVisitante, 10)) {
+               statusResultado = `${mandante} ❌`; // Derrota do mandante
+           } else {
+               statusResultado = "Empate";
+           }
+       } else if (team.toLowerCase() === visitante.toLowerCase()) {
+           // Time jogou como visitante
+           if (parseInt(golsVisitante, 10) > parseInt(golsMandante, 10)) {
+               statusResultado = `${visitante} ✅`; // Vitória do visitante
+           } else if (parseInt(golsVisitante, 10) < parseInt(golsMandante, 10)) {
+               statusResultado = `${visitante} ❌`; // Derrota do visitante
+           } else {
+               statusResultado = "Empate";
+           }
+       }
 
-        // Definir o resultado correto para o time consultado
-        if (formattedTeam.toLowerCase() === mandante.toLowerCase()) {
-            if (parseInt(golsMandante, 10) > parseInt(golsVisitante, 10)) {
-                statusResultado = `${mandante} ✅`;
-            } else if (parseInt(golsMandante, 10) < parseInt(golsVisitante, 10)) {
-                statusResultado = `${mandante} ❌`;
-            } else {
-                statusResultado = "Empate";
-            }
-        } else if (formattedTeam.toLowerCase() === visitante.toLowerCase()) {
-            if (parseInt(golsVisitante, 10) > parseInt(golsMandante, 10)) {
-                statusResultado = `${visitante} ✅`;
-            } else if (parseInt(golsVisitante, 10) < parseInt(golsMandante, 10)) {
-                statusResultado = `${visitante} ❌`;
-            } else {
-                statusResultado = "Empate";
-            }
-        }
+       // Processar data e hora corretamente
+       const [data, hora] = data_hora.split(" ");
+       const dataFormatada = data.replace(".", "/").slice(0, -1);
 
-        // Processar data e hora corretamente
-        const [data, hora] = data_hora.split(" ");
-        const dataFormatada = data.replace(".", "/").slice(0, -1);
-
-        return {
-            data_hora: dataFormatada,
-            hora,
-            timeA: mandante,
-            timeB: visitante,
-            pontosA: golsMandante,
-            pontosB: golsVisitante,
-            resultado: statusResultado,
-        };
-    });
+       return {
+           data_hora: dataFormatada,
+           hora,
+           timeA: mandante, // Sempre mostrar o mandante primeiro
+           timeB: visitante, // Sempre mostrar o visitante depois
+           pontosA: golsMandante,
+           pontosB: golsVisitante,
+           resultado: statusResultado,
+       };
+   });
 };
-
 
 
 
