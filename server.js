@@ -314,7 +314,7 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 });
 
 
-app.get("/golsemcasa1", async (req, res) => {
+app.get("/golsemcasa0", async (req, res) => {
     try {
         let { timeHome, timeAway, threshold } = req.query;
 
