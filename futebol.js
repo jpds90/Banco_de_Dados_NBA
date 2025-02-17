@@ -299,15 +299,18 @@ const fetchLinksFromDatabase1 = async (tableName) => {
 };
 
 
-// Função para remover caracteres especiais e normalizar as strings
+// Função para remover "Segue em frente" e conteúdo dentro de parênteses
 function normalizeString(str) {
     return str
         .toLowerCase()
         .normalize("NFD") // Decomposição de acentos
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
-        .replace(/[\s\-]/g, ''); // Remove espaços e hífens
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/segueemfrente/g, '') // Remove a expressão "Segue em frente", sem espaço
+        .replace(/(segueemfrente)/g, ''); // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
 }
+
 
 // Função de scraping
 // Função de scraping modificada para receber team_name
