@@ -587,6 +587,9 @@ app.get("/ultimos10jogos", async (req, res) => {
 
         const formatarNomeTime = (nome) => nome.replace("Segue em frente", "").trim();
 
+        // Formata os nomes dos times
+        timeHome = formatarNomeTime(timeHome);
+        timeAway = formatarNomeTime(timeAway);
 
         // Buscar os jogos dos dois times (mandante e visitante)
         const jogosHome = await buscarJogos(timeHome);
