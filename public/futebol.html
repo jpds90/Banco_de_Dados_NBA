@@ -248,9 +248,12 @@
                     
                     // Adiciona o evento de clique para chamar todas as APIs necessárias
                     matchElement.addEventListener("click", function() {
+                        selectedTimeHome = match.time_home;  // Atualiza o time da casa
+                        selectedTimeAway = match.time_away;  // Atualiza o time visitante
                         fetchLast10Matches(match.time_home, match.time_away);
                         fetchHeadToHead(match.time_home, match.time_away);
                         fetchGoalAverages(match.time_home, match.time_away);
+                        fetchGoalData();  // 🔹 Agora chama automaticamente a função de gols
                     });
 
                     matchesDiv.appendChild(matchElement);
@@ -381,52 +384,46 @@ async function fetchLast10Matches(timeHome, timeAway) {
 }
 
 
-    let selectedTimeHome = "";
-    let selectedTimeAway = "";
 
-    async function fetchGoalData() {
-        const goalThresholdInput = document.getElementById("goalThresholdInput");
-        const goalResultsTable = document.getElementById("goalResultsTable");
-        const threshold = goalThresholdInput.value;
+async function fetchGoalData() {
+    const goalThresholdInput = document.getElementById("goalThresholdInput");
+    const goalResultsTable = document.getElementById("goalResultsTable");
+    const threshold = goalThresholdInput.value;
 
-        if (!selectedTimeHome || !selectedTimeAway) {
-            goalResultsTable.innerHTML = "<tr><td colspan='6'>Selecione dois times antes de buscar os dados.</td></tr>";
-            return;
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa1?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
+        const result = await response.json();
+        goalResultsTable.innerHTML = ""; // Limpa os resultados anteriores
+
+        if (result.length > 0) {
+            result.forEach(item => {
+                const homeGoals = item.home_hits_threshold || 0;
+                const awayGoals = item.away_hits_threshold || 0;
+                const totalHomeGames = item.total_home_games || 1; // Evita divisão por zero
+                const totalAwayGames = item.total_away_games || 1;
+
+                const homePercentage = ((homeGoals / totalHomeGames) * 100).toFixed(2);
+                const awayPercentage = ((awayGoals / totalAwayGames) * 100).toFixed(2);
+
+                let row = `<tr>
+                    <td>${item.time_home}</td>
+                    <td>${homeGoals}</td>
+                    <td>${homePercentage}% (${totalHomeGames})</td>
+                    <td>${item.time_away}</td>
+                    <td>${awayGoals}</td>
+                    <td>${awayPercentage}% (${totalAwayGames})</td>
+                </tr>`;
+                goalResultsTable.innerHTML += row;
+            });
+        } else {
+            goalResultsTable.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado.</td></tr>";
         }
-
-        try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa1?timeHome=${timeHome}&timeAway=${timeAway}&threshold=${threshold}`);
-            const result = await response.json();
-            goalResultsTable.innerHTML = ""; // Limpa os resultados anteriores
-
-            if (result.length > 0) {
-                result.forEach(item => {
-                    const homeGoals = item.home_hits_threshold || 0;
-                    const awayGoals = item.away_hits_threshold || 0;
-                    const totalHomeGames = item.total_home_games || 1; // Evita divisão por zero
-                    const totalAwayGames = item.total_away_games || 1;
-
-                    const homePercentage = ((homeGoals / totalHomeGames) * 100).toFixed(2);
-                    const awayPercentage = ((awayGoals / totalAwayGames) * 100).toFixed(2);
-
-                    let row = `<tr>
-                        <td>${item.time_home}</td>
-                        <td>${homeGoals}</td>
-                        <td>${homePercentage}% (${totalHomeGames})</td>
-                        <td>${item.time_away}</td>
-                        <td>${awayGoals}</td>
-                        <td>${awayPercentage}% (${totalAwayGames})</td>
-                    </tr>`;
-                    goalResultsTable.innerHTML += row;
-                });
-            } else {
-                goalResultsTable.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado.</td></tr>";
-            }
-        } catch (error) {
-            console.error('Erro ao buscar dados de gols:', error);
-            goalResultsTable.innerHTML = "<tr><td colspan='6'>Erro ao buscar os dados. Tente novamente.</td></tr>";
-        }
+    } catch (error) {
+        console.error('Erro ao buscar dados de gols:', error);
+        goalResultsTable.innerHTML = "<tr><td colspan='6'>Erro ao buscar os dados. Tente novamente.</td></tr>";
     }
+}
+
 
     // Evento para buscar dados quando clicar no botão
     document.getElementById("fetchGoalButton").addEventListener("click", fetchGoalData);
