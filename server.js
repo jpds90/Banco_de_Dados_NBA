@@ -316,114 +316,101 @@ app.get('/probabilidade-vitoria', async (req, res) => {
 
 app.get('/golsemcasa', async (req, res) => {
     try {
-        const tableName = req.query.tableName || 'odds';
-        const threshold = parseFloat(req.query.threshold) || 0.5;
+        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
-        console.log(`📌 Nome da tabela recebida: ${tableName}`);
-        console.log(`🔍 Filtro de gol: ${threshold}`);
-
-        const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
-        const oddsRows = oddsResult.rows;
-
-        console.log(`🔍 Qtd de registros encontrados: ${oddsRows.length}`);
-
-        const results = [];
-        for (const { time_home, time_away } of oddsRows) {
-            const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-            const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-
-            // Verificar tabelas existentes
-            const tablesResult = await pool.query(`
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_name = $1 OR table_name = $2
-            `, [homeTable, awayTable]);
-
-            const tableNames = tablesResult.rows.map(row => row.table_name);
-
-            let homeHitsThreshold = 0;
-            let awayHitsThreshold = 0;
-
-            // Verificar se a tabela do time da casa existe e calcular as ocorrências do gol
-            if (tableNames.includes(homeTable)) {
-                const homeScoresResult = await pool.query(`
-                    SELECT resultadohome 
-                    FROM ${homeTable} 
-                    WHERE timehome = $1
-                    ORDER BY 
-                      -- Prioriza registros no formato DD.MM. HH:MI
-                      CASE
-                          WHEN data_hora  LIKE '__.__. __:__' THEN 1
-                          ELSE 2
-                      END,
-                      -- Ordena pela data/hora dentro de cada grupo de formatos
-                      CASE
-                          WHEN data_hora  LIKE '__.__. __:__' THEN 
-                              TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                          WHEN data_hora  LIKE '__.__.____ __:__' THEN 
-                              TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
-                      END DESC
-                    LIMIT 10
-                `, [time_home]);
-
-                const homeScores = homeScoresResult.rows
-                    .map(row => parseInt(row.resultadohome, 10))
-                    .filter(score => !isNaN(score) && score > threshold);
-
-  homeAvg = homeScores.length 
-      ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) 
-      : 0;
-                homeHitsThreshold = homeScores.length;
-            }
-
-            // Verificar se a tabela do time visitante existe e calcular as ocorrências do gol
-            if (tableNames.includes(awayTable)) {
-                const awayScoresResult = await pool.query(`
-                    SELECT resultadoaway 
-                    FROM ${awayTable} 
-                    WHERE timeaway = $1
-                    ORDER BY 
-                      -- Prioriza registros no formato DD.MM. HH:MI
-                      CASE
-                          WHEN data_hora  LIKE '__.__. __:__' THEN 1
-                          ELSE 2
-                      END,
-                      -- Ordena pela data/hora dentro de cada grupo de formatos
-                      CASE
-                          WHEN data_hora  LIKE '__.__. __:__' THEN 
-                              TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
-                          WHEN data_hora  LIKE '__.__.____ __:__' THEN 
-                              TO_TIMESTAMP(data_hora , 'DD.MM.YYYY')
-                      END DESC
-                    LIMIT 10
-                `, [time_away]);
-
-                const awayScores = awayScoresResult.rows
-                    .map(row => parseInt(row.resultadoaway, 10))
-                    .filter(score => !isNaN(score) && score > threshold);
-
-  awayAvg = awayScores.length 
-      ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) 
-      : 0;
-                awayHitsThreshold = awayScores.length;
-            }
-
-            // Adicionar os resultados para enviar ao frontend
-            results.push({
-                time_home,
-                time_away,
-              home_avg: homeAvg,
-              away_avg: awayAvg,
-              total_pontos: homeAvg + awayAvg, // Agora ambos já são inteiros
-                home_hits_threshold: homeHitsThreshold,
-                away_hits_threshold: awayHitsThreshold
-            });
+        if (!timeHome || !timeAway) {
+            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
-        res.json(results);
+        console.log(`📌 Time da casa recebido: ${timeHome}`);
+        console.log(`📌 Time visitante recebido: ${timeAway}`);
+        console.log(`🔍 Filtro de gol: ${threshold}`);
+
+        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+        // Verificar se as tabelas existem
+        const tablesResult = await pool.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_name = $1 OR table_name = $2
+        `, [homeTable, awayTable]);
+
+        const tableNames = tablesResult.rows.map(row => row.table_name);
+        let homeHitsThreshold = 0;
+        let awayHitsThreshold = 0;
+        let homeAvg = 0;
+        let awayAvg = 0;
+
+        // Verificar e calcular os gols em casa
+        if (tableNames.includes(homeTable)) {
+            const homeScoresResult = await pool.query(`
+                SELECT resultadohome 
+                FROM ${homeTable} 
+                WHERE timehome = $1
+                ORDER BY 
+                  CASE
+                      WHEN data_hora LIKE '__.__. __:__' THEN 1
+                      ELSE 2
+                  END,
+                  CASE
+                      WHEN data_hora LIKE '__.__. __:__' THEN 
+                          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                  END DESC
+                LIMIT 10
+            `, [timeHome]);
+
+            const homeScores = homeScoresResult.rows
+                .map(row => parseInt(row.resultadohome, 10))
+                .filter(score => !isNaN(score) && score > threshold);
+
+            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
+            homeHitsThreshold = homeScores.length;
+        }
+
+        // Verificar e calcular os gols fora de casa
+        if (tableNames.includes(awayTable)) {
+            const awayScoresResult = await pool.query(`
+                SELECT resultadoaway 
+                FROM ${awayTable} 
+                WHERE timeaway = $1
+                ORDER BY 
+                  CASE
+                      WHEN data_hora LIKE '__.__. __:__' THEN 1
+                      ELSE 2
+                  END,
+                  CASE
+                      WHEN data_hora LIKE '__.__. __:__' THEN 
+                          TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                  END DESC
+                LIMIT 10
+            `, [timeAway]);
+
+            const awayScores = awayScoresResult.rows
+                .map(row => parseInt(row.resultadoaway, 10))
+                .filter(score => !isNaN(score) && score > threshold);
+
+            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
+            awayHitsThreshold = awayScores.length;
+        }
+
+        res.json({
+            time_home: timeHome,
+            time_away: timeAway,
+            home_avg: homeAvg,
+            away_avg: awayAvg,
+            total_pontos: homeAvg + awayAvg,
+            home_hits_threshold: homeHitsThreshold,
+            away_hits_threshold: awayHitsThreshold
+        });
+
     } catch (error) {
         console.error('Erro ao processar os dados:', error);
-        res.status(500).send('Erro no servidor');
+        res.status(500).json({ error: 'Erro no servidor' });
     }
 });
 
