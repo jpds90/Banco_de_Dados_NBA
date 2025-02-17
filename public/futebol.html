@@ -106,10 +106,11 @@
         <tr>
             <th>Casa</th>
             <th>Qtd Gols <br> <input type="number" id="goalThresholdInput" placeholder="Digite o limite"></th>
-            <th>% de Gols feitos em X partidas dentro de casa</th>
+            <th>% Gols</th>
             <th>Fora</th>
             <th>Qtd Gols</th>
-            <th>% de Gols feitos em X partidas fora de casa</th>
+            <th>% Gols</th>
+            <th>Total % Gols</th>
         </tr>
     </thead>
     <tbody id="goalResultsTable"></tbody>
@@ -427,6 +428,7 @@ async function fetchGoalData() {
                 <td>${data.time_away}</td>
                 <td>${data.away_hits_threshold}</td>
                 <td>${(data.away_hits_threshold / 10 * 100).toFixed(2)}%</td>
+                <td>${((data.home_hits_threshold / 10 * 100 + data.away_hits_threshold / 10 * 100) / 2).toFixed(2)}%</td>
             </tr>
         `;
     } catch (error) {
