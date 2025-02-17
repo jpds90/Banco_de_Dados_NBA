@@ -224,47 +224,48 @@
         fetchGamesButton.style.display = this.value ? "block" : "none";
     });
 
-    fetchGamesButton.addEventListener("click", async function() {
-        const selectedLeague = leagueSelect.value;
-        if (!selectedLeague) return;
+fetchGamesButton.addEventListener("click", async function() {
+    const selectedLeague = leagueSelect.value;
+    if (!selectedLeague) return;
 
-        let tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
-        console.log(`Buscando dados para a tabela: ${tableName}`);
+    let tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
+    console.log(`Buscando dados para a tabela: ${tableName}`);
 
-        matchesDiv.innerHTML = "Carregando...";
+    matchesDiv.innerHTML = "Carregando...";
+
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
+        const result = await response.json();
         
-        try {
-            const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
-            const result = await response.json();
-            
-            matchesDiv.innerHTML = "";
+        matchesDiv.innerHTML = "";
 
-            if (result.success && result.data.length > 0) {
-                result.data.forEach(match => {
-                    let matchElement = document.createElement("button");
-                    matchElement.classList.add("match-button");
-                    matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
-                    
-                    // Adiciona o evento de clique para chamar todas as APIs necessárias
-                    matchElement.addEventListener("click", function() {
-                        selectedTimeHome = match.time_home;  // Atualiza o time da casa
-                        selectedTimeAway = match.time_away;  // Atualiza o time visitante
-                        fetchLast10Matches(match.time_home, match.time_away);
-                        fetchHeadToHead(match.time_home, match.time_away);
-                        fetchGoalAverages(match.time_home, match.time_away);
-                        fetchGoalData();  // 🔹 Agora chama automaticamente a função de gols
-                    });
-
-                    matchesDiv.appendChild(matchElement);
+        if (result.success && result.data.length > 0) {
+            result.data.forEach(match => {
+                let matchElement = document.createElement("button");
+                matchElement.classList.add("match-button");
+                matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
+                
+                // Adiciona o evento de clique dentro do loop onde o matchElement é criado
+                matchElement.addEventListener("click", function() {
+                    selectedTimeHome = match.time_home;  // Atualiza o time da casa
+                    selectedTimeAway = match.time_away;  // Atualiza o time visitante
+                    fetchLast10Matches(match.time_home, match.time_away);
+                    fetchHeadToHead(match.time_home, match.time_away);
+                    fetchGoalAverages(match.time_home, match.time_away);
+                    fetchGoalData();  // Chama automaticamente a função de gols
                 });
-            } else {
-                matchesDiv.innerHTML = "<p>Nenhum jogo encontrado.</p>";
-            }
-        } catch (error) {
-            console.error("Erro ao buscar os jogos:", error);
-            matchesDiv.innerHTML = "<p>Erro ao buscar os jogos. Tente novamente.</p>";
+
+                matchesDiv.appendChild(matchElement);
+            });
+        } else {
+            matchesDiv.innerHTML = "<p>Nenhum jogo encontrado.</p>";
         }
-    });
+    } catch (error) {
+        console.error("Erro ao buscar os jogos:", error);
+        matchesDiv.innerHTML = "<p>Erro ao buscar os jogos. Tente novamente.</p>";
+    }
+});
+
 
 // 🔹 Função para buscar confrontos diretos de dois times selecionados
 async function fetchHeadToHead(timeHome, timeAway) {
