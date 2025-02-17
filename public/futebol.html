@@ -389,46 +389,26 @@ async function fetchLast10Matches(timeHome, timeAway) {
 // Função para buscar os dados de gols feitos em casa e fora
 // Função para fazer a requisição para a API e preencher a tabela
 async function fetchGoalData() {
-    const threshold = parseFloat(goalThresholdInput.value); // Pega o valor do threshold do input
+    const threshold = parseFloat(document.getElementById("goalThresholdInput").value);
     if (isNaN(threshold) || threshold <= 0) {
-        goalResultsTable.innerHTML = "<tr><td colspan='6'>Por favor, insira um valor válido para o limite de gols.</td></tr>";
-        return;
+        return alert("Digite um limite válido.");
     }
 
-    try {
-        // Realiza a requisição para a API com os parâmetros
-        const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
-        const data = await response.json();
+    const response = await fetch(`https://analise-jpnba.onrender.com/golsemcasa?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}&threshold=${threshold}`);
+    const data = await response.json();
 
-        // Limpar a tabela antes de adicionar os novos dados
-        goalResultsTable.innerHTML = "";
-
-        if (data.length > 0) {
-            data.forEach(item => {
-                // Calcula as porcentagens de gols feitos em casa e fora
-                const homeGoalsPercentage = item.home_hits_threshold ? ((item.home_hits_threshold / 10) * 100).toFixed(2) : "0%"; // Considera 10 como total de partidas, ajuste conforme necessário
-                const awayGoalsPercentage = item.away_hits_threshold ? ((item.away_hits_threshold / 10) * 100).toFixed(2) : "0%"; // Considera 10 como total de partidas, ajuste conforme necessário
-
-                // Cria uma nova linha da tabela com os dados
-                let row = document.createElement("tr");
-                row.innerHTML = `
-                    <td>${item.time_home}</td>
-                    <td>${item.home_hits_threshold}</td>
-                    <td>${homeGoalsPercentage}</td>
-                    <td>${item.time_away}</td>
-                    <td>${item.away_hits_threshold}</td>
-                    <td>${awayGoalsPercentage}</td>
-                `;
-                goalResultsTable.appendChild(row);
-            });
-        } else {
-            goalResultsTable.innerHTML = "<tr><td colspan='6'>Nenhum dado encontrado para os critérios especificados.</td></tr>";
-        }
-    } catch (error) {
-        console.error("Erro ao buscar dados de gols:", error);
-        goalResultsTable.innerHTML = "<tr><td colspan='6'>Erro ao buscar os dados. Tente novamente.</td></tr>";
-    }
+    document.getElementById("goalResultsTable").innerHTML = `
+        <tr>
+            <td>${data.time_home}</td>
+            <td>${data.home_hits_threshold}</td>
+            <td>${(data.home_hits_threshold / 10 * 100).toFixed(2)}%</td>
+            <td>${data.time_away}</td>
+            <td>${data.away_hits_threshold}</td>
+            <td>${(data.away_hits_threshold / 10 * 100).toFixed(2)}%</td>
+        </tr>
+    `;
 }
+
 
 
 
