@@ -156,9 +156,20 @@ async function getNewIds(page, excludedIds, neededCount) {
 
 // 🔥 Inicia o processo
 async function startScraping() {
-    const { tableName, url } = await getTableName();
-    scrapeAndSaveLinks(tableName, url);
+    const args = process.argv.slice(2);  // Pega argumentos da linha de comando
+    const tableName = args[0];  // Primeiro argumento passado do backend
+
+    if (!tableName) {
+        console.error("❌ Nenhum tableName foi fornecido!");
+        return;
+    }
+
+    const { tableName: formattedTable, url } = await getTableName(tableName);
+    if (!formattedTable) return;
+
+    scrapeAndSaveLinks(formattedTable, url);
 }
+
 
 startScraping();
 module.exports = { scrapeAndSaveLinks };
