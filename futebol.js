@@ -93,15 +93,16 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
-            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+            await page.goto(url, { timeout: 180000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
             console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
-            if (attempt === retries - 1) throw error; // Lançar o erro na última tentativa
+            if (attempt === retries - 1) throw error; // Lançar erro na última tentativa
         }
     }
 };
+
 
 // Função para criar uma tabela de estatísticas para um time
 // Função para salvar os dados no banco
@@ -319,6 +320,7 @@ function normalizecoluna(str) {
         .normalize("NFD") // Decomposição de acentos
         .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses
         .replace(/\bSegue em frente\b/gi, '') // Remove exatamente "Segue em frente", independentemente de maiúsculas/minúsculas
+        .replace(/\bsegue\s*em\s*frente\b/gi, '')
         .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único espaço
         .trim(); // Remove espaços extras no início e no fim
 }
@@ -351,7 +353,13 @@ const scrapeResults10 = async (link, team_name) => {
     console.log('Abrindo o navegador e indo para a página...', fullLink);
     await loadPageWithRetries(page, fullLink);
 
+    try {
     const url = await page.evaluate(() => window.location.href);
+    console.log('URL capturada:', url);
+} catch (error) {
+    console.error("Erro ao capturar a URL:", error);
+}
+
     console.log('URL capturada:', url);
 
     let teamID10 = null;
@@ -370,7 +378,12 @@ const scrapeResults10 = async (link, team_name) => {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
     }
     await sleep(10000);
-    await waitForSelectorWithRetries(page, '.container', { timeout: 120000 });
+    try {
+        await page.waitForSelector('.container', { timeout: 180000 });
+    } catch (error) {
+        console.error("Erro ao esperar pelo seletor: .container. O elemento pode não existir.");
+    }
+
 
     const ids = await page.evaluate(() => {
         const sportName = document.querySelector('.sportName.soccer');
@@ -589,8 +602,11 @@ const scrapeResults10 = async (link, team_name) => {
             console.error("Erro geral no scraping:", error);
         }
     }
-
+if (browser) {
+    console.log("Fechando o navegador após processar todos os dados...");
     await browser.close();
+}
+
 };
 // Exportando a função
 module.exports = {
