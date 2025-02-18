@@ -161,8 +161,9 @@ leagueElement.addEventListener("click", async (event) => {
         const executeScriptResponse = await fetch("https://analise-jpnba.onrender.com/futebollink", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tableName }) // Passando tableName para o backend
+            body: JSON.stringify({ tableName }) // Passando a liga selecionada
         });
+
 
         const executeResult = await executeScriptResponse.text();
         console.log("⚽ Script futebollink executado:", executeResult);
