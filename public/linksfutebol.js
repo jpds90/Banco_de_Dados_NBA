@@ -33,18 +33,22 @@ async function getSavedUrl(tableName) {
 }
 
 // ✅ Nome da tabela a partir da URL
-async function getTableName() {
-    const defaultLeague = "laliga"; // Liga padrão caso não tenha uma no banco
-    const url = await getSavedUrl(defaultLeague);
+async function getTableName(tableName) {
+    if (!tableName) {
+        console.error("❌ Nenhuma liga foi especificada!");
+        return null;
+    }
 
-    const tableName = url.split('/').slice(-3, -2)[0]
+    const url = await getSavedUrl(tableName);
+    const formattedTableName = tableName
         .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .replace(/[^a-z0-9]+/g, "_") + "_links"; // Substitui espaços e caracteres inválidos por "_"
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_") + "_links";
 
-    console.log(`📌 Nome da tabela extraído Link Futebol: ${tableName}`);
-    return { tableName, url };
+    console.log(`📌 Nome da tabela extraído Link Futebol: ${formattedTableName}`);
+    return { tableName: formattedTableName, url };
 }
+
 
 
 // ✅ Configuração do banco de dados (PostgreSQL)
