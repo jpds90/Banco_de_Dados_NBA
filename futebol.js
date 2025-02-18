@@ -398,9 +398,9 @@ const scrapeResults10 = async (link, team_name) => {
     for (let id of ids) {
         const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
         console.log("Processando URL:", url);
-        await page2.goto(url, { timeout: 120000 });
+        await page2.goto(url, { timeout: 180000 });
 
-        await sleep(10000);
+        await sleep(100000);
 
         if (teamID10) {
             const lastDate = await getLastDateFromDatabase(teamID10);
@@ -418,11 +418,9 @@ const scrapeResults10 = async (link, team_name) => {
                     const dateExists = await checkDateInDatabase(teamID10, statisticData);
 
                     if (dateExists) {
-                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                        await page2.close();
-                        await browser.close();
-                        console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
-                        return;
+                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogo.`);
+                        await page2.close();  // ✅ Fecha apenas a aba, mas mantém o navegador aberto
+                        continue;  // ✅ Continua para o próximo jogo sem interromper a execução geral
                     } else {
                         console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
                     }
@@ -438,11 +436,11 @@ const scrapeResults10 = async (link, team_name) => {
             const rows = await page2.$$(`#detail`);
             for (const row of rows) {
                 let rowData = '';
-
+                await sleep(100000);
                 // Extração da data do jogo
                 let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
                 rowData += `${data_hora}, `;
-
+                await sleep(100000);
                 // Extração dos times
                 let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
                 let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
