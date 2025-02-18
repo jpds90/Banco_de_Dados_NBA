@@ -381,7 +381,7 @@ const scrapeResults10 = async (link, team_name) => {
 
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
-    await loadPageWithRetries(page, fullLink, { timeout: 120000, waitUntil: 'domcontentloaded' });
+    await loadPageWithRetries(page, fullLink);
 
     const url = await page.evaluate(() => window.location.href);
     console.log('URL capturada:', url);
