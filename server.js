@@ -100,10 +100,12 @@ app.post("/salvar-url", async (req, res) => {
         return res.status(400).json({ success: false, message: "URL ou tableName ausente" });
     }
 
-    const client = await pool.connect();
+    // ✅ Garante que a tabela existe antes de inserir
+    await ensureTableExists(tableName);
 
+    const client = await pool.connect();
     try {
-        // 🔎 Verifica se a URL já existe na tabela
+        // 🔎 Verifica se a URL já existe
         const checkExistence = await client.query(`SELECT * FROM ${tableName} WHERE link = $1`, [url]);
 
         if (checkExistence.rows.length > 0) {
@@ -111,7 +113,7 @@ app.post("/salvar-url", async (req, res) => {
             return res.json({ success: false, message: "URL já está salva!" });
         }
 
-        // 💾 Se a URL não existir, insere no banco
+        // 💾 Insere a URL se ainda não existir
         await client.query(`INSERT INTO ${tableName} (link) VALUES ($1)`, [url]);
         console.log(`✅ URL salva na tabela ${tableName}: ${url}`);
 
