@@ -316,12 +316,12 @@ function normalizecoluna(str) {
     return str
         .normalize("NFD") // Decomposição de acentos
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-        .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
-        .replace(/[\s\-]/g, '') // Remove espaços e hífens
-        .replace(/segueemfrente/g, '') // Remove a expressão "Segue em frente", sem espaço
-        .replace(/(segueemfrente)/g, '') // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
-        .replace(/(Segue em frente)/g, ''); // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
+        .replace(/\([^)]*\)/g, '') // Remove tudo dentro de parênteses
+        .replace(/\bsegue\s*em\s*frente\b/gi, '') // Remove "Segue em frente" ignorando maiúsculas/minúsculas e espaços extras
+        .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único
+        .trim(); // Remove espaços no início e no final
 }
+
 
 
 // Função de scraping
