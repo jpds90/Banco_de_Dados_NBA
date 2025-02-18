@@ -436,11 +436,11 @@ const scrapeResults10 = async (link, team_name) => {
             const rows = await page2.$$(`#detail`);
             for (const row of rows) {
                 let rowData = '';
-                await sleep(3000);
+                await sleep(20000);
                 // Extração da data do jogo
                 let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
                 rowData += `${data_hora}, `;
-                await sleep(3000);
+                await sleep(20000);
                 // Extração dos times
                 let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
                 let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
