@@ -537,9 +537,9 @@ const scrapeResults10 = async (link, team_name) => {
 
                 teamData = {
                     data_hora: data_hora || null,
-                    timehome: timehome || null,
+                    timehome: normalizecoluna(timehome) || null,
                     resultadohome: Resultadohome || 0,
-                    timeaway: timeaway || null,
+                    timeaway: normalizecoluna(timeaway) || null,
                     resultadoaway: Resultadoaway || 0,
                     golos_esperados_xg: estatisticasJogo["golos esperados (xg)"] || 0,
                     posse_de_bola: estatisticasJogo["posse de bola"] || 0,
