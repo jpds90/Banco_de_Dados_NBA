@@ -93,7 +93,7 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
-            await page.goto(url, { timeout: 180000, waitUntil: 'domcontentloaded' });
+            await page.goto(url, { timeout: 60000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
@@ -378,7 +378,7 @@ const scrapeResults10 = async (link, team_name) => {
     }
     await sleep(10000);
     try {
-        await page.waitForSelector('.container', { timeout: 180000 });
+        await page.waitForSelector('.container', { timeout: 60000 });
     } catch (error) {
         console.error("Erro ao esperar pelo seletor: .container. O elemento pode não existir.");
     }
@@ -398,16 +398,16 @@ const scrapeResults10 = async (link, team_name) => {
     for (let id of ids) {
         const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
         console.log("Processando URL:", url);
-        await page2.goto(url, { timeout: 180000 });
+        await page2.goto(url, { timeout: 60000 });
 
-        await sleep(100000);
+        await sleep(60000);
 
         if (teamID10) {
             const lastDate = await getLastDateFromDatabase(teamID10);
             console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
             try {
-                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
+                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 60000 });
 
                 const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
@@ -436,11 +436,11 @@ const scrapeResults10 = async (link, team_name) => {
             const rows = await page2.$$(`#detail`);
             for (const row of rows) {
                 let rowData = '';
-                await sleep(100000);
+                await sleep(60000);
                 // Extração da data do jogo
                 let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
                 rowData += `${data_hora}, `;
-                await sleep(100000);
+                await sleep(60000);
                 // Extração dos times
                 let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
                 let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
