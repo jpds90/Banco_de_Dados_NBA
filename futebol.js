@@ -398,7 +398,7 @@ const scrapeResults10 = async (link, team_name) => {
     for (let id of ids) {
         const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
         console.log("Processando URL:", url);
-        await page2.goto(url, { timeout: 3000 });
+        await page2.goto(url, { timeout: 30000 });
 
         await sleep(3000);
 
@@ -407,7 +407,7 @@ const scrapeResults10 = async (link, team_name) => {
             console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
             try {
-                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 3000 });
+                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 25000 });
 
                 const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
