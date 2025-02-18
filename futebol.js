@@ -87,6 +87,14 @@ const checkDateInDatabase = async (teamTable, specificDate) => {
     }
 };
 
+const restartBrowserIfNeeded = async () => {
+    if (browser && !browser.isConnected()) {
+        console.log("Reiniciando o navegador devido à desconexão...");
+        await browser.close();
+        await launchBrowser(); // Reinicia o navegador
+    }
+};
+
 
 // Função para tentar navegar com tentativas de re-execução
 // Função para tentar navegar com tentativas de reexecução
@@ -97,40 +105,38 @@ const loadPageWithRetries = async (url, retries = 3) => {
     // Função para criar uma nova instância do navegador
     const launchBrowser = async () => {
         browser = await puppeteer.launch({
-            headless: true, // Defina como true ou false conforme necessário
+            headless: true,
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
         });
         page = await browser.newPage();
     };
 
-    // Tente iniciar o navegador
     await launchBrowser();
 
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
-            // Tente carregar a página
             await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
             console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
-
-            // Verifique se o erro é de desconexão do navegador
-            if (error.message.includes("browser has disconnected")) {
-                console.log("Erro de desconexão do navegador. Tentando reconectar...");
-                // Fechar a instância anterior e reiniciar
+            
+            // Caso a sessão tenha sido fechada, reabrir o navegador
+            if (error.message.includes("Session closed") || error.message.includes("page has been closed")) {
+                console.log("Sessão do navegador fechada. Tentando reconectar...");
                 await browser.close();
-                await launchBrowser(); // Reconectar criando uma nova instância do navegador
+                await launchBrowser();
             }
 
-            // Se for a última tentativa, lance o erro
+            // Se for a última tentativa, lançar o erro
             if (attempt === retries - 1) {
                 throw error;
             }
         }
     }
 };
+
 // Função para criar uma tabela de estatísticas para um time
 // Função para salvar os dados no banco
 const createPlayersTable = async (teamName) => {
@@ -375,7 +381,7 @@ const scrapeResults10 = async (link, team_name) => {
 
     const page = await browser.newPage();
     console.log('Abrindo o navegador e indo para a página...', fullLink);
-    await loadPageWithRetries(page, fullLink);
+    await loadPageWithRetries(page, fullLink, { timeout: 120000, waitUntil: 'domcontentloaded' });
 
     const url = await page.evaluate(() => window.location.href);
     console.log('URL capturada:', url);
@@ -412,7 +418,8 @@ const scrapeResults10 = async (link, team_name) => {
     for (let id of ids) {
         const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
         console.log("Processando URL:", url);
-        await page2.goto(url, { timeout: 120000 });
+        await page2.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+
         await sleep(10000);
 
         if (teamID10) {
