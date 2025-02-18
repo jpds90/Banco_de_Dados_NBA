@@ -310,6 +310,16 @@ function normalizeString(str) {
         .replace(/segueemfrente/g, '') // Remove a expressão "Segue em frente", sem espaço
         .replace(/(segueemfrente)/g, ''); // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
 }
+// Função para remover "Segue em frente" e conteúdo dentro de parênteses
+function normalizecoluna(str) {
+    return str
+        .toLowerCase()
+        .normalize("NFD") // Decomposição de acentos
+        .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
+        .replace(/segueemfrente/g, '') // Remove a expressão "Segue em frente", sem espaço
+        .replace(/(segueemfrente)/g, '') // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
+        .replace(/(Segue em frente)/g, ''); // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
+}
 
 
 // Função de scraping
@@ -424,6 +434,12 @@ const scrapeResults10 = async (link, team_name) => {
                 let normalizedTimeHome = normalizeString(timehome);
                 let normalizedTimeAway = normalizeString(timeaway);
 
+                let normalizedTimeHome1 = normalizecoluna(timehome);
+                let normalizedTimeAway2 = normalizecoluna(timeaway);
+
+                console.log(`Time Casa Colunas: ${normalizedTimeHome1}`);
+                console.log(`Time Visitante Colunas: ${normalizedTimeAway2}`);
+
                 console.log(`Time: ${normalizedTeamId}`);
                 console.log(`Time Casa: ${normalizedTimeHome}`);
                 console.log(`Time Visitante: ${normalizedTimeAway}`);
@@ -434,8 +450,8 @@ const scrapeResults10 = async (link, team_name) => {
                 console.log(`Time Casa: ${isHome}`);
                 console.log(`Time Visitante: ${isAway}`);
 
-                rowData += `${timehome || '0'}, `;
-                rowData += `${timeaway || '0'}, `;
+                rowData += `${normalizedTimeHome1 || '0'}, `;
+                rowData += `${normalizedTimeAway2 || '0'}, `;
 
                 let Resultadohome = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(1)`, el => el.textContent.trim()).catch(() => '0');
                 let Resultadoaway = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__wrapper > span:nth-child(3)`, el => el.textContent.trim()).catch(() => '0');
