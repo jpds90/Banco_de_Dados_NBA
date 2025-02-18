@@ -89,16 +89,45 @@ const checkDateInDatabase = async (teamTable, specificDate) => {
 
 
 // Função para tentar navegar com tentativas de re-execução
-const loadPageWithRetries = async (page, url, retries = 3) => {
+// Função para tentar navegar com tentativas de reexecução
+const loadPageWithRetries = async (url, retries = 3) => {
+    let browser;
+    let page;
+
+    // Função para criar uma nova instância do navegador
+    const launchBrowser = async () => {
+        browser = await puppeteer.launch({
+            headless: true, // Defina como true ou false conforme necessário
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
+        page = await browser.newPage();
+    };
+
+    // Tente iniciar o navegador
+    await launchBrowser();
+
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
+            // Tente carregar a página
             await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
             console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
-            if (attempt === retries - 1) throw error; // Lançar o erro na última tentativa
+
+            // Verifique se o erro é de desconexão do navegador
+            if (error.message.includes("browser has disconnected")) {
+                console.log("Erro de desconexão do navegador. Tentando reconectar...");
+                // Fechar a instância anterior e reiniciar
+                await browser.close();
+                await launchBrowser(); // Reconectar criando uma nova instância do navegador
+            }
+
+            // Se for a última tentativa, lance o erro
+            if (attempt === retries - 1) {
+                throw error;
+            }
         }
     }
 };
