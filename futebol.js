@@ -93,7 +93,7 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
-            await page2.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
