@@ -155,9 +155,15 @@ const fetchLinksFromDatabase = async (tableName) => {
 
 // Rota para executar o script futebol link.js
 app.post('/futebollink', (req, res) => {
+    const { tableName } = req.body;  // Recebe o nome da tabela do frontend
+    if (!tableName) {
+        return res.status(400).json({ success: false, message: "tableName ausente" });
+    }
+
     const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
-    runScript(scriptPath, res, 'Extrair URL dos Times');
+    runScript(scriptPath, res, 'Extrair URL dos Times', [tableName]);
 });
+
 
 
 app.post('/timefutebol', async (req, res) => {
