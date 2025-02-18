@@ -378,7 +378,7 @@ const scrapeResults10 = async (link, team_name) => {
     }
     await sleep(3000);
     try {
-        await page.waitForSelector('.container', { timeout: 3000 });
+        await page.waitForSelector('.container', { timeout: 60000 });
     } catch (error) {
         console.error("Erro ao esperar pelo seletor: .container. O elemento pode não existir.");
     }
