@@ -314,16 +314,16 @@ function normalizeString(str) {
 }
 // Função para remover "Segue em frente" e conteúdo dentro de parênteses
 function normalizecoluna(str) {
-    if (!str) return ''; // Evita erros se a string for undefined ou null
+    if (!str) return ''; // Evita erro se for null ou undefined
 
     return str
-        .normalize("NFD") // Decomposição de acentos
-        .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses
-        .replace(/\bSegue em frente\b/gi, '') // Remove exatamente "Segue em frente", independentemente de maiúsculas/minúsculas
-        .replace(/\bsegue\s*em\s*frente\b/gi, '')
-        .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único espaço
-        .trim(); // Remove espaços extras no início e no fim
+        .normalize("NFD") // Remove acentos
+        .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos (acentos)
+        .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove parênteses e "Segue em frente"
+        .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único
+        .trim(); // Remove espaços extras no início e no final
 }
+
 
 
 
