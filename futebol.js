@@ -89,22 +89,7 @@ const checkDateInDatabase = async (teamTable, specificDate) => {
 
 
 // Função para tentar navegar com tentativas de re-execução
-// Função para tentar navegar com tentativas de reexecução
-const loadPageWithRetries = async (url, retries = 3) => {
-    let browser;
-    let page;
-
-    // Função para criar uma nova instância do navegador
-    const launchBrowser = async () => {
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
-        page = await browser.newPage();
-    };
-
-    await launchBrowser();
-
+const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
@@ -113,18 +98,7 @@ const loadPageWithRetries = async (url, retries = 3) => {
             return;
         } catch (error) {
             console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
-            
-            // Caso a sessão tenha sido fechada, reabrir o navegador
-            if (error.message.includes("Session closed") || error.message.includes("page has been closed")) {
-                console.log("Sessão do navegador fechada. Tentando reconectar...");
-                await browser.close();
-                await launchBrowser();
-            }
-
-            // Se for a última tentativa, lançar o erro
-            if (attempt === retries - 1) {
-                throw error;
-            }
+            if (attempt === retries - 1) throw error; // Lançar o erro na última tentativa
         }
     }
 };
@@ -283,7 +257,7 @@ async function waitForSelectorWithRetries(page, selector, options, maxRetries = 
                 console.error(`Falha ao esperar pelo seletor após ${maxRetries} tentativas: ${selector}`);
                 throw error; // Lança o erro após o número máximo de tentativas
             }
-            await sleep(2000); // Aguarda 2 segundos antes de tentar novamente
+            await sleep(6000); // Aguarda 2 segundos antes de tentar novamente
         }
     }
 }
@@ -394,7 +368,7 @@ const scrapeResults10 = async (link, team_name) => {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
     }
     await sleep(10000);
-    await waitForSelectorWithRetries(page, '.container', { timeout: 90000 });
+    await waitForSelectorWithRetries(page, '.container', { timeout: 120000 });
 
     const ids = await page.evaluate(() => {
         const sportName = document.querySelector('.sportName.soccer');
