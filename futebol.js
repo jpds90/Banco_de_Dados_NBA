@@ -87,14 +87,6 @@ const checkDateInDatabase = async (teamTable, specificDate) => {
     }
 };
 
-const restartBrowserIfNeeded = async () => {
-    if (browser && !browser.isConnected()) {
-        console.log("Reiniciando o navegador devido à desconexão...");
-        await browser.close();
-        await launchBrowser(); // Reinicia o navegador
-    }
-};
-
 
 // Função para tentar navegar com tentativas de re-execução
 // Função para tentar navegar com tentativas de reexecução
@@ -116,7 +108,7 @@ const loadPageWithRetries = async (url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
-            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+            await page2.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
@@ -418,7 +410,7 @@ const scrapeResults10 = async (link, team_name) => {
     for (let id of ids) {
         const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
         console.log("Processando URL:", url);
-        await page2.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+        await page2.goto(url, { timeout: 120000 });
 
         await sleep(10000);
 
