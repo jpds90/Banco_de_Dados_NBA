@@ -360,7 +360,6 @@ const scrapeResults10 = async (link, team_name) => {
     console.error("Erro ao capturar a URL:", error);
 }
 
-    console.log('URL capturada:', url);
 
     let teamID10 = null;
     if (team_name && typeof team_name === 'string') {
