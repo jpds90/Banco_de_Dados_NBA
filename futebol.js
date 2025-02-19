@@ -302,16 +302,18 @@ const fetchLinksFromDatabase1 = async (tableName) => {
 
 // Função para remover "Segue em frente" e conteúdo dentro de parênteses
 function normalizeString(str) {
+    if (!str) return '';  // Garantir que a string não seja nula ou vazia
     return str
         .toLowerCase()
         .normalize("NFD") // Decomposição de acentos
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
-        .replace(/\.$/, "")
-        .replace(/segueemfrente/g, '') // Remove a expressão "Segue em frente", sem espaço
-        .replace(/(segueemfrente)/g, ''); // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
+        .replace(/\./g, '')  // Remove todos os pontos na string
+        .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove parênteses e "Segue em frente"
+        .trim(); // Remove espaços extras no início e no fim
 }
+
 // Função para remover "Segue em frente" e conteúdo dentro de parênteses
 function normalizecoluna(str) {
     if (!str) return ''; // Evita erros se a string for undefined ou null
