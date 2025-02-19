@@ -82,7 +82,7 @@ async function scrapeAndSaveLinks(tableName, url) {
 
     // 🔹 Limpa os links antigos antes de inserir os novos
     await client.query(`TRUNCATE TABLE "${tableName}"`);
-    console.log(`🗑️ Tabela ${tableName} limpa.`);
+    console.log(`🗑️ Tabela Links ${tableName} limpa.`);
 
     try {
         console.log("📌 Acessando URL:", url);
