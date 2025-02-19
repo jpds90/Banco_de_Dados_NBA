@@ -15,18 +15,18 @@ async function getSavedUrl(tableName) {
     const client = await pool.connect();
     try {
         console.log(`🔍 Buscando URL na tabela link Futebol: ${tableName}_link...`);
-        const result = await client.query(`SELECT link FROM ${tableName}_link ORDER BY id DESC LIMIT 1`);
+        const result = await client.query(`SELECT link FROM ${tableName} ORDER BY id DESC LIMIT 1`);
 
         if (result.rows.length > 0) {
             console.log(`✅ URL carregada do link Futebol ${tableName} : ${result.rows[0].link}`);
             return result.rows[0].link;
         } else {
             console.log("⚠️ Nenhuma URL encontrada. Usando URL padrão.");
-            return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão
+            return 'https://www.flashscore.pt/futebol/'; // URL padrão
         }
     } catch (error) {
         console.error("❌ Erro ao buscar URL no banco:", error);
-        return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão em caso de erro
+        return 'https://www.flashscore.pt/futebol/'; // URL padrão em caso de erro
     } finally {
         client.release();
     }
