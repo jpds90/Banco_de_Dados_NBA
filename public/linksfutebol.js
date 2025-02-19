@@ -43,7 +43,7 @@ async function getTableName(tableName) {
     const formattedTableName = tableName
         .toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "_") + "_links";
+        .replace(/[^a-z0-9]+/g, "_") + "s";
 
     console.log(`📌 Nome da tabela extraído Link Futebol: ${formattedTableName}`);
     return { tableName: formattedTableName, url };
