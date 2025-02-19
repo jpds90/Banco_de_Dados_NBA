@@ -153,6 +153,8 @@ const fetchLinksFromDatabase = async (tableName) => {
     }
 };
 
+
+
 // Rota para executar o script futebol link.js
 app.post('/futebollink', (req, res) => {
     const { tableName } = req.body;  // Recebe o nome da tabela do frontend
