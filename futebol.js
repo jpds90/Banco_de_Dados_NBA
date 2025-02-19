@@ -588,7 +588,6 @@ for (let id of ids) {
             console.error("Erro geral no scraping:", error);
         }
     }
-};
 // Exportando a função
 module.exports = {
   fetchLinksFromDatabase1,
