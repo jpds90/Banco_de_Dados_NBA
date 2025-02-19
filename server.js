@@ -164,7 +164,7 @@ app.post('/futebollink', (req, res) => {
     }
 
     const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
-    console.log(`📂 Caminho do script: ${scriptPath}`);
+    console.log(`📂 Caminho do script URL dos Times: ${scriptPath}`);
     runScript(scriptPath, res, 'Extrair URL dos Times', [tableName]);
 });
 
@@ -172,12 +172,12 @@ app.post('/futebollink', (req, res) => {
 
 app.post('/timefutebol', async (req, res) => {
     const { tableName } = req.body;
-    console.log(`🔍 Recebido tableName: ${tableName}`);
+    console.log(`🔍 Recebido Futebol.js: ${tableName}`);
 
     try {
         const links = await fetchLinksFromDatabase1(tableName);
 
-        console.log("📤 Enviando links para o frontend:", links);  // 🔥 Adicione isso
+        console.log("📤 Enviando links para o frontend do Fuetbol.js:", links);  // 🔥 Adicione isso
 
         res.json(links);
     } catch (error) {
@@ -196,7 +196,7 @@ app.post('/oddsfutebol', (req, res) => {
     }
 
     const scriptPath = path.join(__dirname, 'public', 'oddsfutebol.js');
-    console.log(`📂 Caminho do script: ${scriptPath}`);
+    console.log(`📂 Caminho do script do Odds: ${scriptPath}`);
     runScript(scriptPath, res, 'Extrair odds dos Times', [tableName]);
 });
 
