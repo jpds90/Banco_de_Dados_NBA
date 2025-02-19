@@ -162,6 +162,7 @@ app.post('/futebollink', (req, res) => {
     }
 
     const scriptPath = path.join(__dirname, 'public', 'linksfutebol.js');
+    console.log(`📂 Caminho do script: ${scriptPath}`);
     runScript(scriptPath, res, 'Extrair URL dos Times', [tableName]);
 });
 
