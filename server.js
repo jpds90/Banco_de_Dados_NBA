@@ -187,12 +187,20 @@ app.post('/timefutebol', async (req, res) => {
 });
 
 
-
 // Rota para executar o script oddsfutebol.js
 app.post('/oddsfutebol', (req, res) => {
+    const { tableName } = req.body;  // Recebe o nome da tabela do frontend
+     console.log("🔹 Recebendo request em /oddsfutebol com tableName:", tableName);
+    if (!tableName) {
+        return res.status(400).json({ success: false, message: "tableName ausente" });
+    }
+
     const scriptPath = path.join(__dirname, 'public', 'oddsfutebol.js');
-    runScript(scriptPath, res, 'Extrair os confrontos');
+    console.log(`📂 Caminho do script: ${scriptPath}`);
+    runScript(scriptPath, res, 'Extrair odds dos Times', [tableName]);
 });
+
+
 
 
 
