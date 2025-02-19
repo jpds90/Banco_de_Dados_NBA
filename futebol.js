@@ -308,20 +308,22 @@ function normalizeString(str) {
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses, incluindo os próprios parênteses
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\.$/, "")
         .replace(/segueemfrente/g, '') // Remove a expressão "Segue em frente", sem espaço
         .replace(/(segueemfrente)/g, ''); // Remover qualquer ocorrência de "Segue em frente" mesmo sem espaço
 }
 // Função para remover "Segue em frente" e conteúdo dentro de parênteses
 function normalizecoluna(str) {
-    if (!str) return ''; // Evita erro se for null ou undefined
+    if (!str) return ''; // Evita erros se a string for undefined ou null
 
     return str
-        .normalize("NFD") // Remove acentos
-        .replace(/[\u0300-\u036f]/g, '') // Remove diacríticos (acentos)
+        .normalize("NFD") // Decomposição de acentos
+        .replace(/\([^)]*\)/g, '') // Remove tudo que estiver dentro de parênteses
         .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove parênteses e "Segue em frente"
-        .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único
-        .trim(); // Remove espaços extras no início e no final
+        .replace(/\s+/g, ' ') // Substitui múltiplos espaços por um único espaço
+        .trim(); // Remove espaços extras no início e no fim
 }
+
 
 
 
@@ -382,44 +384,44 @@ const scrapeResults10 = async (link, team_name) => {
     const page2 = await browser.newPage();
     let teamData = '';
 
-for (let id of ids) {
-    const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
-    console.log("Processando URL:", url);
-    await page2.goto(url, { timeout: 120000 });
+    for (let id of ids) {
+        const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
+        console.log("Processando URL:", url);
+        await page2.goto(url, { timeout: 120000 });
 
-    await sleep(10000);
+        await sleep(10000);
 
-    if (teamID10) {
-        const lastDate = await getLastDateFromDatabase(teamID10);
-        console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+        if (teamID10) {
+            const lastDate = await getLastDateFromDatabase(teamID10);
+            console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
-        try {
-            await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
+            try {
+                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
 
-            const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
+                const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
-            if (statisticElementHandle) {
-                const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
-                console.log(`Data ${statisticData} encontrada!`);
+                if (statisticElementHandle) {
+                    const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
+                    console.log(`Data ${statisticData} encontrada!`);
 
-                // Aguarda a verificação no banco de dados antes de prosseguir
-                const dateExists = await checkDateInDatabase(teamID10, statisticData);
+                    const dateExists = await checkDateInDatabase(teamID10, statisticData);
 
-                if (dateExists) {
-                    console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
-                    await sleep(5000); // Aguarda 5 segundos para garantir o processamento
-                    break; // Continua para o próximo jogo sem fechar o navegador
+                    if (dateExists) {
+                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
+                        await page2.close();
+                        await browser.close();
+                        console.log(`Todos os dados para o time ${teamID10} foram atualizados com sucesso.`);
+                        return;
+                    } else {
+                        console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
+                    }
                 } else {
-                    console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
+                    console.log("❌ Elemento de data do jogo não encontrado!");
                 }
-            } else {
-                console.log("❌ Elemento de data do jogo não encontrado!");
+            } catch (error) {
+                console.error("Erro ao extrair a data do jogo:", error);
             }
-        } catch (error) {
-            console.error("Erro ao extrair a data do jogo:", error);
         }
-    }
-}
 
         try {
             const rows = await page2.$$(`#detail`);
@@ -588,6 +590,9 @@ for (let id of ids) {
             console.error("Erro geral no scraping:", error);
         }
     }
+
+    await browser.close();
+};
 // Exportando a função
 module.exports = {
   fetchLinksFromDatabase1,
