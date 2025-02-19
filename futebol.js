@@ -93,16 +93,15 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
             console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
-            await page.goto(url, { timeout: 180000, waitUntil: 'domcontentloaded' });
+            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
             console.log("Página carregada com sucesso.");
             return;
         } catch (error) {
             console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
-            if (attempt === retries - 1) throw error; // Lançar erro na última tentativa
+            if (attempt === retries - 1) throw error; // Lançar o erro na última tentativa
         }
     }
 };
-
 
 // Função para criar uma tabela de estatísticas para um time
 // Função para salvar os dados no banco
@@ -326,8 +325,6 @@ function normalizecoluna(str) {
 
 
 
-
-
 // Função de scraping
 // Função de scraping modificada para receber team_name
 const scrapeResults10 = async (link, team_name) => {
@@ -353,13 +350,8 @@ const scrapeResults10 = async (link, team_name) => {
     console.log('Abrindo o navegador e indo para a página...', fullLink);
     await loadPageWithRetries(page, fullLink);
 
-    try {
     const url = await page.evaluate(() => window.location.href);
     console.log('URL capturada:', url);
-} catch (error) {
-    console.error("Erro ao capturar a URL:", error);
-}
-
 
     let teamID10 = null;
     if (team_name && typeof team_name === 'string') {
@@ -376,13 +368,8 @@ const scrapeResults10 = async (link, team_name) => {
     } else {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
     }
-    await sleep(3000);
-    try {
-        await page.waitForSelector('.container', { timeout: 60000 });
-    } catch (error) {
-        console.error("Erro ao esperar pelo seletor: .container. O elemento pode não existir.");
-    }
-
+    await sleep(10000);
+    await waitForSelectorWithRetries(page, '.container', { timeout: 120000 });
 
     const ids = await page.evaluate(() => {
         const sportName = document.querySelector('.sportName.soccer');
@@ -395,52 +382,54 @@ const scrapeResults10 = async (link, team_name) => {
     const page2 = await browser.newPage();
     let teamData = '';
 
-    for (let id of ids) {
-        const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
-        console.log("Processando URL:", url);
-        await page2.goto(url, { timeout: 30000 });
+for (let id of ids) {
+    const url = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/estatisticas-de-jogo/0`;
+    console.log("Processando URL:", url);
+    await page2.goto(url, { timeout: 120000 });
 
-        await sleep(3000);
+    await sleep(10000);
 
-        if (teamID10) {
-            const lastDate = await getLastDateFromDatabase(teamID10);
-            console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
+    if (teamID10) {
+        const lastDate = await getLastDateFromDatabase(teamID10);
+        console.log(`Última data encontrada para a tabela ${teamID10}: ${lastDate}`);
 
-            try {
-                await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 25000 });
+        try {
+            await page2.waitForSelector('div.duelParticipant__startTime', { timeout: 10000 });
 
-                const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
+            const statisticElementHandle = await page2.$('div.duelParticipant__startTime');
 
-                if (statisticElementHandle) {
-                    const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
-                    console.log(`Data ${statisticData} encontrada!`);
+            if (statisticElementHandle) {
+                const statisticData = await page2.evaluate(el => el.textContent.trim(), statisticElementHandle);
+                console.log(`Data ${statisticData} encontrada!`);
 
-                    const dateExists = await checkDateInDatabase(teamID10, statisticData);
+                // Aguarda a verificação no banco de dados antes de prosseguir
+                const dateExists = await checkDateInDatabase(teamID10, statisticData);
 
-                    if (dateExists) {
-                        console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogo.`);
-                        await page2.close();  // ✅ Fecha apenas a aba, mas mantém o navegador aberto
-                        continue;  // ✅ Continua para o próximo jogo sem interromper a execução geral
-                    } else {
-                        console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
-                    }
+                if (dateExists) {
+                    console.log(`A data ${statisticData} já foi registrada. Pulando para o próximo jogador.`);
+                    await sleep(5000); // Aguarda 5 segundos para garantir o processamento
+                    break; // Continua para o próximo jogo sem fechar o navegador
                 } else {
-                    console.log("❌ Elemento de data do jogo não encontrado!");
+                    console.log(`A data ${statisticData} ainda não foi registrada. Continuando processamento...`);
                 }
-            } catch (error) {
-                console.error("Erro ao extrair a data do jogo:", error);
+            } else {
+                console.log("❌ Elemento de data do jogo não encontrado!");
             }
+        } catch (error) {
+            console.error("Erro ao extrair a data do jogo:", error);
         }
+    }
+}
 
         try {
             const rows = await page2.$$(`#detail`);
             for (const row of rows) {
                 let rowData = '';
-                await sleep(20000);
+
                 // Extração da data do jogo
                 let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
                 rowData += `${data_hora}, `;
-                await sleep(20000);
+
                 // Extração dos times
                 let timehome = await row.$eval(`div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a`, el => el.textContent.trim()).catch(() => '');
                 let timeaway = await row.$eval(`div.duelParticipant__away > div.participant__participantNameWrapper`, el => el.textContent.trim()).catch(() => '');
@@ -599,11 +588,8 @@ const scrapeResults10 = async (link, team_name) => {
             console.error("Erro geral no scraping:", error);
         }
     }
-if (browser) {
-    console.log("Fechando o navegador após processar todos os dados...");
-    await browser.close();
-}
 
+    await browser.close();
 };
 // Exportando a função
 module.exports = {
