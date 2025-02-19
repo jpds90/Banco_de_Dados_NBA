@@ -862,8 +862,10 @@ app.post('/execute-script', (req, res) => {
 
 
 // Função para executar um script Node.js de forma segura
-function runScript(scriptPath, res, scriptName) {
-    exec(`node ${scriptPath}`, (error, stdout, stderr) => {
+function runScript(scriptPath, res, scriptName, tableName) {
+    console.log(`🚀 Executando script: ${scriptPath} com tableName: ${tableName}`);
+
+    exec(`node ${scriptPath} ${tableName}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ Erro ao executar ${scriptName}: ${error.message}`);
             return res.status(500).json({ success: false, message: `Erro ao executar ${scriptName}.` });
@@ -877,6 +879,7 @@ function runScript(scriptPath, res, scriptName) {
         res.json({ success: true, message: `${scriptName} executado com sucesso.` });
     });
 }
+
 
 // Rota para executar a atualização de jogadores
 app.post('/execute-Jogadores', async (req, res) => {
