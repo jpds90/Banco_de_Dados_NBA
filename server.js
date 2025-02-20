@@ -226,111 +226,73 @@ app.get("/buscar-times", async (req, res) => {
 
 
 
-app.get('/probabilidade-vitoria', async (req, res) => {
-  try {
-    console.log("Recebendo requisição para /probabilidade-vitoria");
-    
-    const { tableName } = req.query;
-    console.log("Parâmetro recebido - tableName:", tableName);
+app.get('/probabilidade', async (req, res) => {
+    try {
+        const { timeHome, timeAway } = req.query;
 
-    // Validação para garantir que tableName não está vazio
-    if (!tableName) {
-      console.error("Erro: Nome da tabela não fornecido");
-      return res.status(400).json({ error: 'Nome da tabela não fornecido' });
+        if (!timeHome || !timeAway) {
+            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+        }
+
+        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+        const queryStats = async (table) => {
+            const result = await pool.query(`
+                SELECT 
+                    AVG(golos_esperados_xg) AS xg, 
+                    AVG(posse_de_bola) AS posse,
+                    AVG(tentativas_de_golo) AS finalizacoes,
+                    AVG(remates_a_baliza) AS remates,
+                    AVG(grandes_oportunidades) AS oportunidades,
+                    AVG(defesas_de_guarda_redes) AS defesas,
+                    AVG(desarmes + intercepcoes) AS defesa
+                FROM ${table}
+            `);
+            return result.rows[0];
+        };
+
+        const homeStats = await queryStats(homeTable);
+        const awayStats = await queryStats(awayTable);
+
+        const calculateWinProbability = (home, away) => {
+            const weights = {
+                xg: 0.25, 
+                posse: 0.15, 
+                finalizacoes: 0.15,
+                remates: 0.15, 
+                oportunidades: 0.20, 
+                defesas: -0.10, 
+                defesa: 0.10
+            };
+
+            let homeScore = 0;
+            let awayScore = 0;
+
+            for (const key in weights) {
+                homeScore += (home[key] || 0) * weights[key];
+                awayScore += (away[key] || 0) * weights[key];
+            }
+
+            const total = homeScore + awayScore;
+            const homeWinProb = ((homeScore / total) * 100).toFixed(2);
+            const awayWinProb = ((awayScore / total) * 100).toFixed(2);
+
+            return { homeWinProb, awayWinProb };
+        };
+
+        const probabilities = calculateWinProbability(homeStats, awayStats);
+
+        res.json({
+            time_home: timeHome,
+            home_win_probability: probabilities.homeWinProb,
+            time_away: timeAway,
+            away_win_probability: probabilities.awayWinProb
+        });
+    } catch (error) {
+        console.error("Erro ao calcular probabilidades:", error);
+        res.status(500).json({ error: "Erro interno do servidor" });
     }
-
-    const oddsResult = await pool.query(`SELECT time_home, time_away FROM ${tableName}`);
-    const oddsRows = oddsResult.rows;
-
-    console.log(`Foram encontrados ${oddsRows.length} registros na tabela ${tableName}`);
-
-    if (oddsRows.length === 0) {
-      return res.status(404).json({ error: `Nenhum jogo encontrado na tabela ${tableName}` });
-    }
-
-    const results = [];
-
-    for (const { time_home, time_away } of oddsRows) {
-      console.log(`Processando jogo: ${time_home} vs ${time_away}`);
-
-      const homeTable = time_home.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-      const awayTable = time_away.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-
-      console.log("Tabelas geradas -> homeTable:", homeTable, "| awayTable:", awayTable);
-
-      // Buscar os dados estatísticos da tabela do time da casa (homeTable)
-      const query = `
-        SELECT 
-          posse_de_bola, 
-          tentativas_de_golo, 
-          remates_a_baliza, 
-          grandes_oportunidades, 
-          CASE WHEN resultadohome > resultadoaway THEN 1 ELSE 0 END as vitoria
-        FROM ${homeTable}
-        WHERE timehome = $1 AND timeaway = $2;
-      `;
-
-      console.log("Executando query na tabela:", homeTable);
-      console.log("Parâmetros -> timehome:", time_home, "| timeaway:", time_away);
-
-      const { rows } = await pool.query(query, [time_home, time_away]);
-
-      console.log(`Resultados encontrados: ${rows.length}`);
-
-      if (rows.length === 0) {
-        console.warn(`Nenhum dado encontrado para ${time_home} vs ${time_away} na tabela ${homeTable}`);
-        continue;
-      }
-
-      // Preparação dos dados para o modelo
-      const data = rows.map(row => [
-        row.posse_de_bola,
-        row.tentativas_de_golo,
-        row.remates_a_baliza,
-        row.grandes_oportunidades,
-      ]);
-
-      const labels = rows.map(row => row.vitoria);
-
-      console.log(`Treinando modelo com ${data.length} amostras`);
-
-      // Treinar o modelo de regressão logística
-      const X = new Matrix(data);
-      const y = labels;
-
-      const logisticRegression = new LogisticRegression({ numSteps: 1000, learningRate: 0.5 });
-      logisticRegression.train(X, y);
-
-      // Fazer previsões (usando a média das features dos dados existentes)
-      const meanFeatures = [
-        data.reduce((sum, row) => sum + row[0], 0) / data.length,
-        data.reduce((sum, row) => sum + row[1], 0) / data.length,
-        data.reduce((sum, row) => sum + row[2], 0) / data.length,
-        data.reduce((sum, row) => sum + row[3], 0) / data.length,
-      ];
-
-      console.log("Média das características calculada:", meanFeatures);
-
-      const probability = logisticRegression.predictProbability(new Matrix([meanFeatures]));
-
-      console.log(`Probabilidade de vitória calculada para ${time_home}: ${probability[0][1]}`);
-
-      // Adiciona os resultados no array de retorno
-      results.push({
-        timeHome: time_home,
-        timeAway: time_away,
-        probabilidadeVitoria: probability[0][1], // Probabilidade de vitória (classe 1)
-      });
-    }
-
-    // Retorna os resultados de todos os jogos analisados
-    console.log("Finalizando requisição. Resultados:", results);
-    res.json({ resultados: results });
-
-  } catch (error) {
-    console.error('Erro ao calcular a probabilidade de vitória:', error);
-    res.status(500).json({ error: 'Erro interno do servidor.' });
-  }
 });
 
 
