@@ -249,8 +249,9 @@
     });
 
 function formatarNomeTime(nome) {
-    return nome.replace("Segue em frente", "").trim(); // Remove a frase e espaços extras
+    return nome.replace("Segue em frente", "").replace(/\//g, "_").trim(); // Remove a frase e substitui '/' por '_'
 }
+
 
 
 
