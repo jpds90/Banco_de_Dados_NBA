@@ -124,8 +124,6 @@
                 <th>Chance Vitória Casa</th>
                 <th>Time Fora</th>
                 <th>Chance Vitória Fora</th>
-                <th>Empate</th>
-                <th>Chance de Empate</th>
             </tr>
         </thead>
         <tbody id="winProbabilityTable">
@@ -480,8 +478,6 @@ async function fetchWinProbability(timeHome, timeAway) {
             <td>${data.home_win_probability}%</td>
             <td>${data.time_away}</td>
             <td>${data.away_win_probability}%</td>
-            <td>Empate</td>
-            <td>${data.draw_probability || "N/A"}%</td>
             </tr>
         `;
     } catch (error) {
