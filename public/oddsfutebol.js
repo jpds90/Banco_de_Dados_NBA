@@ -12,7 +12,7 @@ const pool = new Pool({
 async function getSavedUrl(tableName) {
     const client = await pool.connect();
     try {
-        console.log(`🔍 Buscando URL na tabela: ${tableName}_link...`);
+        console.log(`🔍 Buscando URL na tabela e enviando para odds: ${tableName}_link...`);
         const result = await client.query(`SELECT link FROM ${tableName}_link ORDER BY id DESC LIMIT 1`);
 
         if (result.rows.length > 0) {
