@@ -476,12 +476,12 @@ async function fetchWinProbability(timeHome, timeAway) {
         // Atualiza a interface com as probabilidades
         document.getElementById("winProbabilityTable").innerHTML = `
             <tr>
-                <td>${timeHome}</td>
-                <td>${data.home_probability}%</td>
-                <td>${timeAway}</td>
-                <td>${data.away_probability}%</td>
-                <td>Empate</td>
-                <td>${data.draw_probability}%</td>
+            <td>${data.time_home}</td>
+            <td>${data.home_win_probability}%</td>
+            <td>${data.time_away}</td>
+            <td>${data.away_win_probability}%</td>
+            <td>Empate</td>
+            <td>${data.draw_probability || "N/A"}%</td>
             </tr>
         `;
     } catch (error) {
