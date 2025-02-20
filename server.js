@@ -692,19 +692,40 @@ app.get('/links', async (req, res) => {
 app.get('/linksfut', async (req, res) => {
     const client = await pool.connect();
     try {
-        const result = await client.query(`
+        // Consulta para pegar todas as tabelas com o sufixo "_links"
+        const tablesResult = await client.query(`
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_name LIKE '%_links'
+        `);
+
+        // Criação da consulta dinâmica para unir os resultados de todas as tabelas
+        const tableNames = tablesResult.rows.map(row => row.table_name);
+        if (tableNames.length === 0) {
+            return res.status(404).send('Nenhuma tabela encontrada com sufixo "_links".');
+        }
+
+        // Construção da consulta para pegar os dados das tabelas
+        const queries = tableNames.map(table => `
             SELECT DISTINCT ON (link) team_name, link, event_time
-            FROM laliga_links
+            FROM ${table}
             ORDER BY link, event_time DESC
         `);
+
+        // Junta todas as consultas para fazer uma única chamada ao banco
+        const finalQuery = queries.join(' UNION ');
+
+        // Executa a consulta final
+        const result = await client.query(finalQuery);
         res.json(result.rows);
     } catch (err) {
         console.error(err);
-        res.status(500).send('Erro ao buscar dados dos laliga_links.');
+        res.status(500).send('Erro ao buscar dados das tabelas.');
     } finally {
         client.release();
     }
 });
+
 
 // Rota para limpar os dados de uma tabela específica
 app.post('/clear-table', async (req, res) => {
