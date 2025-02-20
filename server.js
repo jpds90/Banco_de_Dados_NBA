@@ -274,6 +274,10 @@ app.get('/probabilidade', async (req, res) => {
                 awayScore += (away[key] || 0) * weights[key];
             }
 
+            // Vantagem do time da casa (adicionando +7%)
+            const homeAdvantage = 0.07; 
+            homeScore *= (1 + homeAdvantage); 
+
             const total = homeScore + awayScore;
             const homeWinProb = ((homeScore / total) * 100).toFixed(2);
             const awayWinProb = ((awayScore / total) * 100).toFixed(2);
@@ -287,13 +291,15 @@ app.get('/probabilidade', async (req, res) => {
             time_home: timeHome,
             home_win_probability: probabilities.homeWinProb,
             time_away: timeAway,
-            away_win_probability: probabilities.awayWinProb
+            away_win_probability: probabilities.awayWinProb,
+            advantage_home: "+7% Vantagem psicológica e adaptação ao campo"
         });
     } catch (error) {
         console.error("Erro ao calcular probabilidades:", error);
         res.status(500).json({ error: "Erro interno do servidor" });
     }
 });
+
 
 
 app.get('/golsemcasa', async (req, res) => {
