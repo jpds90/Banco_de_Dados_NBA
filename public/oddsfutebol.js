@@ -2,6 +2,8 @@ const puppeteer = require('puppeteer');
 const { Pool } = require('pg');
 const sleep = require('sleep-promise');
 
+console.log("🛠️ Nome da tabela recebido:", process.argv[2]);
+
 // ✅ Conexão com o banco de dados
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -32,17 +34,22 @@ async function getSavedUrl(tableName) {
 
 // ✅ Nome da tabela a partir da URL
 async function getTableName() {
-    const defaultLeague = "laliga"; // Liga padrão caso não tenha uma no banco
-    const url = await getSavedUrl(defaultLeague);
+    const tableNameFromArg = process.argv[2]; // Pega o tableName recebido do backend
+    if (!tableNameFromArg) {
+        console.error("❌ Nenhuma tabela foi recebida como argumento!");
+        process.exit(1);
+    }
 
+    const url = await getSavedUrl(tableNameFromArg); // Usa a tabela certa
     const tableName = url.split('/').slice(-3, -2)[0]
         .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .replace(/[^a-z0-9]+/g, "_") + "_odds"; // Substitui espaços e caracteres inválidos por "_"
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_") + "_odds";
 
     console.log(`📌 Nome da tabela extraído: ${tableName}`);
     return { tableName, url };
 }
+
 
 
 // ✅ Criar tabela no banco de dados, se não existir
