@@ -159,6 +159,18 @@ leagueElement.addEventListener("click", async (event) => {
 }
 
 
+        
+        console.log("🎲 Executando script oddsfutebol...");
+        const executeOddsResponse = await fetch("https://analise-jpnba.onrender.com/oddsfutebol", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tableName }) // Passando tableName para o backend
+        });
+
+        const executeOddsResult = await executeOddsResponse.text();
+        console.log("✅ Script oddsfutebol executado:", executeOddsResult);
+
+
         console.log("🚀 Executando script futebollink...");
         const executeScriptResponse = await fetch("https://analise-jpnba.onrender.com/futebollink", {
             method: "POST",
@@ -180,16 +192,6 @@ leagueElement.addEventListener("click", async (event) => {
         const executedadosResult = await executedadostResponse.text();
         console.log("⚽ Script Dados dos Times executado:", executedadosResult);
 
-        
-        console.log("🎲 Executando script oddsfutebol...");
-        const executeOddsResponse = await fetch("https://analise-jpnba.onrender.com/oddsfutebol", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tableName }) // Passando tableName para o backend
-        });
-
-        const executeOddsResult = await executeOddsResponse.text();
-        console.log("✅ Script oddsfutebol executado:", executeOddsResult);
 
 
 
