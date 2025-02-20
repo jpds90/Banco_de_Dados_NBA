@@ -461,6 +461,8 @@ async function fetchGoalData() {
 }
 // Função para buscar a probabilidade de vitória
 async function fetchWinProbability(timeHome, timeAway) {
+    timeHome = formatarNomeTime(timeHome);
+    timeAway = formatarNomeTime(timeAway);
     try {
         const response = await fetch(`https://analise-jpnba.onrender.com/probabilidade?timeHome=${timeHome}&timeAway=${timeAway}`);
         const data = await response.json();
