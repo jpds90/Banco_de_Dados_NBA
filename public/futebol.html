@@ -463,29 +463,31 @@ async function fetchGoalData() {
 async function fetchWinProbability(timeHome, timeAway) {
     timeHome = formatarNomeTime(timeHome);
     timeAway = formatarNomeTime(timeAway);
+
     try {
         const response = await fetch(`https://analise-jpnba.onrender.com/probabilidade?timeHome=${timeHome}&timeAway=${timeAway}`);
         const data = await response.json();
 
-        // Verifica se os dados vieram corretamente
-        if (!data || !data.home_probability || !data.away_probability || !data.draw_probability) {
+        console.log("Dados recebidos:", data); // Verifique os dados no console
+
+        if (!data || !data.home_win_probability || !data.away_win_probability) {
             console.error("Erro nos dados recebidos para probabilidade:", data);
             return;
         }
 
-        // Atualiza a interface com as probabilidades
         document.getElementById("winProbabilityTable").innerHTML = `
             <tr>
-            <td>${data.time_home}</td>
-            <td>${data.home_win_probability}%</td>
-            <td>${data.time_away}</td>
-            <td>${data.away_win_probability}%</td>
+                <td>${data.time_home}</td>
+                <td>${data.home_win_probability}%</td>
+                <td>${data.time_away}</td>
+                <td>${data.away_win_probability}%</td>
             </tr>
         `;
     } catch (error) {
-        console.error("Erro ao buscar a probabilidade de vitória:", error);
+        console.error("Erro ao buscar probabilidade de vitória:", error);
     }
 }
+
 
 
 
