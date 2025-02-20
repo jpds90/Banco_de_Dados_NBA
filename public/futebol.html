@@ -116,6 +116,17 @@
     <tbody id="goalResultsTable"></tbody>
 </table>
 
+<h2>Probabilidade de Vitória</h2>
+<button id="calculateProbability">Calcular Probabilidade</button>
+<table id="probabilityTable">
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Chance de Vitória</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
 
         <h2>Média de Gols</h2>
         <table>
@@ -443,7 +454,36 @@ async function fetchGoalData() {
         console.error("Erro ao buscar os dados:", error);
     }
 }
+document.getElementById("calculateProbability").addEventListener("click", async function() {
+    if (!selectedTimeHome || !selectedTimeAway) {
+        alert("Selecione um jogo antes de calcular a probabilidade.");
+        return;
+    }
 
+    try {
+        const response = await fetch(`https://analise-jpnba.onrender.com/probabilidade?timeHome=${selectedTimeHome}&timeAway=${selectedTimeAway}`);
+        const data = await response.json();
+        
+        if (!data || !data.probabilidades) {
+            alert("Erro ao calcular a probabilidade.");
+            return;
+        }
+
+        const tableBody = document.querySelector("#probabilityTable tbody");
+        tableBody.innerHTML = `
+            <tr>
+                <td>${selectedTimeHome}</td>
+                <td>${(data.probabilidades[selectedTimeHome] * 100).toFixed(2)}%</td>
+            </tr>
+            <tr>
+                <td>${selectedTimeAway}</td>
+                <td>${(data.probabilidades[selectedTimeAway] * 100).toFixed(2)}%</td>
+            </tr>
+        `;
+    } catch (error) {
+        console.error("Erro ao buscar a probabilidade:", error);
+    }
+});
 
 
 
