@@ -49,6 +49,8 @@ async function getTableName() {
 async function createTableIfNotExists(tableName) {
     const client = await pool.connect();
     try {
+        console.log(`🔧 Criando/verificando tabela: ${tableName}`); // <-- Log para debug
+
         await client.query(`
             CREATE TABLE IF NOT EXISTS ${tableName} (
                 id SERIAL PRIMARY KEY,
@@ -59,11 +61,12 @@ async function createTableIfNotExists(tableName) {
         `);
         console.log(`✅ Tabela ${tableName} verificada/criada com sucesso.`);
     } catch (error) {
-        console.error(`❌ Erro ao criar tabela ${tableName}:`, error);
+        console.error(`❌ Erro ao criar/verificar tabela ${tableName}:`, error);
     } finally {
         client.release();
     }
 }
+
 
 // ✅ Salvar dados no banco de dados
 async function saveToDatabase(tableName, data) {
