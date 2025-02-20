@@ -20,11 +20,11 @@ async function getSavedUrl(tableName) {
             return result.rows[0].link;
         } else {
             console.log("⚠️ Nenhuma URL encontrada. Usando URL padrão.");
-            return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão
+            return 'https://www.flashscore.pt/futebol/'; // URL padrão
         }
     } catch (error) {
         console.error("❌ Erro ao buscar URL no banco:", error);
-        return 'https://www.flashscore.pt/basquetebol/eua/nba/lista/'; // URL padrão em caso de erro
+        return 'https://www.flashscore.pt/futebol/'; // URL padrão em caso de erro
     } finally {
         client.release();
     }
