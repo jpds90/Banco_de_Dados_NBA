@@ -592,7 +592,7 @@ for (let id of ids) {
     }
 
     await browser.close();
-};
+
 // Exportando a função
 module.exports = {
   fetchLinksFromDatabase1,
