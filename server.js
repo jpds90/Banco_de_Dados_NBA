@@ -300,7 +300,7 @@ app.get('/probabilidade', async (req, res) => {
     }
 });
 
-app.get('/golsemcasa', async (req, res) => {
+app.get('/golsemcasa10000', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
@@ -429,7 +429,7 @@ const awayScores = awayScoresResult.rows
 
 
 
-app.get('/golsemcasa1000000', async (req, res) => {
+app.get('/golsemcasa', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
