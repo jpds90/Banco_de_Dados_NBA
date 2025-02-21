@@ -330,8 +330,8 @@ function normalizarNomeTime(nome) {
        console.log(`🔍 Filtro de gol: ${threshold}`);
 
        // 📌 Criar os nomes das tabelas SEM normalizar (mantendo o formato correto do banco)
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
