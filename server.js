@@ -308,6 +308,10 @@ app.get('/golsemcasa', async (req, res) => {
             return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
+       console.log(`📌 Time da casa recebido: ${timeHome}`);
+       console.log(`📌 Time visitante recebido: ${timeAway}`);
+       console.log(`🔍 Filtro de gol: ${threshold}`);
+
         // 📌 Criar os nomes das tabelas a partir dos valores originais da requisição (SEM NORMALIZAR)
         const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
         const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
@@ -425,6 +429,8 @@ app.get('/golsemcasa1000000', async (req, res) => {
        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
+       console.log(`📌 Time da casa Futebol: ${homeTable}`);
+       console.log(`📌 Time visitante Futebol: ${awayTable}`);
        // Verificar se as tabelas existem
        const tablesResult = await pool.query(`
            SELECT table_name 
