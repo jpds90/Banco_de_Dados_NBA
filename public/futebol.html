@@ -260,7 +260,12 @@ fetchGamesButton.addEventListener("click", async function() {
     const selectedLeague = leagueSelect.value;
     if (!selectedLeague) return;
 
-    let tableName = selectedLeague.replace(/\s+/g, "_").toLowerCase() + "_odds";
+    let tableName = selectedLeague
+    .normalize("NFD") // Decompõe os caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "") // Remove os acentos e sinais diacríticos
+    .replace(/\s+/g, "_") // Substitui espaços por _
+    .toLowerCase() + "_odds"; // Converte para minúsculas e adiciona "_odds"
+
     console.log(`Buscando dados para a tabela: ${tableName}`);
 
     matchesDiv.innerHTML = "Carregando...";
