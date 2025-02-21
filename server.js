@@ -699,7 +699,6 @@ app.get('/linksfut', async (req, res) => {
             WHERE table_name LIKE '%_links'
         `);
 
-        // Criação da consulta dinâmica para unir os resultados de todas as tabelas
         const tableNames = tablesResult.rows.map(row => row.table_name);
         if (tableNames.length === 0) {
             return res.status(404).send('Nenhuma tabela encontrada com sufixo "_links".');
@@ -712,8 +711,9 @@ app.get('/linksfut', async (req, res) => {
             ORDER BY link, event_time DESC
         `);
 
-        // Junta todas as consultas com UNION ALL (não UNION) para garantir que todas as linhas sejam retornadas
-        const finalQuery = queries.join(' UNION ALL '); // Alterado de "UNION" para "UNION ALL"
+        // Verificando a consulta final antes de executar
+        const finalQuery = queries.join(' UNION ALL ');
+        console.log('Consulta gerada:', finalQuery); // Log para verificar a consulta gerada
 
         // Executa a consulta final
         const result = await client.query(finalQuery);
@@ -725,6 +725,7 @@ app.get('/linksfut', async (req, res) => {
         client.release();
     }
 });
+
 
 
 
