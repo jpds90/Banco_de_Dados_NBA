@@ -108,7 +108,11 @@ const loadPageWithRetries = async (page, url, retries = 3) => {
 const createPlayersTable = async (teamName) => {
     const client = await pool.connect();
     try {
-        const tableName = teamName.replace(/[^a-zA-Z0-9áéíóúãõçáà]/g, "_").toLowerCase();
+        const tableName = teamName
+    .normalize("NFD")                  // Normaliza para decompor caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "")   // Remove os acentos
+    .replace(/[^a-zA-Z0-9/]/g, "_")    // Substitui todos os caracteres não alfanuméricos (exceto "/") por "_"
+    .toLowerCase();
 
 
         console.log(`Verificando a criação da tabela "jogadores" para o time: "${teamName}"...`);
@@ -182,7 +186,11 @@ const cleanNumber = (value) => {
 const saveDataToPlayersTable = async (teamName, data) => {
     const client = await pool.connect();
     try {
-        const tableName = teamName.replace(/[^a-zA-Z0-9áéíóúãõçáà]/g, "_").toLowerCase();
+        const tableName = teamName
+    .normalize("NFD")                  // Normaliza para decompor caracteres acentuados
+    .replace(/[\u0300-\u036f]/g, "")   // Remove os acentos
+    .replace(/[^a-zA-Z0-9/]/g, "_")    // Substitui todos os caracteres não alfanuméricos (exceto "/") por "_"
+    .toLowerCase();
 
         console.log(`🔵 Salvando dados na tabela "${tableName}"...`);
 
