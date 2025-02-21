@@ -369,12 +369,11 @@ function normalizarNomeTime(nome) {
                LIMIT 10
            `, [timeHome]);
 
-           const homeScores = homeScoresResult.rows
-               .filter(row => 
-                   normalizarNomeTime(row.timehome) === timeHomeNormalizado
-               )
-               .map(row => parseInt(row.resultadohome, 10))
-               .filter(score => !isNaN(score) && score > threshold);
+const homeScores = homeScoresResult.rows
+    .filter(row => normalizarNomeTime(row.timehome).localeCompare(timeHomeNormalizado, undefined, { sensitivity: 'base' }) === 0)
+    .map(row => parseInt(row.resultadohome, 10))
+    .filter(score => !isNaN(score) && score > threshold);
+
 
            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
            homeHitsThreshold = homeScores.length;
@@ -400,12 +399,13 @@ function normalizarNomeTime(nome) {
                LIMIT 10
            `, [timeAway]);
 
-           const awayScores = awayScoresResult.rows
-               .filter(row => 
-                   normalizarNomeTime(row.timeaway) === timeAwayNormalizado
-               )
-               .map(row => parseInt(row.resultadoaway, 10))
-               .filter(score => !isNaN(score) && score > threshold);
+const awayScores = awayScoresResult.rows
+    .filter(row => 
+        normalizarNomeTime(row.timeaway).localeCompare(timeAwayNormalizado, undefined, { sensitivity: 'base' }) === 0
+    )
+    .map(row => parseInt(row.resultadoaway, 10))
+    .filter(score => !isNaN(score) && score > threshold);
+
 
            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
            awayHitsThreshold = awayScores.length;
