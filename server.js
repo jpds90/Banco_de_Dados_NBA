@@ -352,7 +352,7 @@ app.get('/golsemcasa', async (req, res) => {
        // Verificar e calcular os gols em casa
        if (tableNames.includes(homeTable)) {
            const homeScoresResult = await pool.query(`
-               SELECT resultadohome 
+               SELECT timehome, resultadohome
                FROM ${homeTable} 
                WHERE timehome = $1
                ORDER BY 
@@ -371,8 +371,7 @@ app.get('/golsemcasa', async (req, res) => {
 
            const homeScores = homeScoresResult.rows
                .filter(row => 
-                   normalizarNomeTime(row.timehome) === timeHomeNormalizado || 
-                   normalizarNomeTime(row.timeaway) === timeHomeNormalizado
+                   normalizarNomeTime(row.timehome) === timeHomeNormalizado
                )
                .map(row => parseInt(row.resultadohome, 10))
                .filter(score => !isNaN(score) && score > threshold);
@@ -384,7 +383,7 @@ app.get('/golsemcasa', async (req, res) => {
        // Verificar e calcular os gols fora de casa
        if (tableNames.includes(awayTable)) {
            const awayScoresResult = await pool.query(`
-               SELECT resultadoaway 
+               SELECT resultadoaway, timeaway 
                FROM ${awayTable} 
                WHERE timeaway = $1
                ORDER BY 
@@ -403,7 +402,6 @@ app.get('/golsemcasa', async (req, res) => {
 
            const awayScores = awayScoresResult.rows
                .filter(row => 
-                   normalizarNomeTime(row.timehome) === timeAwayNormalizado || 
                    normalizarNomeTime(row.timeaway) === timeAwayNormalizado
                )
                .map(row => parseInt(row.resultadoaway, 10))
