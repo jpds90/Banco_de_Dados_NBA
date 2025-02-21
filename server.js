@@ -712,19 +712,20 @@ app.get('/linksfut', async (req, res) => {
             ORDER BY link, event_time DESC
         `);
 
-        // Junta todas as consultas para fazer uma única chamada ao banco
-        const finalQuery = queries.join(' UNION ');
+        // Junta todas as consultas com UNION ALL (não UNION) para garantir que todas as linhas sejam retornadas
+        const finalQuery = queries.join(' UNION ALL '); // Alterado de "UNION" para "UNION ALL"
 
         // Executa a consulta final
         const result = await client.query(finalQuery);
         res.json(result.rows);
     } catch (err) {
-        console.error(err);
+        console.error('Erro na consulta SQL:', err);
         res.status(500).send('Erro ao buscar dados das tabelas.');
     } finally {
         client.release();
     }
 });
+
 
 
 // Rota para limpar os dados de uma tabela específica
