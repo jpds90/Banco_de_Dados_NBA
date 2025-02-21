@@ -301,50 +301,61 @@ app.get('/probabilidade', async (req, res) => {
 });
 
 app.get('/golsemcasa', async (req, res) => {
-    try {
-        let { timeHome, timeAway, threshold = 0.5 } = req.query;
+   try {
+       const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
-        if (!timeHome || !timeAway) {
-            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
-        }
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
 
-       console.log(`📌 Time da casa recebido: ${timeHome}`);
-       console.log(`📌 Time visitante recebido: ${timeAway}`);
+       // 🔄 Função para normalizar os nomes dos times
+       function normalizarNomeTime(nome) {
+           return nome
+               .toLowerCase()
+               .normalize("NFD") // Decomposição de acentos
+               .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+               .replace(/\([^)]*\)/g, '') // Remove tudo dentro de parênteses
+               .replace(/[\s\-]/g, '') // Remove espaços e hífens
+               .replace(/\./g, '') // Remove pontos
+               .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove "Segue em frente"
+               .trim(); // Remove espaços extras
+       }
+
+       // 🔄 Normaliza os nomes dos times da requisição
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       console.log(`📌 Time da casa recebido (normalizado): ${timeHomeNormalizado}`);
+       console.log(`📌 Time visitante recebido (normalizado): ${timeAwayNormalizado}`);
        console.log(`🔍 Filtro de gol: ${threshold}`);
 
-        // 📌 Criar os nomes das tabelas a partir dos valores originais da requisição (SEM NORMALIZAR)
-        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       // 📌 Criar os nomes das tabelas SEM normalizar (mantendo o formato correto do banco)
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
 
-        // 🔄 Função para normalizar os nomes dos times
-        function normalizarNomeTime(nome) {
-            return nome
-                .toLowerCase()
-                .normalize("NFD") // Decomposição de acentos
-                .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-                .replace(/\([^)]*\)/g, '') // Remove tudo dentro de parênteses
-                .replace(/[\s\-]/g, '') // Remove espaços e hífens
-                .replace(/\./g, '') // Remove pontos
-                .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove "Segue em frente"
-                .trim(); // Remove espaços extras
-        }
+       console.log(`📌 Tabela do time da casa: ${homeTable}`);
+       console.log(`📌 Tabela do time visitante: ${awayTable}`);
 
-        // 🔄 Normaliza os nomes dos times vindos do req.query para garantir comparações consistentes
-        const timeHomeNormalizado = normalizarNomeTime(timeHome);
-        const timeAwayNormalizado = normalizarNomeTime(timeAway);
+       // Verificar se as tabelas existem
+       const tablesResult = await pool.query(`
+           SELECT table_name 
+           FROM information_schema.tables 
+           WHERE table_name = $1 OR table_name = $2
+       `, [homeTable, awayTable]);
 
-        console.log(`📌 Time da casa consultado: ${timeHomeNormalizado}`);
-        console.log(`📌 Time visitante consultado: ${timeAwayNormalizado}`);
+       const tableNames = tablesResult.rows.map(row => row.table_name);
+       let homeHitsThreshold = 0;
+       let awayHitsThreshold = 0;
+       let homeAvg = 0;
+       let awayAvg = 0;
 
-        // ✅ Buscar os dados do time da casa
-        const homeScoresResult = await pool.query(`
-            SELECT 
-                timehome,  -- Pegamos os nomes sem alterar no SQL
-                resultadohome, 
-                timeaway 
-            FROM ${homeTable} 
-            WHERE timehome = $1 OR timeaway = $1
-            ORDER BY 
+       // Verificar e calcular os gols em casa
+       if (tableNames.includes(homeTable)) {
+           const homeScoresResult = await pool.query(`
+               SELECT timehome, resultadohome, timeaway 
+               FROM ${homeTable} 
+               WHERE timehome = $1 OR timeaway = $1
+               ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
                      ELSE 2
@@ -355,18 +366,28 @@ app.get('/golsemcasa', async (req, res) => {
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-            LIMIT 10
-        `, [timeHome]);
+               LIMIT 10
+           `, [timeHome]);
 
-        // ✅ Buscar os dados do time visitante
-        const awayScoresResult = await pool.query(`
-            SELECT 
-                timehome, 
-                resultadoaway, 
-                timeaway
-            FROM ${awayTable} 
-            WHERE timehome = $1 OR timeaway = $1
-            ORDER BY 
+           const homeScores = homeScoresResult.rows
+               .filter(row => 
+                   normalizarNomeTime(row.timehome) === timeHomeNormalizado || 
+                   normalizarNomeTime(row.timeaway) === timeHomeNormalizado
+               )
+               .map(row => parseInt(row.resultadohome, 10))
+               .filter(score => !isNaN(score) && score > threshold);
+
+           homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
+           homeHitsThreshold = homeScores.length;
+       }
+
+       // Verificar e calcular os gols fora de casa
+       if (tableNames.includes(awayTable)) {
+           const awayScoresResult = await pool.query(`
+               SELECT timehome, resultadoaway, timeaway 
+               FROM ${awayTable} 
+               WHERE timehome = $1 OR timeaway = $1
+               ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
                      ELSE 2
@@ -377,41 +398,37 @@ app.get('/golsemcasa', async (req, res) => {
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-            LIMIT 10
-        `, [timeAway]);
+               LIMIT 10
+           `, [timeAway]);
 
-        // 🔄 Normaliza os nomes nos resultados antes de processá-los (Comparação correta)
-        const homeScores = homeScoresResult.rows
-            .filter(row => 
-                normalizarNomeTime(row.timehome) === timeHomeNormalizado || 
-                normalizarNomeTime(row.timeaway) === timeHomeNormalizado
-            )
-            .map(row => parseInt(row.resultadohome, 10))
-            .filter(score => !isNaN(score) && score > threshold);
+           const awayScores = awayScoresResult.rows
+               .filter(row => 
+                   normalizarNomeTime(row.timehome) === timeAwayNormalizado || 
+                   normalizarNomeTime(row.timeaway) === timeAwayNormalizado
+               )
+               .map(row => parseInt(row.resultadoaway, 10))
+               .filter(score => !isNaN(score) && score > threshold);
 
-        const awayScores = awayScoresResult.rows
-            .filter(row => 
-                normalizarNomeTime(row.timehome) === timeAwayNormalizado || 
-                normalizarNomeTime(row.timeaway) === timeAwayNormalizado
-            )
-            .map(row => parseInt(row.resultadoaway, 10))
-            .filter(score => !isNaN(score) && score > threshold);
+           awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
+           awayHitsThreshold = awayScores.length;
+       }
 
-        res.json({
-            time_home: timeHome,
-            time_away: timeAway,
-            home_avg: homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0,
-            away_avg: awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0,
-            total_pontos: homeScores.length + awayScores.length,
-            home_hits_threshold: homeScores.length,
-            away_hits_threshold: awayScores.length
-        });
+       res.json({
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg,
+           home_hits_threshold: homeHitsThreshold,
+           away_hits_threshold: awayHitsThreshold
+       });
 
-    } catch (error) {
-        console.error("Erro ao processar os dados:", error);
-        res.status(500).json({ error: "Erro no servidor" });
-    }
+   } catch (error) {
+       console.error('Erro ao processar os dados:', error);
+       res.status(500).json({ error: 'Erro no servidor' });
+   }
 });
+
 
 
 app.get('/golsemcasa1000000', async (req, res) => {
