@@ -300,7 +300,7 @@ app.get('/probabilidade', async (req, res) => {
     }
 });
 
-app.get('/golsemcasa10000', async (req, res) => {
+app.get('/golsemcasa1', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
@@ -534,7 +534,7 @@ app.get('/golsemcasa', async (req, res) => {
 
 
 // 🔹 Endpoint para buscar a média de gols dos dois times
-app.get('/golsemcasa1', async (req, res) => {
+app.get('/golsemcasa100000', async (req, res) => {
    try {
        const timeHome = req.query.timeHome;
        const timeAway = req.query.timeAway;
