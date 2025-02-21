@@ -706,7 +706,7 @@ app.get('/linksfut', async (req, res) => {
 
         // Construção da consulta para pegar os dados das tabelas
         const queries = tableNames.map(table => `
-            SELECT DISTINCT ON (link) team_name, link, event_time
+            SELECT DISTINCT team_name, link, event_time
             FROM ${table}
             ORDER BY link, event_time DESC
         `);
@@ -725,6 +725,7 @@ app.get('/linksfut', async (req, res) => {
         client.release();
     }
 });
+
 
 
 
