@@ -300,9 +300,117 @@ app.get('/probabilidade', async (req, res) => {
     }
 });
 
-
-
 app.get('/golsemcasa', async (req, res) => {
+    try {
+        let { timeHome, timeAway, threshold = 0.5 } = req.query;
+
+        if (!timeHome || !timeAway) {
+            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+        }
+
+        // 📌 Criar os nomes das tabelas a partir dos valores originais da requisição (SEM NORMALIZAR)
+        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+
+        // 🔄 Função para normalizar os nomes dos times
+        function normalizarNomeTime(nome) {
+            return nome
+                .toLowerCase()
+                .normalize("NFD") // Decomposição de acentos
+                .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                .replace(/\([^)]*\)/g, '') // Remove tudo dentro de parênteses
+                .replace(/[\s\-]/g, '') // Remove espaços e hífens
+                .replace(/\./g, '') // Remove pontos
+                .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove "Segue em frente"
+                .trim(); // Remove espaços extras
+        }
+
+        // 🔄 Normaliza os nomes dos times vindos do req.query para garantir comparações consistentes
+        const timeHomeNormalizado = normalizarNomeTime(timeHome);
+        const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+        console.log(`📌 Time da casa consultado: ${timeHomeNormalizado}`);
+        console.log(`📌 Time visitante consultado: ${timeAwayNormalizado}`);
+
+        // ✅ Buscar os dados do time da casa
+        const homeScoresResult = await pool.query(`
+            SELECT 
+                timehome,  -- Pegamos os nomes sem alterar no SQL
+                resultadohome, 
+                timeaway 
+            FROM ${homeTable} 
+            WHERE timehome = $1 OR timeaway = $1
+            ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+            LIMIT 10
+        `, [timeHome]);
+
+        // ✅ Buscar os dados do time visitante
+        const awayScoresResult = await pool.query(`
+            SELECT 
+                timehome, 
+                resultadoaway, 
+                timeaway
+            FROM ${awayTable} 
+            WHERE timehome = $1 OR timeaway = $1
+            ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+            LIMIT 10
+        `, [timeAway]);
+
+        // 🔄 Normaliza os nomes nos resultados antes de processá-los (Comparação correta)
+        const homeScores = homeScoresResult.rows
+            .filter(row => 
+                normalizarNomeTime(row.timehome) === timeHomeNormalizado || 
+                normalizarNomeTime(row.timeaway) === timeHomeNormalizado
+            )
+            .map(row => parseInt(row.resultadohome, 10))
+            .filter(score => !isNaN(score) && score > threshold);
+
+        const awayScores = awayScoresResult.rows
+            .filter(row => 
+                normalizarNomeTime(row.timehome) === timeAwayNormalizado || 
+                normalizarNomeTime(row.timeaway) === timeAwayNormalizado
+            )
+            .map(row => parseInt(row.resultadoaway, 10))
+            .filter(score => !isNaN(score) && score > threshold);
+
+        res.json({
+            time_home: timeHome,
+            time_away: timeAway,
+            home_avg: homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0,
+            away_avg: awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0,
+            total_pontos: homeScores.length + awayScores.length,
+            home_hits_threshold: homeScores.length,
+            away_hits_threshold: awayScores.length
+        });
+
+    } catch (error) {
+        console.error("Erro ao processar os dados:", error);
+        res.status(500).json({ error: "Erro no servidor" });
+    }
+});
+
+
+app.get('/golsemcasa1000000', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
