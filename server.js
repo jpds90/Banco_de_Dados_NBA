@@ -589,7 +589,6 @@ app.get('/confrontosfutebol1', async (req, res) => {
        console.log(`🚀 Time Away consultado: ${timeAway}`);
 
        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        // Verifica se a tabela existe no banco
        const tablesResult = await pool.query(
