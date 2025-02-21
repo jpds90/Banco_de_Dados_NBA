@@ -250,10 +250,7 @@
 
 function formatarNomeTime(nome) {
     return nome
-        .replace("Segue em frente", "")     // Remove a frase "Segue em frente"
-        .normalize("NFD")                   // Normaliza para decompor caracteres acentuados
-        .replace(/[\u0300-\u036f]/g, "")    // Remove os acentos
-        .trim();
+        .replace(/(\([^()]*\)|Segue em frente)/g, '');
 }
 
 
