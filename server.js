@@ -706,17 +706,23 @@ app.get('/linksfut', async (req, res) => {
 
         // Construção da consulta para pegar os dados das tabelas
         const queries = tableNames.map(table => `
-            SELECT DISTINCT team_name, link, event_time
+            SELECT team_name, link, event_time
             FROM ${table}
-            ORDER BY link, event_time DESC
         `);
 
-        // Verificando a consulta final antes de executar
+        // Junta todas as consultas com UNION ALL
         const finalQuery = queries.join(' UNION ALL ');
-        console.log('Consulta gerada:', finalQuery); // Log para verificar a consulta gerada
+
+        // Adiciona o ORDER BY na consulta final
+        const orderedQuery = `
+            ${finalQuery}
+            ORDER BY link, event_time DESC
+        `;
+
+        console.log('Consulta gerada:', orderedQuery); // Log para verificar a consulta gerada
 
         // Executa a consulta final
-        const result = await client.query(finalQuery);
+        const result = await client.query(orderedQuery);
         res.json(result.rows);
     } catch (err) {
         console.error('Erro na consulta SQL:', err);
@@ -725,6 +731,7 @@ app.get('/linksfut', async (req, res) => {
         client.release();
     }
 });
+
 
 
 
