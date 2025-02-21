@@ -352,9 +352,9 @@ app.get('/golsemcasa', async (req, res) => {
        // Verificar e calcular os gols em casa
        if (tableNames.includes(homeTable)) {
            const homeScoresResult = await pool.query(`
-               SELECT timehome, resultadohome, timeaway 
+               SELECT resultadohome 
                FROM ${homeTable} 
-               WHERE timehome = $1 OR timeaway = $1
+               WHERE timehome = $1
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -384,9 +384,9 @@ app.get('/golsemcasa', async (req, res) => {
        // Verificar e calcular os gols fora de casa
        if (tableNames.includes(awayTable)) {
            const awayScoresResult = await pool.query(`
-               SELECT timehome, resultadoaway, timeaway 
+               SELECT resultadoaway 
                FROM ${awayTable} 
-               WHERE timehome = $1 OR timeaway = $1
+               WHERE timeaway = $1
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
