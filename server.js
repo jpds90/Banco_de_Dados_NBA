@@ -234,8 +234,8 @@ app.get('/probabilidade', async (req, res) => {
             return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
-        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
         const queryStats = async (table) => {
             const result = await pool.query(`
@@ -441,8 +441,8 @@ app.get('/golsemcasa1000000', async (req, res) => {
        console.log(`📌 Time visitante recebido: ${timeAway}`);
        console.log(`🔍 Filtro de gol: ${threshold}`);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Time da casa Futebol: ${homeTable}`);
        console.log(`📌 Time visitante Futebol: ${awayTable}`);
@@ -588,7 +588,8 @@ app.get('/confrontosfutebol1', async (req, res) => {
        console.log(`🏠 Time Home consultado: ${timeHome}`);
        console.log(`🚀 Time Away consultado: ${timeAway}`);
 
-       const tableHome = timeHome.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        // Verifica se a tabela existe no banco
        const tablesResult = await pool.query(
