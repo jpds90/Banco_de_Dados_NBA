@@ -363,21 +363,21 @@ async function fetchGoalAverages(timeHome, timeAway) {
         const tableBody = document.getElementById("goalAveragesTable");
         tableBody.innerHTML = "";
 
-        if (!data || data.length === 0) {
-            tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
-            return;
-        }
+if (!data || Object.keys(data).length === 0 || data.error) {
+    tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado</td></tr>";
+    return;
+}
 
-        data.forEach(match => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${match.time_home}</td>
-                <td>${match.time_away}</td>
-                <td>${match.home_avg}</td>
-                <td>${match.away_avg}</td>
-                <td>${match.total_pontos}</td>
-            `;
-            tableBody.appendChild(row);
+// Criar uma única linha na tabela
+const row = document.createElement("tr");
+row.innerHTML = `
+    <td>${data.time_home}</td>
+    <td>${data.time_away}</td>
+    <td>${data.home_avg}</td>
+    <td>${data.away_avg}</td>
+    <td>${data.total_pontos}</td>
+`;
+tableBody.appendChild(row);
         });
     } catch (error) {
         console.error("Erro ao buscar as médias de gols:", error);
