@@ -309,17 +309,18 @@ app.get('/golsemcasa', async (req, res) => {
        }
 
        // 🔄 Função para normalizar os nomes dos times
-       function normalizarNomeTime(nome) {
-           return nome
-               .toLowerCase()
-               .normalize("NFD") // Decomposição de acentos
-               .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-               .replace(/\([^)]*\)/g, '') // Remove tudo dentro de parênteses
-               .replace(/[\s\-]/g, '') // Remove espaços e hífens
-               .replace(/\./g, '') // Remove pontos
-               .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove "Segue em frente"
-               .trim(); // Remove espaços extras
-       }
+function normalizarNomeTime(nome) {
+    return nome
+        .toLowerCase()
+        .normalize("NFD") // Decomposição de acentos
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/ã/g, 'a') // Adiciona um tratamento para o "ã"
+        .replace(/\([^)]*\)/g, '') // Remove tudo dentro de parênteses
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .replace(/(\([^()]*\)|Segue em frente)/g, '') // Remove "Segue em frente"
+        .trim(); // Remove espaços extras
+}
 
        // 🔄 Normaliza os nomes dos times da requisição
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
