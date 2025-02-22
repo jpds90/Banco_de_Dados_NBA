@@ -354,7 +354,7 @@ function normalizarNomeTime(nome) {
            const homeScoresResult = await pool.query(`
                SELECT timehome, resultadohome
                FROM ${homeTable} 
-               WHERE timehome ILIKE $1
+                WHERE unaccent(timehome) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -366,7 +366,7 @@ function normalizarNomeTime(nome) {
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-               LIMIT 10
+               LIMIT 100
            `, [timeHomeNormalizado]);
 // Verifica se encontrou resultados
 if (homeScoresResult.rows.length === 0) {
@@ -389,7 +389,7 @@ const homeScores = homeScoresResult.rows
            const awayScoresResult = await pool.query(`
                SELECT resultadoaway, timeaway 
                FROM ${awayTable} 
-               WHERE timeaway ILIKE $1
+                WHERE unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -401,7 +401,7 @@ const homeScores = homeScoresResult.rows
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-               LIMIT 10
+               LIMIT 100
            `, [timeAwayNormalizado]);
 // Verifica se encontrou resultados
 if (awayScoresResult.rows.length === 0) {
