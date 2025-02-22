@@ -419,7 +419,7 @@ async function fetchLast10Matches(timeHome, timeAway) {
     timeHome = formatarNomeTime(timeHome);
     timeAway = formatarNomeTime(timeAway);
     try {
-        const url =`https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`;
+        const url = `https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`;
         console.log(`🔍 URL da requisição: ${url}`);
         const response = await fetch(url);
         const data = await response.json();
@@ -441,16 +441,16 @@ async function fetchLast10Matches(timeHome, timeAway) {
         data.forEach(match => {
             let row = `<tr>
                 <td>${match.data_hora}</td>
-                <td>${match.timeA}</td>
-                <td>${match.timeB}</td>
-                <td>${match.pontosA} x ${match.pontosB} (${match.resultado})</td>
+                <td>${match.timehome}</td>
+                <td>${match.timeaway}</td>
+                <td>${match.resultadohome} x ${match.resultadoaway} (${match.resultado})</td>
             </tr>`;
 
             // Adiciona na tabela correta
-            if (match.timeA === timeHome || match.timeB === timeHome) {
+            if (match.timehome === timeHome || match.timeaway === timeHome) {
                 homeTableBody.innerHTML += row;
             }
-            if (match.timeA === timeAway || match.timeB === timeAway) {
+            if (match.timehome === timeAway || match.timeaway === timeAway) {
                 awayTableBody.innerHTML += row;
             }
         });
@@ -458,6 +458,7 @@ async function fetchLast10Matches(timeHome, timeAway) {
         console.error("Erro ao buscar os últimos 10 jogos:", error);
     }
 }
+
 
 
 
