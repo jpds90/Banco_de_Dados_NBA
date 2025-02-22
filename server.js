@@ -447,6 +447,23 @@ app.get('/golsemcasa', async (req, res) => {
            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
        }
 
+       // 🔄 Função para normalizar os nomes dos times
+function normalizarNomeTime(nome) {
+    return nome
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim(); 
+}
+
+
+       // 🔄 Normaliza os nomes dos times da requisição
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
        console.log(`📌 Time da casa recebido: ${timeHome}`);
        console.log(`📌 Time visitante recebido: ${timeAway}`);
        console.log(`🔍 Filtro de gol: ${threshold}`);
@@ -474,7 +491,7 @@ app.get('/golsemcasa', async (req, res) => {
            const homeScoresResult = await pool.query(`
                SELECT resultadohome 
                FROM ${homeTable} 
-               WHERE timehome ILIKE $1
+               WHERE unaccent(timehome) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -487,7 +504,7 @@ app.get('/golsemcasa', async (req, res) => {
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
                LIMIT 10
-           `, [timeHome]);
+           `, [timeHomeNormalizado]);
 
            const homeScores = homeScoresResult.rows
                .map(row => parseInt(row.resultadohome, 10))
@@ -502,7 +519,7 @@ app.get('/golsemcasa', async (req, res) => {
            const awayScoresResult = await pool.query(`
                SELECT resultadoaway 
                FROM ${awayTable} 
-               WHERE timeaway ILIKE $1
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -515,7 +532,7 @@ app.get('/golsemcasa', async (req, res) => {
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
                LIMIT 10
-           `, [timeAway]);
+           `, [timeAwayNormalizado]);
 
            const awayScores = awayScoresResult.rows
                .map(row => parseInt(row.resultadoaway, 10))
@@ -595,6 +612,23 @@ app.get('/confrontosfutebol1', async (req, res) => {
            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
        }
 
+       // 🔄 Função para normalizar os nomes dos times
+function normalizarNomeTime(nome) {
+    return nome
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim(); 
+}
+
+
+       // 🔄 Normaliza os nomes dos times da requisição
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+     
        console.log(`🏠 Time Home consultado: ${timeHome}`);
        console.log(`🚀 Time Away consultado: ${timeAway}`);
 
@@ -615,7 +649,8 @@ app.get('/confrontosfutebol1', async (req, res) => {
        const confrontationsQuery = `
            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
            FROM ${tableHome} 
-           WHERE (timehome ILIKE $1 AND timeaway ILIKE $2) OR (timehome ILIKE $2 AND timeaway ILIKE $1)
+           WHERE (unaccent(timehome) ILIKE unaccent($1) AND unaccent(timeaway) ILIKE unaccent($2)) 
+       OR (unaccent(timehome) ILIKE unaccent($2) AND unaccent(timeaway) ILIKE unaccent($1))
            ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -692,6 +727,22 @@ app.get("/ultimos10jogos", async (req, res) => {
            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
        }
 
+       // 🔄 Função para normalizar os nomes dos times
+function normalizarNomeTime(nome) {
+    return nome
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim(); 
+}
+
+
+       // 🔄 Normaliza os nomes dos times da requisição
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
        console.log(`🏠 Time 1 consultado: ${timeHome}`);
        console.log(`🚀 Time 2 consultado: ${timeAway}`);
 
@@ -734,7 +785,7 @@ const buscarJogos = async (team) => {
        const querySQL = `
            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
            FROM ${table} 
-           WHERE timehome ILIKE $1 OR timeaway ILIKE $1
+           WHERE (unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1)
            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
            LIMIT 10
        `;
