@@ -272,18 +272,32 @@ fetchGamesButton.addEventListener("click", async function() {
 
     matchesDiv.innerHTML = "Carregando...";
 
-    try {
-        const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
-        const result = await response.json();
-        
-        matchesDiv.innerHTML = "";
+try {
+    const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
+    const result = await response.json();
 
-        if (result.success && result.data.length > 0) {
-            result.data.forEach(match => {
-                let matchElement = document.createElement("button");
-                matchElement.classList.add("match-button");
-                matchElement.textContent = `${match.data_jogo} - ${match.time_home} x ${match.time_away}`;
-                
+    matchesDiv.innerHTML = ""; // Limpa o conteúdo anterior
+
+    if (result.success && result.data.length > 0) {
+        result.data.forEach(match => {
+            // Formata a data
+            const dataJogo = new Date(match.data_jogo);
+            const dia = String(dataJogo.getDate()).padStart(2, '0'); // Dia (2 dígitos)
+            const mes = String(dataJogo.getMonth() + 1).padStart(2, '0'); // Mês (2 dígitos)
+            const ano = dataJogo.getFullYear(); // Ano
+            const horas = String(dataJogo.getHours()).padStart(2, '0'); // Horas (2 dígitos)
+            const minutos = String(dataJogo.getMinutes()).padStart(2, '0'); // Minutos (2 dígitos)
+
+            const dataFormatada = `${dia}/${mes}/${ano} ${horas}:${minutos}`;
+
+            // Cria o botão com a data formatada
+            let matchElement = document.createElement("button");
+            matchElement.classList.add("match-button");
+            matchElement.textContent = `${dataFormatada} - ${match.time_home} x ${match.time_away}`;
+
+           
+
+    
                 // Adiciona o evento de clique dentro do loop onde o matchElement é criado
 matchElement.addEventListener("click", function() {
     selectedTimeHome = formatarNomeTime(match.time_home);
