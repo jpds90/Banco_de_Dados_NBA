@@ -367,8 +367,13 @@ function normalizarNomeTime(nome) {
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
                LIMIT 10
-           `, [timeHome]);
-
+           `, [timeHomeNormalizado]);
+// Verifica se encontrou resultados
+if (homeScoresResult.rows.length === 0) {
+    console.log("🔴 Nenhum resultado encontrado para:", timeHomeNormalizado);
+} else {
+    console.log("🟢 Encontrado!", homeScoresResult.rows);
+}
 const homeScores = homeScoresResult.rows
     .filter(row => normalizarNomeTime(row.timehome).localeCompare(timeHomeNormalizado, undefined, { sensitivity: 'base' }) === 0)
     .map(row => parseInt(row.resultadohome, 10))
@@ -397,8 +402,13 @@ const homeScores = homeScoresResult.rows
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
                LIMIT 10
-           `, [timeAway]);
-
+           `, [timeAwayNormalizado]);
+// Verifica se encontrou resultados
+if (awayScoresResult.rows.length === 0) {
+    console.log("🔴 Nenhum resultado encontrado para:", timeAwayNormalizado);
+} else {
+    console.log("🟢 Encontrado!", awayScoresResult.rows);
+}
 const awayScores = awayScoresResult.rows
     .filter(row => 
         normalizarNomeTime(row.timeaway).localeCompare(timeAwayNormalizado, undefined, { sensitivity: 'base' }) === 0
