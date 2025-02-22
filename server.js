@@ -366,7 +366,7 @@ function normalizarNomeTime(nome) {
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-               LIMIT 100
+               LIMIT 10
            `, [timeHomeNormalizado]);
 // Verifica se encontrou resultados
 if (homeScoresResult.rows.length === 0) {
@@ -401,7 +401,7 @@ const homeScores = homeScoresResult.rows
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-               LIMIT 100
+               LIMIT 10
            `, [timeAwayNormalizado]);
 // Verifica se encontrou resultados
 if (awayScoresResult.rows.length === 0) {
