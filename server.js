@@ -804,35 +804,35 @@ console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Ve
 
 // Função para processar os jogos e determinar os resultados
 const processarJogos = (jogos, team) => {
-   return jogos.map(row => {
-       const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
-     
-       console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
-       console.log(`🧐 Time consultado: ${team}`);
-       let timeA, timeB, pontosA, pontosB, statusResultado;
+return jogos.map(row => {
+    const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
 
-       // Definir corretamente quem jogou em casa e quem jogou fora
-       const mandante = timehome;
-       const visitante = timeaway;
-       const golsMandante = resultadohome;
-       const golsVisitante = resultadoaway;
+    console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
+    console.log(`🧐 Time consultado: ${team}`);
 
-       // Verificar se o time consultado jogou como mandante ou visitante
-       if (mandante.toLowerCase() === team.toLowerCase()) {
-           // Time jogou em casa
-           timeA = mandante;
-           timeB = visitante;
-           pontosA = golsMandante;
-           pontosB = golsVisitante;
-       } else if (visitante.toLowerCase() === team.toLowerCase()) {
-           // Time jogou fora
-           timeA = visitante;
-           timeB = mandante;
-           pontosA = golsVisitante;
-           pontosB = golsMandante;
-       } else {
-           throw new Error("O time consultado não participou deste jogo.");
-       }
+    // Normalizar os nomes dos times para garantir que sejam comparáveis
+    const timehomeNormalizado = normalizarNomeTime(timehome);
+    const timeawayNormalizado = normalizarNomeTime(timeaway);
+    const teamNormalizado = normalizarNomeTime(team);
+
+    console.log(`🎯 TimeHome Normalizado: ${timehomeNormalizado}, TimeAway Normalizado: ${timeawayNormalizado}, Team Consultado Normalizado: ${teamNormalizado}`);
+
+    // Verificar se o time jogou como mandante ou visitante após normalização
+    if (timehomeNormalizado === teamNormalizado) {
+        timeA = timehome;
+        timeB = timeaway;
+        pontosA = resultadohome;
+        pontosB = resultadoaway;
+    } else if (timeawayNormalizado === teamNormalizado) {
+        timeA = timeaway;
+        timeB = timehome;
+        pontosA = resultadoaway;
+        pontosB = resultadohome;
+    } else {
+        console.error(`❌ ERRO: O time consultado (${team}) não foi encontrado na partida: ${timehome} vs ${timeaway}`);
+        throw new Error("O time consultado não participou deste jogo.");
+    }
+
 
        // Definir o resultado correto para o time consultado
        if (team.toLowerCase() === mandante.toLowerCase()) {
