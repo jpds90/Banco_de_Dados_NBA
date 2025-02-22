@@ -818,54 +818,22 @@ const processarJogos = (jogos, team) => {
         const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
 
         console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
-        console.log(`🧐 Time consultado: ${team}`);
 
-        // Normalizar os nomes dos times para garantir que sejam comparáveis
-        const timehomeNormalizado = normalizarNomeTime(timehome);
-        const timeawayNormalizado = normalizarNomeTime(timeaway);
-        const teamNormalizado = normalizarNomeTime(team);
+        // Normalizar o nome do time para evitar problemas de comparação (removendo acentos e deixando tudo minúsculo)
+        const teamNormalizado = team.toLowerCase();
+        const timehomeNormalizado = timehome.toLowerCase();
+        const timeawayNormalizado = timeaway.toLowerCase();
 
-        console.log(`🎯 TimeHome Normalizado: ${timehomeNormalizado}, TimeAway Normalizado: ${timeawayNormalizado}, Team Consultado Normalizado: ${teamNormalizado}`);
-
-        // Inicializar variáveis corretamente
-        let mandante, visitante, golsMandante, golsVisitante;
-
-        // Verificar se o time jogou como mandante ou visitante após normalização
-        if (timehomeNormalizado === teamNormalizado) {
-            mandante = timehome;
-            visitante = timeaway;
-            golsMandante = resultadohome;
-            golsVisitante = resultadoaway;
-        } else if (timeawayNormalizado === teamNormalizado) {
-            mandante = timeaway;
-            visitante = timehome;
-            golsMandante = resultadoaway;
-            golsVisitante = resultadohome;
-        } else {
-            console.error(`❌ ERRO: O time consultado (${team}) não foi encontrado na partida: ${timehome} vs ${timeaway}`);
-            throw new Error("O time consultado não participou deste jogo.");
-        }
-
-        // Definir o resultado correto para o time consultado
-        let statusResultado;
-        if (teamNormalizado === normalizarNomeTime(mandante)) {
-            // Time jogou como mandante
-            if (parseInt(golsMandante, 10) > parseInt(golsVisitante, 10)) {
-                statusResultado = `${mandante} ✅`; // Vitória do mandante
-            } else if (parseInt(golsMandante, 10) < parseInt(golsVisitante, 10)) {
-                statusResultado = `${mandante} ❌`; // Derrota do mandante
-            } else {
-                statusResultado = "Empate";
-            }
-        } else if (teamNormalizado === normalizarNomeTime(visitante)) {
-            // Time jogou como visitante
-            if (parseInt(golsVisitante, 10) > parseInt(golsMandante, 10)) {
-                statusResultado = `${visitante} ✅`; // Vitória do visitante
-            } else if (parseInt(golsVisitante, 10) < parseInt(golsMandante, 10)) {
-                statusResultado = `${visitante} ❌`; // Derrota do visitante
-            } else {
-                statusResultado = "Empate";
-            }
+        // Definir o status do jogo para o time pesquisado
+        let resultado = "Empate";
+        if (teamNormalizado === timehomeNormalizado) {
+            // O time pesquisado jogou como mandante
+            if (resultadohome > resultadoaway) resultado = `${team} ✅`; // Vitória do mandante
+            else if (resultadohome < resultadoaway) resultado = `${team} ❌`; // Derrota do mandante
+        } else if (teamNormalizado === timeawayNormalizado) {
+            // O time pesquisado jogou como visitante
+            if (resultadoaway > resultadohome) resultado = `${team} ✅`; // Vitória do visitante
+            else if (resultadoaway < resultadohome) resultado = `${team} ❌`; // Derrota do visitante
         }
 
         // Processar data e hora corretamente
@@ -875,11 +843,11 @@ const processarJogos = (jogos, team) => {
         return {
             data_hora: dataFormatada,
             hora,
-            timeA: mandante, // Sempre mostrar o mandante primeiro
-            timeB: visitante, // Sempre mostrar o visitante depois
-            pontosA: golsMandante,
-            pontosB: golsVisitante,
-            resultado: statusResultado,
+            timehome,
+            resultadohome,
+            timeaway,
+            resultadoaway,
+            resultado // Indica vitória, derrota ou empate do time pesquisado
         };
     });
 };
