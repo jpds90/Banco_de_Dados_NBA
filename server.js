@@ -808,6 +808,7 @@ const processarJogos = (jogos, team) => {
        const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
      
        console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
+       console.log(`🧐 Time consultado: ${team}`);
        let timeA, timeB, pontosA, pontosB, statusResultado;
 
        // Definir corretamente quem jogou em casa e quem jogou fora
