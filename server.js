@@ -743,6 +743,7 @@ function normalizarNomeTime(nome) {
        // 🔄 Normaliza os nomes dos times da requisição
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
        console.log(`🏠 Time 1 consultado: ${timeHome}`);
        console.log(`🚀 Time 2 consultado: ${timeAway}`);
 
@@ -775,11 +776,13 @@ function normalizarNomeTime(nome) {
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team) => {
    const table = team.toLowerCase().replace(/\s/g, "_").replace(/\./g, "") + "_futebol";
+   console.log(`🔍 Consultando a tabela: ${table}`); 
 
    const tablesResult = await pool.query(
        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
        [table]
    );
+console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Verifica o resultado da consulta
 
    if (tablesResult.rows.length > 0) {
        const querySQL = `
@@ -792,6 +795,7 @@ const buscarJogos = async (team) => {
 
        console.log(`📄 Executando query para ${table}: ${querySQL}`);
        const jogosResult = await pool.query(querySQL, [team]);
+       console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
        return jogosResult.rows;
    }
 
@@ -802,6 +806,8 @@ const buscarJogos = async (team) => {
 const processarJogos = (jogos, team) => {
    return jogos.map(row => {
        const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
+     
+       console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
        let timeA, timeB, pontosA, pontosB, statusResultado;
 
        // Definir corretamente quem jogou em casa e quem jogou fora
