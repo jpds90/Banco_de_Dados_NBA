@@ -354,7 +354,7 @@ function normalizarNomeTime(nome) {
            const homeScoresResult = await pool.query(`
                SELECT timehome, resultadohome
                FROM ${homeTable} 
-               WHERE timehome = $1
+               WHERE timehome ILIKE $1
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -384,7 +384,7 @@ const homeScores = homeScoresResult.rows
            const awayScoresResult = await pool.query(`
                SELECT resultadoaway, timeaway 
                FROM ${awayTable} 
-               WHERE timeaway = $1
+               WHERE timeaway ILIKE $1
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -464,7 +464,7 @@ app.get('/golsemcasa', async (req, res) => {
            const homeScoresResult = await pool.query(`
                SELECT resultadohome 
                FROM ${homeTable} 
-               WHERE timehome = $1
+               WHERE timehome ILIKE $1
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -492,7 +492,7 @@ app.get('/golsemcasa', async (req, res) => {
            const awayScoresResult = await pool.query(`
                SELECT resultadoaway 
                FROM ${awayTable} 
-               WHERE timeaway = $1
+               WHERE timeaway ILIKE $1
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -724,7 +724,7 @@ const buscarJogos = async (team) => {
        const querySQL = `
            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
            FROM ${table} 
-           WHERE timehome = $1 OR timeaway = $1
+           WHERE timehome ILIKE $1 OR timeaway ILIKE $1
            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
            LIMIT 10
        `;
