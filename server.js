@@ -801,6 +801,16 @@ console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Ve
 
    return [];
 };
+// Função para normalizar os nomes dos times
+function normalizarNomeTime(nome) {
+    return nome
+        .normalize("NFD") // Separa os acentos
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim()
+        .toLowerCase();
+}
 
 // Função para processar os jogos e determinar os resultados
 const processarJogos = (jogos, team) => {
