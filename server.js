@@ -785,7 +785,7 @@ const buscarJogos = async (team) => {
        const querySQL = `
            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
            FROM ${table} 
-           WHERE (unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1)
+           WHERE (unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1))
            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
            LIMIT 10
        `;
