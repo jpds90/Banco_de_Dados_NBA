@@ -416,8 +416,12 @@ function selectTeams(team1, team2) {
     // Função para buscar os últimos 10 jogos
     // Função para buscar os últimos 10 jogos e preencher as tabelas corretas
 async function fetchLast10Matches(timeHome, timeAway) {
+    // Normaliza os nomes removendo acentos
+    const normalizeString = (str) => str.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+
     timeHome = formatarNomeTime(timeHome);
     timeAway = formatarNomeTime(timeAway);
+
     try {
         const url = `https://analise-jpnba.onrender.com/ultimos10jogos?timeHome=${timeHome}&timeAway=${timeAway}`;
         console.log(`🔍 URL da requisição: ${url}`);
@@ -439,6 +443,11 @@ async function fetchLast10Matches(timeHome, timeAway) {
         awayTableBody.innerHTML = "";
 
         data.forEach(match => {
+            let timehomeNormalized = normalizeString(match.timehome);
+            let timeawayNormalized = normalizeString(match.timeaway);
+            let timeHomeNormalized = normalizeString(timeHome);
+            let timeAwayNormalized = normalizeString(timeAway);
+
             let row = `<tr>
                 <td>${match.data_hora}</td>
                 <td>${match.timehome}</td>
@@ -446,11 +455,11 @@ async function fetchLast10Matches(timeHome, timeAway) {
                 <td>${match.resultadohome} x ${match.resultadoaway} (${match.resultado})</td>
             </tr>`;
 
-            // Adiciona na tabela correta
-            if (match.timehome === timeHome || match.timeaway === timeHome) {
+            // Adiciona na tabela correta (comparando os nomes normalizados)
+            if (timehomeNormalized === timeHomeNormalized || timeawayNormalized === timeHomeNormalized) {
                 homeTableBody.innerHTML += row;
             }
-            if (match.timehome === timeAway || match.timeaway === timeAway) {
+            if (timehomeNormalized === timeAwayNormalized || timeawayNormalized === timeAwayNormalized) {
                 awayTableBody.innerHTML += row;
             }
         });
@@ -458,6 +467,7 @@ async function fetchLast10Matches(timeHome, timeAway) {
         console.error("Erro ao buscar os últimos 10 jogos:", error);
     }
 }
+
 
 
 
