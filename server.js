@@ -605,9 +605,19 @@ app.get('/confrontosfutebol1', async (req, res) => {
        const confrontationsQuery = `
            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
            FROM ${tableHome} 
-           WHERE (timehome = $1 AND timeaway = $2) OR (timehome = $2 AND timeaway = $1)
-           ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-           LIMIT 10
+           WHERE (timehome ILIKE $1 AND timeaway ILIKE $2) OR (timehome ILIKE $2 AND timeaway ILIKE $1)
+           ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+           LIMIT 1000
        `;
 
        console.log(`📄 Executando query de confrontos diretos: ${confrontationsQuery}`);
