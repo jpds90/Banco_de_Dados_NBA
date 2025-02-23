@@ -158,6 +158,8 @@ leagueElement.addEventListener("click", async (event) => {
     throw new Error("Erro ao salvar a URL.");
 }
 
+
+
 console.log("🚀 Executando script futebollink...");
         const executeScriptResponse = await fetch("https://analise-jpnba.onrender.com/futebollink", {
             method: "POST",
@@ -170,8 +172,19 @@ console.log("🚀 Executando script futebollink...");
         console.log("⚽ Script futebollink executado:", executeResult);
 
        
+    
         
-        console.log("🎲 Executando script oddsfutebol...");
+        console.log("🚀 Executando script Dados dos Times...");
+        const executedadostResponse = await fetch("https://analise-jpnba.onrender.com/timefutebol", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ tableName }) // Passando tableName para o backend
+        });
+
+        const executedadosResult = await executedadostResponse.text();
+        console.log("⚽ Script Dados dos Times executado:", executedadosResult);
+
+console.log("🎲 Executando script oddsfutebol...");
         const executeOddsResponse = await fetch("https://analise-jpnba.onrender.com/oddsfutebol", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -182,16 +195,7 @@ console.log("🚀 Executando script futebollink...");
         console.log("✅ Script oddsfutebol executado:", executeOddsResult);
 
 
-         console.log("🚀 Executando script Dados dos Times...");
-        const executedadostResponse = await fetch("https://analise-jpnba.onrender.com/timefutebol", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ tableName }) // Passando tableName para o backend
-        });
-
-        const executedadosResult = await executedadostResponse.text();
-        console.log("⚽ Script Dados dos Times executado:", executedadosResult);
-
+         
 
 
 
