@@ -326,8 +326,8 @@ app.get('/golsemcasa1', async (req, res) => {
        console.log(`📌 Time visitante recebido: ${timeAway} (Normalizado: ${timeAwayNormalizado})`);
 
        // 🔍 Gerando nomes das tabelas
-       const homeTable = timeHomeNormalizado + "_futebol";
-       const awayTable = timeAwayNormalizado + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
