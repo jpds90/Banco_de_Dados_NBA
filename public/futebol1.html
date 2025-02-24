@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Países e Ligas</title>
+    <style>
+        .country {
+            cursor: pointer;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .leagues {
+            display: none;
+            margin-left: 20px;
+        }
+        .league-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+        .league {
+            cursor: pointer;
+            color: blue;
+            text-decoration: underline;
+        }
+        .btn {
+            padding: 5px 10px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        .btn-process { background-color: orange; color: white; }
+        .btn-teams { background-color: blue; color: white; }
+        .btn-odds { background-color: green; color: white; }
+        .loading { color: gray !important; }
+        .success { color: green !important; }
+        .error { color: red !important; }
+    </style>
+</head>
+<body>
+    <h1>Selecione um País</h1>
+    <div id="countries"></div>
+    
+    <script>
+        function formatText(text) {
+            return text
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+        }
+
+        const countries = {
+    "AMÉRICA DO SUL": ["Taça dos Libertadores"],
+    "Europa": ["Liga dos Campeões", "Liga Europa", "Liga Conferência", "Liga das Nações"],
+    "Brasil": ["Taça do Brasil", "Paulista", "Carioca", "Gaucho", "Mineiro", "Taça do Nordeste", "Goiano", "Catarinense", "Baiano"],
+    "Portugal": ["Liga Portugal Betclic", "Taça de Portugal", "Liga Portugal 2", "Liga 3"],
+    "Inglaterra": ["Premier League", "Championship", "Troféu FA", "Taça da Liga EFL", "Liga 1"],
+    "Espanha": ["LaLiga", "Segunda División", "Taça do Rei de Espanha", "Primeira RFEF - Grupo 1"],
+    "Itália": ["Série A", "Série B", "Taça de Itália"],
+    "Alemanha": ["Bundesliga", "Taça da Alemanha", "2 Bundesliga", "3 Liga Alema"],
+    "França": ["Liga 1", "Liga2", "Nacional"],
+    "Países Baixos": ["Eredivisie", "Taça KNVB Beker", "Primeira Divisão"],
+    "Turquia": ["Super liga", "1 lig"],
+    "Áustria": ["Bundesliga", "2. Liga"],
+    "Bélgica": ["1A Pro League", "Challenger Pro League"],
+    "Bulgária": ["Parva Liga"],
+    "Chipre": ["1ª Divisão"],
+    "Croácia": ["HNL", "1. NL"],
+    "Dinamarca": ["Superligaen", "1. division"],
+    "Escócia": ["Premiership", "Championship"],
+    "Eslováquia": ["Superliga"],
+    "Eslovénia": ["PrvaLiga"],
+    "Finlândia": ["Liigacup"],
+    "Grécia": ["Super League 1", "Taça", "Super League 2"],
+    "Hungria": ["NB I"],
+    "Irlanda": ["Primeira divisão", "1.ª divisão"],
+    "Irlanda do Norte": ["Premiership"],
+    "Israel": ["Ligat Ha'al"],
+    "Montenegro": ["Kup Crne Gore"],
+    "País de Gales": ["Cymru Premier"],
+    "Polónia": ["Ekstraklasa", "I liga"],
+    "Chéquia": ["1. liga"],
+    "Roménia": ["Liga 1", "Betano Taça", "Liga 2"],
+    "Suíça": ["Super League", "Challenge League"],
+    "Ucrânia": ["Premier Liga"],
+    "Argentina": ["Torneo Betano", "Copa", "Primera B Nacional"],
+    "Chile": ["Liga de Primera", "Copa Chile"],
+    "Colômbia": ["Categoría Primera A"],
+    "Costa Rica": ["Liga FPD"],
+    "Equador": ["Liga Pro Serie A"],
+    "EUA": ["MLS"],
+    "México": ["Liga MX", "Liga de Expansion MX"],
+    "Panamá": ["LPF"],
+    "Paraguai": ["Primeira Divisão"],
+    "Peru": ["Liga 1"],
+    "Uruguai": ["Liga AUF Uruguaya"],
+    "África do Sul": ["Premiership"],
+    "Angola": ["Girabola"],
+    "Arábia Saudita": ["Pro League"],
+    "Argélia": ["Ligue 1"],
+    "Austrália": ["A-League"],
+    "Catar": ["Stars League"],
+    "China": ["Super League"],
+    "Coreia do Sul": ["K League 1", "K League 2"],
+    "Egito": ["Premier League"],
+    "Índia": ["Super League"],
+    "Indonésia": ["Liga 1"],
+    "Japão": ["J1 League", "J2 League"],
+    "Omã": ["Pro League"],
+    "Tailândia": ["Thai League 1"],
+    "Tanzânia": ["Premier League"],
+    "Tunísia": ["Ligue 1"]
+        };
+
+        const countryContainer = document.getElementById("countries");
+
+        async function executeScript(url, tableName, scriptName, button) {
+            button.textContent = "Executando...";
+            button.disabled = true;
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ tableName })
+                });
+
+                const result = await response.text();
+                console.log(`✅ ${scriptName} executado:`, result);
+                alert(`✅ ${scriptName} executado com sucesso!`);
+            } catch (error) {
+                console.error(`❌ Erro ao executar ${scriptName}:`, error);
+                alert(`❌ Erro ao executar ${scriptName}.`);
+            }
+
+            button.textContent = scriptName;
+            button.disabled = false;
+        }
+
+        for (let country in countries) {
+            let countryElement = document.createElement("div");
+            countryElement.classList.add("country");
+            countryElement.textContent = country;
+            countryContainer.appendChild(countryElement);
+            
+            let leaguesDiv = document.createElement("div");
+            leaguesDiv.classList.add("leagues");
+            
+            countries[country].forEach(league => {
+                let leagueContainer = document.createElement("div");
+                leagueContainer.classList.add("league-container");
+
+                let leagueElement = document.createElement("div");
+                leagueElement.textContent = league;
+                leagueElement.classList.add("league");
+
+                let formattedLeague = formatText(league);
+                let tableName = formattedLeague.replace(/[^a-z0-9]+/g, "_") + "_link";
+
+                let processButton = document.createElement("button");
+                processButton.textContent = "Processar";
+                processButton.classList.add("btn", "btn-process");
+                processButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/futebollink", tableName, "Processar Liga", processButton);
+
+                let teamsButton = document.createElement("button");
+                teamsButton.textContent = "Times";
+                teamsButton.classList.add("btn", "btn-teams");
+                teamsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/timefutebol", tableName, "Dados dos Times", teamsButton);
+
+                let oddsButton = document.createElement("button");
+                oddsButton.textContent = "Odds";
+                oddsButton.classList.add("btn", "btn-odds");
+                oddsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/oddsfutebol", tableName, "Odds Futebol", oddsButton);
+
+                leagueContainer.appendChild(leagueElement);
+                leagueContainer.appendChild(processButton);
+                leagueContainer.appendChild(teamsButton);
+                leagueContainer.appendChild(oddsButton);
+
+                leaguesDiv.appendChild(leagueContainer);
+            });
+
+            countryElement.addEventListener("click", () => {
+                leaguesDiv.style.display = leaguesDiv.style.display === "block" ? "none" : "block";
+            });
+
+            countryContainer.appendChild(leaguesDiv);
+        }
+    </script>
+</body>
+</html>
