@@ -348,7 +348,17 @@ app.get('/golsemcasa1', async (req, res) => {
                SELECT resultadohome 
                FROM ${homeTable} 
                WHERE unaccent(timehome) ILIKE unaccent($1)
-               ORDER BY data_hora DESC
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
                LIMIT 10
            `, [timeHome]);
 
@@ -366,7 +376,17 @@ app.get('/golsemcasa1', async (req, res) => {
                SELECT resultadoaway 
                FROM ${awayTable} 
                WHERE unaccent(timeaway) ILIKE unaccent($1)
-               ORDER BY data_hora DESC
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
                LIMIT 10
            `, [timeAway]);
 
