@@ -309,14 +309,14 @@ app.get('/golsemcasa1', async (req, res) => {
 
        function normalizarNomeTime(nome) {
            return nome
-               .toLowerCase()
-               .normalize("NFD")
-               .replace(/[̀-ͯ]/g, '')
-               .replace('ã', 'a')
-               .replace('ó', 'o')
-               .replace(/[\s\-]/g, '')
-               .replace(/\./g, '')
-               .trim(); 
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim(); 
        }
 
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
@@ -374,9 +374,17 @@ if (homeScoresResult.rows.length === 0) {
     console.log("🟢 Encontrado!", homeScoresResult.rows);
 }
 const homeScores = homeScoresResult.rows
-    .filter(row => normalizarNomeTime(row.timehome).localeCompare(timeHomeNormalizado, undefined, { sensitivity: 'base' }) === 0)
-    .map(row => parseInt(row.resultadohome, 10))
+    .filter(row => {
+        const nomeBanco = normalizarNomeTime(row.timehome);
+        console.log(`🔍 Comparando (Banco): "${nomeBanco}" <-> (Normalizado): "${timeHomeNormalizado}"`);
+        return nomeBanco.localeCompare(timeHomeNormalizado, undefined, { sensitivity: 'base' }) === 0;
+    })
+    .map(row => {
+        console.log(`✅ Gol válido encontrado: ${row.resultadohome}`);
+        return parseInt(row.resultadohome, 10);
+    })
     .filter(score => !isNaN(score) && score > threshold);
+
 
 
            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
@@ -410,11 +418,17 @@ if (awayScoresResult.rows.length === 0) {
     console.log("🟢 Encontrado!", awayScoresResult.rows);
 }
 const awayScores = awayScoresResult.rows
-    .filter(row => 
-        normalizarNomeTime(row.timeaway).localeCompare(timeAwayNormalizado, undefined, { sensitivity: 'base' }) === 0
-    )
-    .map(row => parseInt(row.resultadoaway, 10))
+    .filter(row => {
+        const nomeBanco = normalizarNomeTime(row.timeaway);
+        console.log(`🔍 Comparando (Banco): "${nomeBanco}" <-> (Normalizado): "${timeAwayNormalizado}"`);
+        return nomeBanco.localeCompare(timeAwayNormalizado, undefined, { sensitivity: 'base' }) === 0;
+    })
+    .map(row => {
+        console.log(`✅ Gol válido encontrado: ${row.resultadoaway}`);
+        return parseInt(row.resultadoaway, 10);
+    })
     .filter(score => !isNaN(score) && score > threshold);
+
 
 
            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
