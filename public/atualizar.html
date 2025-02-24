@@ -38,18 +38,33 @@
     </style>
 </head>
 <body>
-    <h1>Atualiazar dados NBA - Futebol</h1>
 
-    <button id="loadNBA">NBA</button>
-    <button id="loadFutebol">Futebol</button>
-    <button id="executeAll10">Atualizar Time Futebol</button>
-    <button id="executeScript">Atualizar Links</button>
-    <button id="executeScript1">Atualizar Links Futebol</button>
-    <button id="executeAll">Atualizar Tudo</button>
-    <button id="executeAll1">Atualizar Jogadores</button>
-    <button id="executeAll2">Atualizar Lesões</button>
-    <button id="executeOdds">Atualizar Odds</button>
-    <button id="executeRank">Atualizar Rank</button>
+    <h1>Atualizar Dados NBA - Futebol</h1>
+
+    <div class="container">
+        <div class="column">
+            <h2>NBA</h2>
+            <div class="buttons">
+                <button id="loadNBA">NBA</button>
+                <button id="executeScript">Atualizar Links - NBA</button>
+                <button id="executeAll">Atualizar Tudo - NBA</button>
+                <button id="executeAll1">Atualizar Jogadores - NBA</button>
+                <button id="executeAll2">Atualizar Lesões - NBA</button>
+                <button id="executeOdds">Atualizar Odds - NBA</button>
+                <button id="executeRank">Atualizar Rank - NBA</button>
+            </div>
+        </div>
+
+        <div class="column">
+            <h2>Futebol</h2>
+            <div class="buttons">
+                <button id="loadFutebol">Futebol</button>
+                <button id="executeAll10">Atualizar Time Futebol</button>
+                <button id="executeScript1">Atualizar Links Futebol</button>
+            </div>
+        </div>
+    </div>
+
     <button onclick="window.location.href='principal.html';">Home</button>
 
     <p id="loadingMessage">Carregando...</p>
@@ -65,7 +80,6 @@
         </thead>
         <tbody id="linksTable"></tbody>
     </table>
-
     <script>
         let data = [];
 
