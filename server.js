@@ -234,8 +234,8 @@ app.get('/probabilidade', async (req, res) => {
             return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
         const queryStats = async (table) => {
             const result = await pool.query(`
@@ -315,6 +315,7 @@ function normalizarNomeTime(nome) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
         .replace(/\./g, '') // Remove pontos
         .trim(); 
@@ -330,8 +331,8 @@ function normalizarNomeTime(nome) {
        console.log(`🔍 Filtro de gol: ${threshold}`);
 
        // 📌 Criar os nomes das tabelas SEM normalizar (mantendo o formato correto do banco)
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
@@ -454,6 +455,7 @@ function normalizarNomeTime(nome) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
         .replace(/\./g, '') // Remove pontos
         .trim(); 
@@ -468,8 +470,8 @@ function normalizarNomeTime(nome) {
        console.log(`📌 Time visitante recebido: ${timeAway}`);
        console.log(`🔍 Filtro de gol: ${threshold}`);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Time da casa Futebol: ${homeTable}`);
        console.log(`📌 Time visitante Futebol: ${awayTable}`);
@@ -619,6 +621,7 @@ function normalizarNomeTime(nome) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
         .replace(/\./g, '') // Remove pontos
         .trim(); 
@@ -632,7 +635,7 @@ function normalizarNomeTime(nome) {
        console.log(`🏠 Time Home consultado: ${timeHome}`);
        console.log(`🚀 Time Away consultado: ${timeAway}`);
 
-       const tableHome = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const tableHome = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        // Verifica se a tabela existe no banco
        const tablesResult = await pool.query(
@@ -734,6 +737,7 @@ function normalizarNomeTime(nome) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
         .replace(/\./g, '') // Remove pontos
         .trim(); 
@@ -775,7 +779,7 @@ function normalizarNomeTime(nome) {
 
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team) => {
-   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
    console.log(`🔍 Consultando a tabela: ${table}`); 
 
    const tablesResult = await pool.query(
