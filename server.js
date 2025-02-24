@@ -414,6 +414,8 @@ app.get('/golsemcasa1', async (req, res) => {
 app.get('/golsemcasa2', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
+      console.log(`📌 time da casa: ${timeHome} (tipo: ${typeof timeHome})`);
+      console.log(`📌 time visitante: ${timeAway} (tipo: ${typeof timeAway})`);
 
        if (!timeHome || !timeAway) {
            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
