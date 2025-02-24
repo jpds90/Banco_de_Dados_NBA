@@ -299,7 +299,110 @@ app.get('/probabilidade', async (req, res) => {
         res.status(500).json({ error: "Erro interno do servidor" });
     }
 });
+
+
 app.get('/golsemcasa1', async (req, res) => {
+   try {
+       const { timeHome, timeAway, threshold = 0.5 } = req.query;
+
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
+
+       function normalizarNomeTime(nome) {
+           return nome
+               .toLowerCase()
+               .normalize("NFD")
+               .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+               .replace(/[\s\-]/g, '') // Remove espaços e hífens
+               .replace(/\./g, '') // Remove pontos
+               .trim(); 
+       }
+
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       console.log(`📌 Time da casa: ${timeHome} (Normalizado: ${timeHomeNormalizado})`);
+       console.log(`📌 Time visitante: ${timeAway} (Normalizado: ${timeAwayNormalizado})`);
+
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+
+       console.log(`📌 Tabela timeHome: ${homeTable}`);
+       console.log(`📌 Tabela timeAway: ${awayTable}`);
+
+       const tablesResult = await pool.query(
+           `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
+           [homeTable, awayTable]
+       );
+
+       console.log("🔎 Tabelas encontradas:", tablesResult.rows);
+
+       let homeGoals = [];
+       let awayGoals = [];
+
+       if (tablesResult.rows.some(row => row.table_name === homeTable)) {
+           console.log(`📄 Buscando jogos de ${timeHome} como mandante na tabela: ${homeTable}`);
+
+           const homeScoresResult = await pool.query(`
+               SELECT resultadohome 
+               FROM ${homeTable} 
+               WHERE unaccent(timehome) ILIKE unaccent($1)
+               ORDER BY data_hora DESC
+               LIMIT 10
+           `, [timeHome]);
+
+           console.log("📊 Resultados timeHome (como mandante):", homeScoresResult.rows);
+
+           homeGoals = homeScoresResult.rows
+               .map(row => parseInt(row.resultadohome, 10))
+               .filter(score => !isNaN(score));
+       }
+
+       if (tablesResult.rows.some(row => row.table_name === awayTable)) {
+           console.log(`📄 Buscando jogos de ${timeAway} como visitante na tabela: ${awayTable}`);
+
+           const awayScoresResult = await pool.query(`
+               SELECT resultadoaway 
+               FROM ${awayTable} 
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
+               ORDER BY data_hora DESC
+               LIMIT 10
+           `, [timeAway]);
+
+           console.log("📊 Resultados timeAway (como visitante):", awayScoresResult.rows);
+
+           awayGoals = awayScoresResult.rows
+               .map(row => parseInt(row.resultadoaway, 10))
+               .filter(score => !isNaN(score));
+       }
+
+       const homeAvg = homeGoals.length ? (homeGoals.reduce((a, b) => a + b, 0) / homeGoals.length).toFixed(2) : 0;
+       const awayAvg = awayGoals.length ? (awayGoals.reduce((a, b) => a + b, 0) / awayGoals.length).toFixed(2) : 0;
+
+       console.log("✅ Resumo final:", {
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg
+       });
+
+       res.json({
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg
+       });
+
+   } catch (error) {
+       console.error('❌ Erro ao processar os dados:', error);
+       res.status(500).json({ error: 'Erro no servidor' });
+   }
+});
+
+
+
+app.get('/golsemcasafuncionou', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
