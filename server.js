@@ -404,14 +404,16 @@ app.get('/golsemcasa1', async (req, res) => {
            time_home: timeHome,
            time_away: timeAway,
            home_avg: homeAvg,
-           away_avg: awayAvg
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg
        });
 
        res.json({
            time_home: timeHome,
            time_away: timeAway,
            home_avg: homeAvg,
-           away_avg: awayAvg
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg
        });
 
    } catch (error) {
