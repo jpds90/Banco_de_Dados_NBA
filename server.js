@@ -367,11 +367,18 @@ app.get('/golsemcasa1', async (req, res) => {
            `, [timeHomeNormalizado]);
 
            console.log("📊 Resultados do time da casa:", homeScoresResult.rows);
-           const homeScores = homeScoresResult.rows
-               .map(row => parseInt(row.resultadohome, 10))
-               .filter(score => !isNaN(score) && score > threshold);
+// Verifica se encontrou resultados
+if (homeScoresResult.rows.length === 0) {
+    console.log("🔴 Nenhum resultado encontrado para:", timeHomeNormalizado);
+} else {
+    console.log("🟢 Encontrado!", homeScoresResult.rows);
+}
+const homeScores = homeScoresResult.rows
+    .filter(row => normalizarNomeTime(row.timehome).localeCompare(timeHomeNormalizado, undefined, { sensitivity: 'base' }) === 0)
+    .map(row => parseInt(row.resultadohome, 10))
+    .filter(score => !isNaN(score) && score > threshold);
 
-           console.log("🏠 Gols válidos do time da casa:", homeScores);
+
            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
            homeHitsThreshold = homeScores.length;
        }
@@ -397,11 +404,19 @@ app.get('/golsemcasa1', async (req, res) => {
            `, [timeAwayNormalizado]);
 
            console.log("📊 Resultados do time visitante:", awayScoresResult.rows);
-           const awayScores = awayScoresResult.rows
-               .map(row => parseInt(row.resultadoaway, 10))
-               .filter(score => !isNaN(score) && score > threshold);
+if (awayScoresResult.rows.length === 0) {
+    console.log("🔴 Nenhum resultado encontrado para:", timeAwayNormalizado);
+} else {
+    console.log("🟢 Encontrado!", awayScoresResult.rows);
+}
+const awayScores = awayScoresResult.rows
+    .filter(row => 
+        normalizarNomeTime(row.timeaway).localeCompare(timeAwayNormalizado, undefined, { sensitivity: 'base' }) === 0
+    )
+    .map(row => parseInt(row.resultadoaway, 10))
+    .filter(score => !isNaN(score) && score > threshold);
 
-           console.log("🚀 Gols válidos do time visitante:", awayScores);
+
            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
            awayHitsThreshold = awayScores.length;
        }
