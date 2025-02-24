@@ -311,6 +311,126 @@ app.get('/golsemcasa1', async (req, res) => {
 
        function normalizarNomeTime(nome) {
            return nome
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[̀-ͯ]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim(); 
+       }
+
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       console.log(`📌 Time da casa recebido (original): ${timeHome}`);
+       console.log(`📌 Time visitante recebido (original): ${timeAway}`);
+       console.log(`📌 Time da casa normalizado: ${timeHomeNormalizado}`);
+       console.log(`📌 Time visitante normalizado: ${timeAwayNormalizado}`);
+       console.log(`🔍 Filtro de gol (threshold): ${threshold}`);
+
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+
+       console.log(`📌 Tabela do time da casa: ${homeTable}`);
+       console.log(`📌 Tabela do time visitante: ${awayTable}`);
+
+       const tablesResult = await pool.query(`
+           SELECT table_name FROM information_schema.tables 
+           WHERE table_name = $1 OR table_name = $2
+       `, [homeTable, awayTable]);
+
+       console.log("🔎 Tabelas encontradas:", tablesResult.rows);
+
+       const tableNames = tablesResult.rows.map(row => row.table_name);
+       let homeHitsThreshold = 0;
+       let awayHitsThreshold = 0;
+       let homeAvg = 0;
+       let awayAvg = 0;
+       let homeGoalsConcededAvg = 0;
+       let awayGoalsConcededAvg = 0;
+
+       if (tableNames.includes(homeTable)) {
+           console.log(`📄 Consultando dados para a tabela: ${homeTable}`);
+           const homeScoresResult = await pool.query(`
+               SELECT timehome, resultadohome, resultadoaway FROM ${homeTable} 
+               WHERE unaccent(timehome) ILIKE unaccent($1)
+               ORDER BY data_hora DESC
+               LIMIT 10
+           `, [timeHomeNormalizado]);
+
+           console.log("📊 Resultados do time da casa:", homeScoresResult.rows);
+
+           const homeScores = homeScoresResult.rows.map(row => parseInt(row.resultadohome, 10)).filter(score => !isNaN(score) && score > threshold);
+           const homeGoalsConceded = homeScoresResult.rows.map(row => parseInt(row.resultadoaway, 10)).filter(score => !isNaN(score));
+
+           homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
+           homeHitsThreshold = homeScores.length;
+           homeGoalsConcededAvg = homeGoalsConceded.length ? Math.round(homeGoalsConceded.reduce((a, b) => a + b, 0) / homeGoalsConceded.length) : 0;
+       }
+
+       if (tableNames.includes(awayTable)) {
+           console.log(`📄 Consultando dados para a tabela: ${awayTable}`);
+           const awayScoresResult = await pool.query(`
+               SELECT timeaway, resultadoaway, resultadohome FROM ${awayTable} 
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
+               ORDER BY data_hora DESC
+               LIMIT 10
+           `, [timeAwayNormalizado]);
+
+           console.log("📊 Resultados do time visitante:", awayScoresResult.rows);
+
+           const awayScores = awayScoresResult.rows.map(row => parseInt(row.resultadoaway, 10)).filter(score => !isNaN(score) && score > threshold);
+           const awayGoalsConceded = awayScoresResult.rows.map(row => parseInt(row.resultadohome, 10)).filter(score => !isNaN(score));
+
+           awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
+           awayHitsThreshold = awayScores.length;
+           awayGoalsConcededAvg = awayGoalsConceded.length ? Math.round(awayGoalsConceded.reduce((a, b) => a + b, 0) / awayGoalsConceded.length) : 0;
+       }
+
+       console.log("✅ Resumo final:", {
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg,
+           home_hits_threshold: homeHitsThreshold,
+           away_hits_threshold: awayHitsThreshold,
+           home_goals_conceded_avg: homeGoalsConcededAvg,
+           away_goals_conceded_avg: awayGoalsConcededAvg
+       });
+
+       res.json({
+           time_home: timeHome,
+           time_away: timeAway,
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg,
+           home_hits_threshold: homeHitsThreshold,
+           away_hits_threshold: awayHitsThreshold,
+           home_goals_conceded_avg: homeGoalsConcededAvg,
+           away_goals_conceded_avg: awayGoalsConcededAvg
+       });
+
+   } catch (error) {
+       console.error('❌ Erro ao processar os dados:', error);
+       res.status(500).json({ error: 'Erro no servidor' });
+   }
+});
+
+
+
+app.get('/golsemcasatop', async (req, res) => {
+   try {
+       const { timeHome, timeAway, threshold = 0.5 } = req.query;
+
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
+
+       function normalizarNomeTime(nome) {
+           return nome
                .toLowerCase()
                .normalize("NFD")
                .replace(/[\u0300-\u036f]/g, '') // Remove acentos
