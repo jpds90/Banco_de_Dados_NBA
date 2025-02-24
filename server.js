@@ -367,12 +367,6 @@ app.get('/golsemcasa1', async (req, res) => {
            `, [timeHomeNormalizado]);
 
            console.log("📊 Resultados do time da casa:", homeScoresResult.rows);
-// Verifica se encontrou resultados
-if (homeScoresResult.rows.length === 0) {
-    console.log("🔴 Nenhum resultado encontrado para:", timeHomeNormalizado);
-} else {
-    console.log("🟢 Encontrado!", homeScoresResult.rows);
-}
 const homeScores = homeScoresResult.rows
     .filter(row => {
         const nomeBanco = normalizarNomeTime(row.timehome);
@@ -412,11 +406,6 @@ const homeScores = homeScoresResult.rows
            `, [timeAwayNormalizado]);
 
            console.log("📊 Resultados do time visitante:", awayScoresResult.rows);
-if (awayScoresResult.rows.length === 0) {
-    console.log("🔴 Nenhum resultado encontrado para:", timeAwayNormalizado);
-} else {
-    console.log("🟢 Encontrado!", awayScoresResult.rows);
-}
 const awayScores = awayScoresResult.rows
     .filter(row => {
         const nomeBanco = normalizarNomeTime(row.timeaway);
