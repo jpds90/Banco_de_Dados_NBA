@@ -828,7 +828,7 @@ const awayScores = awayScoresResult.rows
 });
 
 
-app.get('/golsemcasa1', async (req, res) => {
+app.get('/ambasmarcam', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
@@ -943,6 +943,91 @@ app.get('/golsemcasa1', async (req, res) => {
    }
 });
 
+app.get('/golsemcasa1', async (req, res) => {
+   try {
+       const { timeHome, timeAway } = req.query;
+
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
+
+       function normalizarNomeTime(nome) {
+           return nome
+               .toLowerCase()
+               .normalize("NFD")
+               .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+               .replace(/[\s\-]/g, '') // Remove espaços e hífens
+               .replace(/\./g, '') // Remove pontos
+               .trim(); 
+       }
+
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       const homeTable = timeHomeNormalizado + "_futebol";
+       const awayTable = timeAwayNormalizado + "_futebol";
+
+       const tablesResult = await pool.query(
+           `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
+           [homeTable, awayTable]
+       );
+
+       let homeGoals = 0;
+       let awayGoals = 0;
+       const totalJogos = 10; // Sempre considerando os últimos 10 jogos
+
+       if (tablesResult.rows.some(row => row.table_name === homeTable)) {
+           const homeScoresResult = await pool.query(`
+               SELECT resultadohome 
+               FROM ${homeTable} 
+               WHERE unaccent(timehome) ILIKE unaccent($1)
+               ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+               LIMIT 10
+           `, [timeHome]);
+
+           homeGoals = homeScoresResult.rows.filter(row => parseInt(row.resultadohome, 10) > 0).length;
+       }
+
+       if (tablesResult.rows.some(row => row.table_name === awayTable)) {
+           const awayScoresResult = await pool.query(`
+               SELECT resultadoaway 
+               FROM ${awayTable} 
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
+               ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+               LIMIT 10
+           `, [timeAway]);
+
+           awayGoals = awayScoresResult.rows.filter(row => parseInt(row.resultadoaway, 10) > 0).length;
+       }
+
+       // Calcula a porcentagem dos jogos em que ambos marcaram
+       const totalPontos = homeGoals + awayGoals;
+       const porcentagem = (totalPontos / (totalJogos * 2)) * 100;
+
+       let status;
+       if (porcentagem >= 75) {
+           status = "Ambas Marcam";
+       } else if (porcentagem >= 65) {
+           status = "+1,5 Gols";
+       } else {
+           status = "Nenhuma tendência forte";
+       }
+
+       res.json({
+           time_home: timeHome,
+           time_away: timeAway,
+           home_gols_marcados: homeGoals,
+           away_gols_marcados: awayGoals,
+           total_pontos: totalPontos,
+           porcentagem: porcentagem.toFixed(2) + "%",
+           status: status
+       });
+
+   } catch (error) {
+       console.error('❌ Erro ao processar os dados:', error);
+       res.status(500).json({ error: 'Erro no servidor' });
+   }
+});
 
 
 
