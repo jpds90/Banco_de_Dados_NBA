@@ -1877,7 +1877,7 @@ const processarJogos2 = (jogos, team) => {
     });
 };
 // Função para formatar os resultados como 'VVDED' para timeHome e 'VDDVE' para timeAway
-const formatarResultados = (jogos, team) => {
+const formatarResultados2 = (jogos, team) => {
     let resultadosHome = "";
     let resultadosAway = "";
 
