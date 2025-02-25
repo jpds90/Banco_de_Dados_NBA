@@ -193,8 +193,40 @@ o<!DOCTYPE html>
             </thead>
             <tbody></tbody>
         </table>
+<h2>Últimos 5 Jogos</h2>
+<!-- Estrutura para mostrar tabelas lado a lado -->
+<div class="last-matches">
+    <div class="team-table">
+        <h3 id="teamHomeName"></h3> <!-- Nome do primeiro time -->
+        <table id="teamHomeTable5">
+            <thead>
+                <tr>
+                    <th>Desempenho</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preencher com dados dos jogos do time mandante -->
+            </tbody>
+        </table>
+    </div>
 
-<h2>Últimos Jogos</h2>
+    <div class="team-table">
+        <h3 id="teamAwayName"></h3> <!-- Nome do segundo time -->
+        <table id="teamAwayTable">
+            <thead>
+                <tr>
+                    <th>Desempenho5</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Preencher com dados dos jogos do time visitante -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<h2>Últimos 10 Jogos</h2>
 <!-- Estrutura para mostrar tabelas lado a lado -->
 <div class="last-matches">
     <div class="team-table">
@@ -231,6 +263,7 @@ o<!DOCTYPE html>
         </table>
     </div>
 </div>
+
 
 
    <script>
@@ -339,6 +372,7 @@ matchElement.addEventListener("click", function() {
 
     fetchWinProbability(selectedTimeHome, selectedTimeAway);
     fetchLast10Matches(selectedTimeHome, selectedTimeAway);
+    fetchLast5Matches(selectedTimeHome, selectedTimeAway);
     fetchHeadToHead(selectedTimeHome, selectedTimeAway);
     buscarMediasDeGols(selectedTimeHome, selectedTimeAway);
     buscarMediasDeGolssofrido(selectedTimeHome, selectedTimeAway);
@@ -583,7 +617,50 @@ async function fetchLast10Matches(timeHome, timeAway) {
 }
 
 
+async function fetchLast5Matches(timeHome, timeAway) {
+    // Normaliza os nomes removendo acentos e espaços extras
+    const normalizeString = (str) => str.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim();
 
+    timeHome = normalizeString(timeHome);
+    timeAway = normalizeString(timeAway);
+
+    try {
+        const url = `https://analise-jpnba.onrender.com/ultimos5jogos?timeHome=${encodeURIComponent(timeHome)}&timeAway=${encodeURIComponent(timeAway)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (!data.timeHome || !data.timeAway) {
+            console.error("Erro: Dados dos times não retornados corretamente.");
+            return;
+        }
+
+        // Atualiza os nomes dos times no HTML
+        document.getElementById("teamHomeName").textContent = data.timeHome.nome;
+        document.getElementById("teamAwayName").textContent = data.timeAway.nome;
+
+        // Preencher a tabela dos últimos 5 jogos em casa
+        preencherTabela("teamHomeTable5", data.timeHome.desempenho_casa);
+
+        // Preencher a tabela dos últimos 5 jogos fora de casa
+        preencherTabela("teamAwayTable5", data.timeAway.desempenho_fora);
+
+    } catch (error) {
+        console.error("Erro ao buscar os últimos 5 jogos:", error);
+    }
+}
+
+function preencherTabela(tabelaId, desempenho) {
+    const tabela = document.getElementById(tabelaId).querySelector("tbody");
+    tabela.innerHTML = ""; // Limpa a tabela antes de adicionar novos dados
+
+    for (const resultado of desempenho) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.textContent = resultado; // Adiciona os símbolos (✅, ❌, 🤝)
+        row.appendChild(cell);
+        tabela.appendChild(row);
+    }
+}
 
 
 // Função para buscar os dados de gols feitos em casa e fora
