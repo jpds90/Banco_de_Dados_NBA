@@ -311,14 +311,12 @@ app.get('/golsemcasa1', async (req, res) => {
 
        function normalizarNomeTime(nome) {
            return nome
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/g, '') // Remove acentos
-        .replace('ã', 'a') // Substitui o 'ã' por 'a'
-        .replace('ó', 'o')
-        .replace(/[\s\-]/g, '') // Remove espaços e hífens
-        .replace(/\./g, '') // Remove pontos
-        .trim(); 
+               .toLowerCase()
+               .normalize("NFD")
+               .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+               .replace(/[\s\-]/g, '') // Remove espaços e hífens
+               .replace(/\./g, '') // Remove pontos
+               .trim(); 
        }
 
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
