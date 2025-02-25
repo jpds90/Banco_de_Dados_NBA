@@ -1051,7 +1051,7 @@ app.get('/ambas', async (req, res) => {
 
 
 
-app.get('/golsemcasa', async (req, res) => {
+app.get('/golsemcasa20', async (req, res) => {
     try {
         const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
@@ -1174,7 +1174,7 @@ app.get('/golsemcasa', async (req, res) => {
 });
 
 
-app.get('/golsemcasa100', async (req, res) => {
+app.get('/golsemcasa', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
