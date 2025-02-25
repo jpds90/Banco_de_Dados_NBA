@@ -1612,10 +1612,16 @@ app.get("/ultimos10jogos", async (req, res) => {
        console.log(`🏠 Time 1 consultado: ${timeHome}`);
        console.log(`🚀 Time 2 consultado: ${timeAway}`);
 
+       console.log(`🏠 Time 1 Normalizado: ${timeHomeNormalizado}`);
+       console.log(`🚀 Time 2 Normalizado: ${timeAwayNormalizado}`);
+
        // Buscar os últimos 5 jogos do timeHome dentro de casa
        const jogosHome = await buscarJogos(timeHome, true);
        // Buscar os últimos 5 jogos do timeAway fora de casa
        const jogosAway = await buscarJogos(timeAway, false);
+
+       console.log(`🏠 Jogos 1 : ${jogosHome}`);
+       console.log(`🚀 Jogos 2 : ${jogosAway}`);
 
        let jogos = [...jogosHome, ...jogosAway];
        console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
@@ -1624,6 +1630,9 @@ app.get("/ultimos10jogos", async (req, res) => {
        const jogosHomeFormatados = processarJogos(jogosHome, timeHome);
        const jogosAwayFormatados = processarJogos(jogosAway, timeAway);
 
+       console.log(`🏠 Jogos Formatado 1 : ${jogosHomeFormatados}`);
+       console.log(`🚀 Jogos Formatado 2 : ${jogosAwayFormatados}`);
+     
        // 🏆 Formatar os resultados como "VVDED" para os últimos 5 jogos
        const { resultadosHome, resultadosAway } = formatarResultados([...jogosHomeFormatados, ...jogosAwayFormatados], timeHome);
 
@@ -1686,12 +1695,16 @@ function normalizarNomeTime(nome) {
 const processarJogos = (jogos, team) => {
     const teamNormalizado = normalizarNomeTime(team);
 
+       console.log(`🏠 Team NormalizadoII 1 : ${teamNormalizado}`);
     return jogos.map(row => {
         const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
 
         // Normaliza os nomes dos times
         const timehomeNormalizado = normalizarNomeTime(timehome);
         const timeawayNormalizado = normalizarNomeTime(timeaway);
+
+       console.log(`🏠 Jogos NormalizadoII 1 : ${timehomeNormalizado}`);
+       console.log(`🚀 Jogos NormalizadoII 2 : ${timeawayNormalizado}`);
 
         // Definir o status do jogo para o time pesquisado
         let resultado = "🤝"; // Padrão é empate
