@@ -838,45 +838,43 @@ app.get('/golsemcasa1', async (req, res) => {
 
        function normalizarNomeTime(nome) {
            return nome
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-                .replace(/[\s\-]/g, '') // Remove espaços e hífens
-                .replace(/\./g, '') // Remove pontos
-                .trim();
+               .toLowerCase()
+               .normalize("NFD")
+               .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+               .replace(/[\s\-]/g, '') // Remove espaços e hífens
+               .replace(/\./g, '') // Remove pontos
+               .trim(); 
        }
 
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
 
-       console.log(`📌 Time da casa recebido (original): ${timeHome}`);
-       console.log(`📌 Time visitante recebido (original): ${timeAway}`);
-       console.log(`📌 Time da casa normalizado: ${timeHomeNormalizado}`);
-       console.log(`📌 Time visitante normalizado: ${timeAwayNormalizado}`);
-       console.log(`🔍 Filtro de gol (threshold): ${threshold}`);
+       console.log(`📌 Time da casa: ${timeHome} (Normalizado: ${timeHomeNormalizado})`);
+       console.log(`📌 Time visitante: ${timeAway} (Normalizado: ${timeAwayNormalizado})`);
 
        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       console.log(`📌 Tabela do time da casa: ${homeTable}`);
-       console.log(`📌 Tabela do time visitante: ${awayTable}`);
+
+       console.log(`📌 Tabela timeHome: ${homeTable}`);
+       console.log(`📌 Tabela timeAway: ${awayTable}`);
 
        const tablesResult = await pool.query(
-           `SELECT table_name FROM information_schema.tables 
-            WHERE table_name = $1 OR table_name = $2`,
+           `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
            [homeTable, awayTable]
        );
 
        console.log("🔎 Tabelas encontradas:", tablesResult.rows);
 
-       const tableNames = tablesResult.rows.map(row => row.table_name);
-       let homeGamesScored = 0;
-       let awayGamesScored = 0;
+       let homeGoals = [];
+       let awayGoals = [];
 
-       if (tableNames.includes(homeTable)) {
-           console.log(`📄 Consultando dados para a tabela: ${homeTable}`);
-           const homeScoresResult = await pool.query(
-               `SELECT timehome, resultadohome FROM ${homeTable} 
-                WHERE unaccent(timehome) ILIKE unaccent($1)
+       if (tablesResult.rows.some(row => row.table_name === homeTable)) {
+           console.log(`📄 Buscando jogos de ${timeHome} como mandante na tabela: ${homeTable}`);
+
+           const homeScoresResult = await pool.query(`
+               SELECT resultadohome 
+               FROM ${homeTable} 
+               WHERE unaccent(timehome) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -888,20 +886,21 @@ app.get('/golsemcasa1', async (req, res) => {
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-               LIMIT 10`,
-               [timeHomeNormalizado]
-           );
+               LIMIT 10
+           `, [timeHome]);
 
-           console.log("📊 Resultados do time da casa:", homeScoresResult.rows);
+           console.log("📊 Resultados timeHome (como mandante):", homeScoresResult.rows);
 
-           homeGamesScored = homeScoresResult.rows.filter(row => parseInt(row.resultadohome, 10) > 0).length;
+           homeGoals = homeScoresResult.rows.filter(row => parseInt(row.resultadohome, 10) > 0).length;
        }
 
-       if (tableNames.includes(awayTable)) {
-           console.log(`📄 Consultando dados para a tabela: ${awayTable}`);
-           const awayScoresResult = await pool.query(
-               `SELECT timeaway, resultadoaway FROM ${awayTable} 
-                WHERE unaccent(timeaway) ILIKE unaccent($1)
+       if (tablesResult.rows.some(row => row.table_name === awayTable)) {
+           console.log(`📄 Buscando jogos de ${timeAway} como visitante na tabela: ${awayTable}`);
+
+           const awayScoresResult = await pool.query(`
+               SELECT resultadoaway 
+               FROM ${awayTable} 
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -913,27 +912,29 @@ app.get('/golsemcasa1', async (req, res) => {
                      WHEN data_hora LIKE '__.__.____ __:__' THEN 
                          TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
                  END DESC
-               LIMIT 10`,
-               [timeAwayNormalizado]
-           );
+               LIMIT 10
+           `, [timeAway]);
 
-           console.log("📊 Resultados do time visitante:", awayScoresResult.rows);
+           console.log("📊 Resultados timeAway (como visitante):", awayScoresResult.rows);
 
-           awayGamesScored = awayScoresResult.rows.filter(row => parseInt(row.resultadoaway, 10) > 0).length;
+           awayGoals = awayScoresResult.rows.filter(row => parseInt(row.resultadoaway, 10) > 0).length;
        }
+
 
        console.log("✅ Resumo final:", {
            time_home: timeHome,
            time_away: timeAway,
-           home_games_scored: homeGamesScored,
-           away_games_scored: awayGamesScored
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg
        });
 
        res.json({
            time_home: timeHome,
            time_away: timeAway,
-           home_games_scored: homeGamesScored,
-           away_games_scored: awayGamesScored
+           home_avg: homeAvg,
+           away_avg: awayAvg,
+           total_pontos: homeAvg + awayAvg
        });
 
    } catch (error) {
