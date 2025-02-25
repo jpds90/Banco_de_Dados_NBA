@@ -1793,7 +1793,7 @@ function normalizarNomeTime(nome) {
 });
 
 // Função para buscar os jogos do time no banco de dados
-const buscarJogos = async (team) => {
+const buscarJogos2 = async (team) => {
    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
    console.log(`🔍 Consultando a tabela: ${table}`); 
 
@@ -1833,7 +1833,7 @@ function normalizarNomeTime(nome) {
 }
 
 // Função para processar os jogos e determinar os resultados
-const processarJogos = (jogos, team) => {
+const processarJogos2 = (jogos, team) => {
     const teamNormalizado = normalizarNomeTime(team); // Normaliza o nome do time pesquisado
 
     return jogos.map(row => {
