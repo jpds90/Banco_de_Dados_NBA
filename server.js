@@ -1563,7 +1563,7 @@ const processarJogos = (jogos, team) => {
         const timeawayNormalizado = timeaway.toLowerCase();
 
         // Definir o status do jogo para o time pesquisado
-        //let resultado = "Empate";
+        let resultado = "Empate";
         if (teamNormalizado === timehomeNormalizado) {
             // O time pesquisado jogou como mandante
             if (resultadohome > resultadoaway) resultado = `${team} ✅`; // Vitória do mandante
@@ -1572,15 +1572,7 @@ const processarJogos = (jogos, team) => {
             // O time pesquisado jogou como visitante
             if (resultadoaway > resultadohome) resultado = `${team} ✅`; // Vitória do visitante
             else if (resultadoaway < resultadohome) resultado = `${team} ❌`; // Derrota do visitante
-        } else if (teamNormalizado === timeawayNormalizado) {
-            // O time pesquisado jogou como visitante
-            if (resultadoaway = resultadohome) resultado = `${team} 🔄 `; // Vitória do visitante            
-          else if (resultadoaway = resultadohome) resultado = `${team} 🔄`; // Derrota do visitante
-        } else if (teamNormalizado === timehomeNormalizado) {
-            // O time pesquisado jogou como mandante
-            if (resultadohome = resultadoaway) resultado = `${team} 🔄`; // Vitória do mandante
-            else if (resultadohome = resultadoaway) resultado = `${team} 🔄`; // Derrota do mandante
-        }
+        } 
         // Processar data e hora corretamente
         const [data, hora] = data_hora.split(" ");
         const dataFormatada = data.replace(/\./g, "/");
