@@ -116,24 +116,43 @@ o<!DOCTYPE html>
     </thead>
     <tbody id="goalResultsTable"></tbody>
 </table>
+<div style="display: flex; gap: 20px;">
+    <div>
+        <h2>Probabilidade de Vitória</h2>
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>Time Casa</th>
+                        <th>Chance Vitória Casa</th>
+                        <th>Time Fora</th>
+                        <th>Chance Vitória Fora</th>
+                    </tr>
+                </thead>
+                <tbody id="winProbabilityTable">
+                    <!-- Aqui serão inseridos os resultados dinamicamente -->
+                </tbody>
+        </table>
+    </div>
 
-<h2>Probabilidade de Vitória</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Time Casa</th>
-                <th>Chance Vitória Casa</th>
-                <th>Time Fora</th>
-                <th>Chance Vitória Fora</th>
-            </tr>
-        </thead>
-        <tbody id="winProbabilityTable">
-            <!-- Aqui serão inseridos os resultados dinamicamente -->
-        </tbody>
-    </table>
-        
+    <div>
+        <h2>Amnbas ou +1,5 Gols</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Casa</th>
+                    <th>Visitante</th>
+                    <th>%</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="goalAveragesTableambas"></tbody>
+        </table>
+    </div>
+</div>
+<div style="display: flex; gap: 20px;">
+    <div>
         <h2>Média de Gols Feitos</h2>
-        <table>
+        <table border="1">
             <thead>
                 <tr>
                     <th>Casa</th>
@@ -144,9 +163,11 @@ o<!DOCTYPE html>
             </thead>
             <tbody id="goalAveragesTable"></tbody>
         </table>
+    </div>
 
+    <div>
         <h2>Média de Gols Sofridos</h2>
-        <table>
+        <table border="1">
             <thead>
                 <tr>
                     <th>Casa</th>
@@ -157,7 +178,8 @@ o<!DOCTYPE html>
             </thead>
             <tbody id="goalAveragesTablesofrido"></tbody>
         </table>
-
+    </div>
+</div>
         <h2>Confronto Direto</h2>
         <table id="headToHeadTable">
             <thead>
@@ -320,6 +342,7 @@ matchElement.addEventListener("click", function() {
     fetchHeadToHead(selectedTimeHome, selectedTimeAway);
     buscarMediasDeGols(selectedTimeHome, selectedTimeAway);
     buscarMediasDeGolssofrido(selectedTimeHome, selectedTimeAway);
+    buscarMediasDeGolsambas(selectedTimeHome, selectedTimeAway);
     fetchGoalData();
 });
 
@@ -455,6 +478,45 @@ async function fetchHeadToHead(timeHome, timeAway) {
             } catch (error) {
                 console.error("Erro ao buscar as médias de gols Sofridos:", error);
                 document.getElementById("goalAveragesTablesofrido").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados</td></tr>";
+            }
+        }
+        async function buscarMediasDeGolssambas(timeHome, timeAway) {
+    timeHome = formatarNomeTime(timeHome);
+    timeAway = formatarNomeTime(timeAway);
+
+            if (!timeHome || !timeAway) {
+                alert("Preencha os nomes dos times.");
+                return;
+            }
+
+            const url = `https://analise-jpnba.onrender.com/ambas?timeHome=${encodeURIComponent(timeHome)}&timeAway=${encodeURIComponent(timeAway)}`;
+            console.log(`🔍 URL da requisição: ${url}`);
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const tableBody = document.getElementById("goalAveragesTableambas");
+                tableBody.innerHTML = "";
+
+                // Se houver erro ou os dados estiverem vazios
+                if (!data || Object.keys(data).length === 0 || data.error) {
+                    tableBody.innerHTML = "<tr><td colspan='5'>Nenhum dado encontrado Ambas Marcam</td></tr>";
+                    return;
+                }
+
+                // Criar uma única linha na tabela
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${data.time_home}</td>
+                    <td>${data.time_away}</td>
+                    <td>${data.porcentagem}</td>
+                    <td>${data.status}</td>
+                `;
+                tableBody.appendChild(row);
+                
+            } catch (error) {
+                console.error("Erro ao buscar Ambas ou +1,5 Gols:", error);
+                document.getElementById("goalAveragesTableambas").innerHTML = "<tr><td colspan='5'>Erro ao carregar os dados Ambas Marcam</td></tr>";
             }
         }
 
