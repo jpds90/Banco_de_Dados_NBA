@@ -943,7 +943,7 @@ app.get('/ambasmarcam', async (req, res) => {
    }
 });
 
-app.get('/golsemcasa1', async (req, res) => {
+app.get('/ambas', async (req, res) => {
    try {
        const { timeHome, timeAway } = req.query;
 
