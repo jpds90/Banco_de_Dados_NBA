@@ -924,17 +924,17 @@ app.get('/golsemcasa1', async (req, res) => {
        console.log("✅ Resumo final:", {
            time_home: timeHome,
            time_away: timeAway,
-           home_avg: homeAvg,
-           away_avg: awayAvg,
-           total_pontos: homeAvg + awayAvg
+           home_avg: homeGoals,
+           away_avg: awayGoals,
+           total_pontos: homeGoals + awayGoals
        });
 
        res.json({
            time_home: timeHome,
            time_away: timeAway,
-           home_avg: homeAvg,
-           away_avg: awayAvg,
-           total_pontos: homeAvg + awayAvg
+           home_avg: homeGoals,
+           away_avg: awayGoals,
+           total_pontos: homeGoals + awayGoals
        });
 
    } catch (error) {
