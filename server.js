@@ -1633,19 +1633,22 @@ function normalizarNomeTime(nome) {
        let jogos = [...jogosHome, ...jogosAway];
        console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
 
-       // Processar os jogos corretamente, garantindo que não haja erros com times sem registros
-       const jogosFormatados = [
-           ...(jogosHome.length ? processarJogos(jogosHome, timeHome) : []),
-           ...(jogosAway.length ? processarJogos(jogosAway, timeAway) : [])
-       ];
+       // Processar os jogos corretamente
+       const jogosHomeFormatados = processarJogos(jogosHome, timeHome);
+       const jogosAwayFormatados = processarJogos(jogosAway, timeAway);
 
-       // Ordenar os jogos pela data mais recente primeiro
-       const jogosOrdenados = jogosFormatados.sort((a, b) => {
-           return new Date(b.data_hora + " " + b.hora) - new Date(a.data_hora + " " + a.hora);
+       // 🏆 Formatar os resultados como "VVDED" para os últimos 5 jogos
+       const { resultadosHome, resultadosAway } = formatarResultados([...jogosHomeFormatados, ...jogosAwayFormatados], timeHome);
+
+       console.log(`🏠 Timehome dentro de casa: ${resultadosHome}`);
+       console.log(`🚀 TimeAway fora de casa: ${resultadosAway}`);
+
+       // Enviar a resposta JSON com os resultados formatados
+       res.json({
+           timeHome: resultadosHome,
+           timeAway: resultadosAway
        });
 
-       console.log("📢 Jogos processados finalizados:", jogosOrdenados);
-       res.json(jogosOrdenados);
    } catch (error) {
        console.error("🔥 Erro ao processar os dados:", error);
        res.status(500).send("Erro no servidor");
@@ -1669,7 +1672,7 @@ console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Ve
            FROM ${table} 
            WHERE (unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1))
            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-           LIMIT 10
+           LIMIT 5
        `;
 
        console.log(`📄 Executando query para ${table}: ${querySQL}`);
