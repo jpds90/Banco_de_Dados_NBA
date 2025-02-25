@@ -1563,7 +1563,7 @@ const processarJogos = (jogos, team) => {
         const timeawayNormalizado = timeaway.toLowerCase();
 
         // Definir o status do jogo para o time pesquisado
-        let resultado = "Empate";
+        //let resultado = "Empate";
         if (teamNormalizado === timehomeNormalizado) {
             // O time pesquisado jogou como mandante
             if (resultadohome > resultadoaway) resultado = `${team} ✅`; // Vitória do mandante
