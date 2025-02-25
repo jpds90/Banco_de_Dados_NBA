@@ -1605,12 +1605,10 @@ app.get("/ultimos10jogos", async (req, res) => {
            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
        }
 
-       // 🔄 Normaliza os nomes dos times da requisição
-       const timeHomeNormalizado = normalizarNomeTime(timeHome);
-       const timeAwayNormalizado = normalizarNomeTime(timeAway);
-
-       console.log(`🏠 Time 1 consultado: ${timeHome}`);
-       console.log(`🚀 Time 2 consultado: ${timeAway}`);
+       // Normaliza os nomes dos times da requisição
+       console.log(`🔍 Time 1 consultado: ${timeHome}`);
+       console.log(`🔍 Time 2 consultado: ${timeAway}`);
+       console.log(`🔍 Time normalizado: ${normalizarNomeTime(timeHome)}`);
 
        // Buscar os últimos 5 jogos do timeHome dentro de casa
        const jogosHome = await buscarJogos(timeHome, true);
@@ -1644,35 +1642,35 @@ app.get("/ultimos10jogos", async (req, res) => {
 
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team, isHome) => {
-    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-    console.log(`🔍 Consultando a tabela: ${table}`); 
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '') + "_futebol";
+   console.log(`🔍 Consultando a tabela: ${table}`); 
 
-    const tablesResult = await pool.query(
-        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
-        [table]
-    );
-    
-    console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);
+   const tablesResult = await pool.query(
+       `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
+       [table]
+   );
+   console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Verifica o resultado da consulta
 
-    if (tablesResult.rows.length > 0) {
-        const colunaFiltro = isHome ? "timehome" : "timeaway"; // Define a coluna correta
+   if (tablesResult.rows.length > 0) {
+       const colunaFiltro = isHome ? "timehome" : "timeaway"; // Ajusta o filtro dependendo de ser "dentro" ou "fora de casa"
+       
+       const querySQL = `
+           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+           FROM ${table} 
+           WHERE unaccent(${colunaFiltro}) ILIKE unaccent($1)
+           ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+           LIMIT 5
+       `;
 
-        const querySQL = `
-            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
-            FROM ${table} 
-            WHERE unaccent(${colunaFiltro}) ILIKE unaccent($1)
-            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-            LIMIT 5
-        `;
+       console.log(`📄 Executando query para ${table}:`, querySQL);
+       const jogosResult = await pool.query(querySQL, [normalizarNomeTime(team)]);
+       console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
+       return jogosResult.rows;
+   }
 
-        console.log(`📄 Executando query para ${table}: ${querySQL}`);
-        const jogosResult = await pool.query(querySQL, [normalizarNomeTime(team)]);
-        console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
-        return jogosResult.rows;
-    }
-
-    return [];
+   return [];
 };
+
 
 
 // Função para normalizar os nomes dos times
