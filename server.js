@@ -1605,35 +1605,47 @@ app.get("/ultimos10jogos", async (req, res) => {
            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
        }
 
-       // Normaliza os nomes dos times da requisição
-       console.log(`🔍 Time 1 consultado: ${timeHome}`);
-       console.log(`🔍 Time 2 consultado: ${timeAway}`);
-       console.log(`🔍 Time normalizado: ${normalizarNomeTime(timeHome)}`);
+       // 🔄 Função para normalizar os nomes dos times
+function normalizarNomeTime(nome) {
+    return nome
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
+        .replace(/[\s\-]/g, '') // Remove espaços e hífens
+        .replace(/\./g, '') // Remove pontos
+        .trim(); 
+}
 
-       // Buscar os últimos 5 jogos do timeHome dentro de casa
-       const jogosHome = await buscarJogos(timeHome, true);
-       // Buscar os últimos 5 jogos do timeAway fora de casa
-       const jogosAway = await buscarJogos(timeAway, false);
+
+       // 🔄 Normaliza os nomes dos times da requisição
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       console.log(`🏠 Time 1 consultado: ${timeHome}`);
+       console.log(`🚀 Time 2 consultado: ${timeAway}`);
+
+       // Buscar os jogos dos dois times (mandante e visitante)
+       const jogosHome = await buscarJogos(timeHome);
+       const jogosAway = await buscarJogos(timeAway);
 
        let jogos = [...jogosHome, ...jogosAway];
        console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
 
-       // Processar os jogos corretamente
-       const jogosHomeFormatados = processarJogos(jogosHome, timeHome);
-       const jogosAwayFormatados = processarJogos(jogosAway, timeAway);
+       // Processar os jogos corretamente, garantindo que não haja erros com times sem registros
+       const jogosFormatados = [
+           ...(jogosHome.length ? processarJogos(jogosHome, timeHome) : []),
+           ...(jogosAway.length ? processarJogos(jogosAway, timeAway) : [])
+       ];
 
-       // 🏆 Formatar os resultados como "VVDED" para os últimos 5 jogos
-       const { resultadosHome, resultadosAway } = formatarResultados([...jogosHomeFormatados, ...jogosAwayFormatados], timeHome);
-
-       console.log(`🏠 Timehome dentro de casa: ${resultadosHome}`);
-       console.log(`🚀 TimeAway fora de casa: ${resultadosAway}`);
-
-       // Enviar a resposta JSON com os resultados formatados
-       res.json({
-           timeHome: resultadosHome,
-           timeAway: resultadosAway
+       // Ordenar os jogos pela data mais recente primeiro
+       const jogosOrdenados = jogosFormatados.sort((a, b) => {
+           return new Date(b.data_hora + " " + b.hora) - new Date(a.data_hora + " " + a.hora);
        });
 
+       console.log("📢 Jogos processados finalizados:", jogosOrdenados);
+       res.json(jogosOrdenados);
    } catch (error) {
        console.error("🔥 Erro ao processar os dados:", error);
        res.status(500).send("Erro no servidor");
@@ -1641,36 +1653,33 @@ app.get("/ultimos10jogos", async (req, res) => {
 });
 
 // Função para buscar os jogos do time no banco de dados
-const buscarJogos = async (team, isHome) => {
-   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '') + "_futebol";
+const buscarJogos = async (team) => {
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
    console.log(`🔍 Consultando a tabela: ${table}`); 
 
    const tablesResult = await pool.query(
        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
        [table]
    );
-   console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Verifica o resultado da consulta
+console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Verifica o resultado da consulta
 
    if (tablesResult.rows.length > 0) {
-       const colunaFiltro = isHome ? "timehome" : "timeaway"; // Ajusta o filtro dependendo de ser "dentro" ou "fora de casa"
-       
        const querySQL = `
            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
            FROM ${table} 
-           WHERE unaccent(${colunaFiltro}) ILIKE unaccent($1)
+           WHERE (unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1))
            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-           LIMIT 5
+           LIMIT 10
        `;
 
-       console.log(`📄 Executando query para ${table}:`, querySQL);
-       const jogosResult = await pool.query(querySQL, [normalizarNomeTime(team)]);
+       console.log(`📄 Executando query para ${table}: ${querySQL}`);
+       const jogosResult = await pool.query(querySQL, [team]);
        console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
        return jogosResult.rows;
    }
 
    return [];
 };
-
 
 
 // Função para normalizar os nomes dos times
