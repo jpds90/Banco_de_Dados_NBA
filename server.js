@@ -1643,33 +1643,37 @@ app.get("/ultimos10jogos", async (req, res) => {
 });
 
 // Função para buscar os jogos do time no banco de dados
-const buscarJogos = async (team) => {
-   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-   console.log(`🔍 Consultando a tabela: ${table}`); 
+const buscarJogos = async (team, isHome) => {
+    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+    console.log(`🔍 Consultando a tabela: ${table}`); 
 
-   const tablesResult = await pool.query(
-       `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
-       [table]
-   );
-console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Verifica o resultado da consulta
+    const tablesResult = await pool.query(
+        `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
+        [table]
+    );
+    
+    console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);
 
-   if (tablesResult.rows.length > 0) {
-       const querySQL = `
-           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
-           FROM ${table} 
-           WHERE (unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1))
-           ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
-           LIMIT 5
-       `;
+    if (tablesResult.rows.length > 0) {
+        const colunaFiltro = isHome ? "timehome" : "timeaway"; // Define a coluna correta
 
-       console.log(`📄 Executando query para ${table}: ${querySQL}`);
-       const jogosResult = await pool.query(querySQL, [team]);
-       console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
-       return jogosResult.rows;
-   }
+        const querySQL = `
+            SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+            FROM ${table} 
+            WHERE unaccent(${colunaFiltro}) ILIKE unaccent($1)
+            ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+            LIMIT 5
+        `;
 
-   return [];
+        console.log(`📄 Executando query para ${table}: ${querySQL}`);
+        const jogosResult = await pool.query(querySQL, [team]);
+        console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
+        return jogosResult.rows;
+    }
+
+    return [];
 };
+
 
 // Função para normalizar os nomes dos times
 function normalizarNomeTime(nome) {
