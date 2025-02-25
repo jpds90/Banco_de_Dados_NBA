@@ -1644,7 +1644,7 @@ app.get("/ultimos10jogos", async (req, res) => {
 
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team, isHome) => {
-   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '') + "_futebol";
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
    console.log(`🔍 Consultando a tabela: ${table}`);
 
    const tablesResult = await pool.query(
