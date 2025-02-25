@@ -1542,33 +1542,34 @@ console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Ve
 // Função para normalizar os nomes dos times
 function normalizarNomeTime(nome) {
     return nome
-        .normalize("NFD")
+        .normalize("NFD") 
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
         .replace('ã', 'a') // Substitui o 'ã' por 'a'
-        .replace('ó', 'o')
-        .replace(/[\s\-]/g, '') // Remove espaços e hífens
-        .replace(/\./g, '') // Remove pontos
-        .trim(); 
+        .replace('ó', 'o') // Substitui o 'ó' por 'o'
+        .replace(/[\s\-\.]/g, '') // Remove espaços, hífens e pontos
+        .trim()
+        .toLowerCase(); // Deixa tudo minúsculo
 }
 
 // Função para processar os jogos e determinar os resultados
 const processarJogos = (jogos, team) => {
+    const teamNormalizado = normalizarNomeTime(team); // Normaliza o nome do time pesquisado
+
     return jogos.map(row => {
         const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
 
         console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
 
-        // Normalizar o nome do time para evitar problemas de comparação (removendo acentos e deixando tudo minúsculo)
-        const teamNormalizado = team.toLowerCase();
-        const timehomeNormalizado = timehome.toLowerCase();
-        const timeawayNormalizado = timeaway.toLowerCase();
+        // Normaliza os nomes dos times
+        const timehomeNormalizado = normalizarNomeTime(timehome);
+        const timeawayNormalizado = normalizarNomeTime(timeaway);
 
-       console.log(`📌 Time da casa recebido: ${timehomeNormalizado}`);
-       console.log(`📌 Time visitante recebido: ${timeawayNormalizado}`);
-       console.log(`🔍 Team: ${teamNormalizado}`);
-      
+        console.log(`📌 Time da casa recebido: ${timehomeNormalizado}`);
+        console.log(`📌 Time visitante recebido: ${timeawayNormalizado}`);
+        console.log(`🔍 Team: ${teamNormalizado}`);
+
         // Definir o status do jogo para o time pesquisado
-        let resultado = "Empate";
+        let resultado = "Empate"; // Padrão é empate
         if (teamNormalizado === timehomeNormalizado) {
             // O time pesquisado jogou como mandante
             if (resultadohome > resultadoaway) resultado = `${team} ✅`; // Vitória do mandante
@@ -1577,7 +1578,8 @@ const processarJogos = (jogos, team) => {
             // O time pesquisado jogou como visitante
             if (resultadoaway > resultadohome) resultado = `${team} ✅`; // Vitória do visitante
             else if (resultadoaway < resultadohome) resultado = `${team} ❌`; // Derrota do visitante
-        } 
+        }
+
         // Processar data e hora corretamente
         const [data, hora] = data_hora.split(" ");
         const dataFormatada = data.replace(/\./g, "/");
@@ -1593,6 +1595,7 @@ const processarJogos = (jogos, team) => {
         };
     });
 };
+
 
 
 
