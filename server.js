@@ -347,7 +347,7 @@ app.get('/golsemcasa1',  async (req, res) => {
            const homeScoresResult = await pool.query(`
                SELECT resultadoaway 
                FROM ${homeTable} 
-               WHERE unaccent(timeaway) ILIKE unaccent($1)
+               WHERE unaccent(timehome) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
@@ -375,7 +375,7 @@ app.get('/golsemcasa1',  async (req, res) => {
            const awayScoresResult = await pool.query(`
                SELECT resultadohome 
                FROM ${awayTable} 
-               WHERE unaccent(timehome) ILIKE unaccent($1)
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY 
                  CASE
                      WHEN data_hora LIKE '__.__. __:__' THEN 1
