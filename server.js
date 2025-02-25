@@ -1552,7 +1552,7 @@ function normalizarNomeTime(nome) {
 }
 
 // Função para processar os jogos e determinar os resultados
-const processarJogos = (jogos, team) => {
+const processarJogos1 = (jogos, team) => {
     const teamNormalizado = normalizarNomeTime(team); // Normaliza o nome do time pesquisado
 
     return jogos.map(row => {
