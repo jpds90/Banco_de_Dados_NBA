@@ -827,6 +827,124 @@ const awayScores = awayScoresResult.rows
    }
 });
 
+
+app.get('/golsemcasa1', async (req, res) => {
+   try {
+       const { timeHome, timeAway, threshold = 0.5 } = req.query;
+
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
+
+       function normalizarNomeTime(nome) {
+           return nome
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                .replace(/[\s\-]/g, '') // Remove espaços e hífens
+                .replace(/\./g, '') // Remove pontos
+                .trim();
+       }
+
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       console.log(`📌 Time da casa recebido (original): ${timeHome}`);
+       console.log(`📌 Time visitante recebido (original): ${timeAway}`);
+       console.log(`📌 Time da casa normalizado: ${timeHomeNormalizado}`);
+       console.log(`📌 Time visitante normalizado: ${timeAwayNormalizado}`);
+       console.log(`🔍 Filtro de gol (threshold): ${threshold}`);
+
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       console.log(`📌 Tabela do time da casa: ${homeTable}`);
+       console.log(`📌 Tabela do time visitante: ${awayTable}`);
+
+       const tablesResult = await pool.query(
+           `SELECT table_name FROM information_schema.tables 
+            WHERE table_name = $1 OR table_name = $2`,
+           [homeTable, awayTable]
+       );
+
+       console.log("🔎 Tabelas encontradas:", tablesResult.rows);
+
+       const tableNames = tablesResult.rows.map(row => row.table_name);
+       let homeGamesScored = 0;
+       let awayGamesScored = 0;
+
+       if (tableNames.includes(homeTable)) {
+           console.log(`📄 Consultando dados para a tabela: ${homeTable}`);
+           const homeScoresResult = await pool.query(
+               `SELECT timehome, resultadohome FROM ${homeTable} 
+                WHERE unaccent(timehome) ILIKE unaccent($1)
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+               LIMIT 10`,
+               [timeHomeNormalizado]
+           );
+
+           console.log("📊 Resultados do time da casa:", homeScoresResult.rows);
+
+           homeGamesScored = homeScoresResult.rows.filter(row => parseInt(row.resultadohome, 10) > 0).length;
+       }
+
+       if (tableNames.includes(awayTable)) {
+           console.log(`📄 Consultando dados para a tabela: ${awayTable}`);
+           const awayScoresResult = await pool.query(
+               `SELECT timeaway, resultadoaway FROM ${awayTable} 
+                WHERE unaccent(timeaway) ILIKE unaccent($1)
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
+               LIMIT 10`,
+               [timeAwayNormalizado]
+           );
+
+           console.log("📊 Resultados do time visitante:", awayScoresResult.rows);
+
+           awayGamesScored = awayScoresResult.rows.filter(row => parseInt(row.resultadoaway, 10) > 0).length;
+       }
+
+       console.log("✅ Resumo final:", {
+           time_home: timeHome,
+           time_away: timeAway,
+           home_games_scored: homeGamesScored,
+           away_games_scored: awayGamesScored
+       });
+
+       res.json({
+           time_home: timeHome,
+           time_away: timeAway,
+           home_games_scored: homeGamesScored,
+           away_games_scored: awayGamesScored
+       });
+
+   } catch (error) {
+       console.error('❌ Erro ao processar os dados:', error);
+       res.status(500).json({ error: 'Erro no servidor' });
+   }
+});
+
+
+
+
 app.get('/golsemcasa', async (req, res) => {
     try {
         const { timeHome, timeAway, threshold = 0.5 } = req.query;
@@ -950,7 +1068,7 @@ app.get('/golsemcasa', async (req, res) => {
 });
 
 
-app.get('/golsemcasa1', async (req, res) => {
+app.get('/golsemcasa100', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
