@@ -1674,6 +1674,8 @@ function normalizarNomeTime(nome) {
     return nome
         .normalize("NFD") 
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o') // Substitui o 'ó' por 'o'
         .replace(/[\s\-\.]/g, '') // Remove espaços, hífens e pontos
         .trim()
         .toLowerCase(); // Deixa tudo minúsculo
@@ -1681,14 +1683,20 @@ function normalizarNomeTime(nome) {
 
 // Função para processar os jogos e determinar os resultados
 const processarJogos = (jogos, team) => {
-    const teamNormalizado = normalizarNomeTime(team);
+    const teamNormalizado = normalizarNomeTime(team); // Normaliza o nome do time pesquisado
 
     return jogos.map(row => {
         const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
 
+        console.log(`🔄 Processando jogo: ${timehome} vs ${timeaway}, Resultado: ${resultadohome} - ${resultadoaway}, Data: ${data_hora}`);
+
         // Normaliza os nomes dos times
         const timehomeNormalizado = normalizarNomeTime(timehome);
         const timeawayNormalizado = normalizarNomeTime(timeaway);
+
+        console.log(`📌 Time da casa recebido: ${timehomeNormalizado}`);
+        console.log(`📌 Time visitante recebido: ${timeawayNormalizado}`);
+        console.log(`🔍 Team: ${teamNormalizado}`);
 
         // Definir o status do jogo para o time pesquisado
         let resultado = "🤝"; // Padrão é empate
@@ -1700,7 +1708,7 @@ const processarJogos = (jogos, team) => {
             else if (resultadoaway < resultadohome) resultado = "❌"; // Derrota do visitante
         }
 
-        // Processar data corretamente
+        // Processar data e hora corretamente
         const [data, hora] = data_hora.split(" ");
         const dataFormatada = data.replace(/\./g, "/");
 
@@ -1711,7 +1719,7 @@ const processarJogos = (jogos, team) => {
             resultadohome,
             timeaway,
             resultadoaway,
-            resultado
+            resultado // Indica vitória, derrota ou empate do time pesquisado
         };
     });
 };
