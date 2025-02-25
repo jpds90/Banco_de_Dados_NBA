@@ -1569,7 +1569,7 @@ const processarJogos = (jogos, team) => {
         console.log(`🔍 Team: ${teamNormalizado}`);
 
         // Definir o status do jogo para o time pesquisado
-        let resultado = "Empate"; // Padrão é empate
+        let resultado = "🤝 Empate"; // Padrão é empate
         if (teamNormalizado === timehomeNormalizado) {
             // O time pesquisado jogou como mandante
             if (resultadohome > resultadoaway) resultado = `${team} ✅`; // Vitória do mandante
