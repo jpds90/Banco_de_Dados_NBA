@@ -10,6 +10,7 @@ o<!DOCTYPE html>
             margin: 0;
             padding: 0;
             background-color: #f5f5f5;
+            text-align: center; /* Centraliza os títulos */
         }
 
         header {
@@ -22,33 +23,27 @@ o<!DOCTYPE html>
 
         .container {
             width: 90%;
-            max-width: 800px;
+            max-width: 900px;
             margin: 20px auto;
             background: white;
             padding: 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
         }
 
-        .bet-options {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-        }
-
-        .bet {
-            background: #2f4f2f;
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 18px;
+        h2 {
             text-align: center;
-            width: 30%;
+            margin-top: 20px;
+            color: #2f4f2f;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
         }
 
         th, td {
@@ -62,23 +57,36 @@ o<!DOCTYPE html>
             color: white;
         }
 
-        select, button {
-            padding: 10px;
-            margin-top: 10px;
-            width: 100%;
-            font-size: 16px;
-        }
-
-        /* Estilo para colocar as tabelas lado a lado */
+        /* Estrutura para colocar as tabelas lado a lado */
         .last-matches {
             display: flex;
-            justify-content: space-between;
+            flex-wrap: wrap; /* Permite quebrar em telas menores */
+            justify-content: center;
             gap: 20px;
+            margin-top: 20px;
         }
 
         .team-table {
-            width: 48%;  /* Largura ajustada para caber lado a lado */
+            width: 45%; /* Mantém duas tabelas lado a lado */
+            min-width: 300px; /* Garante tamanho adequado em telas pequenas */
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .last-matches {
+                flex-direction: column; /* Empilha as tabelas em telas menores */
+                align-items: center;
+            }
+
+            .team-table {
+                width: 100%; /* Ocupa a tela toda no celular */
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -193,11 +201,10 @@ o<!DOCTYPE html>
             </thead>
             <tbody></tbody>
         </table>
-<h2>Últimos 5 Jogos</h2>
-<!-- Estrutura para mostrar tabelas lado a lado -->
+<h2>Últimos 5 Jogos </h2>
 <div class="last-matches">
     <div class="team-table">
-        <h3 id="teamHomeName"></h3> <!-- Nome do primeiro time -->
+        <h3 id="teamHomeName5"></h3> <!-- Nome do primeiro time -->
         <table id="teamHomeTable5">
             <thead>
                 <tr>
@@ -205,13 +212,12 @@ o<!DOCTYPE html>
                 </tr>
             </thead>
             <tbody>
-                <!-- Preencher com dados dos jogos do time mandante -->
             </tbody>
         </table>
     </div>
 
     <div class="team-table">
-        <h3 id="teamAwayName"></h3> <!-- Nome do segundo time -->
+        <h3 id="teamAwayName5"></h3> <!-- Nome do segundo time -->
         <table id="teamAwayTable5">
             <thead>
                 <tr>
@@ -226,7 +232,7 @@ o<!DOCTYPE html>
 </div>
 
 
-<h2>Últimos 5 Jogos</h2>
+<h2>Últimos 5 Jogos Geral</h2>
 <!-- Estrutura para mostrar tabelas lado a lado -->
 <div class="last-matches">
     <div class="team-table">
@@ -635,8 +641,8 @@ async function fetchLast5Matches(timeHome, timeAway) {
         }
 
         // Atualiza os nomes dos times no HTML
-        document.getElementById("teamHomeName").textContent = data.timeHome.nome;
-        document.getElementById("teamAwayName").textContent = data.timeAway.nome;
+        document.getElementById("teamHomeName5").textContent = data.timeHome.nome;
+        document.getElementById("teamAwayName5").textContent = data.timeAway.nome;
 
         // Preencher a tabela dos últimos 5 jogos em casa
         preencherTabela("teamHomeTable5", data.timeHome.desempenho_casa);
