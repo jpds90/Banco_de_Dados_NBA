@@ -1714,12 +1714,12 @@ const processarJogos = (jogos, team) => {
         let resultado = "🤝"; // Padrão é empate
         if (teamNormalizado === timehomeNormalizado) {
             // O time pesquisado jogou como mandante
-            if (resultadohome > resultadoaway) resultado = `${team} ✅`; // Vitória do mandante
-            else if (resultadohome < resultadoaway) resultado = `${team} ❌`; // Derrota do mandante
+            if (resultadohome > resultadoaway) resultado = "✅"; // Vitória do mandante
+            else if (resultadohome < resultadoaway) resultado = "❌"; // Derrota do mandante
         } else if (teamNormalizado === timeawayNormalizado) {
             // O time pesquisado jogou como visitante
-            if (resultadoaway > resultadohome) resultado = `${team} ✅`; // Vitória do visitante
-            else if (resultadoaway < resultadohome) resultado = `${team} ❌`; // Derrota do visitante
+            if (resultadoaway > resultadohome) resultado = "✅"; // Vitória do visitante
+            else if (resultadoaway < resultadohome) resultado = "❌"; // Derrota do visitante
         }
 
         // Processar data e hora corretamente
