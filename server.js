@@ -1542,12 +1542,13 @@ console.log(`📂 Resultado da consulta de tabelas:`, tablesResult.rows);  // Ve
 // Função para normalizar os nomes dos times
 function normalizarNomeTime(nome) {
     return nome
-        .normalize("NFD") // Separa os acentos
+        .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace('ã', 'a') // Substitui o 'ã' por 'a'
+        .replace('ó', 'o')
         .replace(/[\s\-]/g, '') // Remove espaços e hífens
         .replace(/\./g, '') // Remove pontos
-        .trim()
-        .toLowerCase();
+        .trim(); 
 }
 
 // Função para processar os jogos e determinar os resultados
@@ -1562,6 +1563,10 @@ const processarJogos = (jogos, team) => {
         const timehomeNormalizado = timehome.toLowerCase();
         const timeawayNormalizado = timeaway.toLowerCase();
 
+       console.log(`📌 Time da casa recebido: ${timehomeNormalizado}`);
+       console.log(`📌 Time visitante recebido: ${timeawayNormalizado}`);
+       console.log(`🔍 Team: ${teamNormalizado}`);
+      
         // Definir o status do jogo para o time pesquisado
         let resultado = "Empate";
         if (teamNormalizado === timehomeNormalizado) {
