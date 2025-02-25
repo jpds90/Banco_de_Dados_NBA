@@ -1597,60 +1597,84 @@ const processarJogos1 = (jogos, team) => {
 };
 
 app.get("/ultimos10jogos", async (req, res) => {
-   try {
-       const timeHome = req.query.timeHome;
-       const timeAway = req.query.timeAway;
+    try {
+        const timeHome = req.query.timeHome;
+        const timeAway = req.query.timeAway;
 
-       if (!timeHome || !timeAway) {
-           return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
-       }
+        if (!timeHome || !timeAway) {
+            return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+        }
 
-       // 🔄 Normaliza os nomes dos times da requisição
-       const timeHomeNormalizado = normalizarNomeTime(timeHome);
-       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+        console.log(`🏠 Timehome consultado: ${timeHome}`);
+        console.log(`🚀 Timeaway consultado: ${timeAway}`);
 
-       console.log(`🏠 Time 1 consultado: ${timeHome}`);
-       console.log(`🚀 Time 2 consultado: ${timeAway}`);
+        // Buscar apenas os jogos do timeHome em casa
+        const jogosHome = await buscarJogosEmCasa(timeHome);
+        // Buscar apenas os jogos do timeAway fora de casa
+        const jogosAway = await buscarJogosFora(timeAway);
 
-       console.log(`🏠 Time 1 Normalizado: ${timeHomeNormalizado}`);
-       console.log(`🚀 Time 2 Normalizado: ${timeAwayNormalizado}`);
+        console.log(`📊 Jogos do ${timeHome} em casa encontrados: ${jogosHome.length}`);
+        console.log(`📊 Jogos do ${timeAway} fora de casa encontrados: ${jogosAway.length}`);
 
-       // Buscar os últimos 5 jogos do timeHome dentro de casa
-       const jogosHome = await buscarJogos(timeHome, true);
-       // Buscar os últimos 5 jogos do timeAway fora de casa
-       const jogosAway = await buscarJogos(timeAway, false);
+        // Processar os jogos
+        const jogosHomeFormatados = processarJogos(jogosHome, timeHome);
+        const jogosAwayFormatados = processarJogos(jogosAway, timeAway);
 
-       console.log(`🏠 Jogos 1 : ${jogosHome}`);
-       console.log(`🚀 Jogos 2 : ${jogosAway}`);
+        // Pegar os últimos 5 jogos de cada
+        const ultimos5Home = jogosHomeFormatados.slice(0, 5);
+        const ultimos5Away = jogosAwayFormatados.slice(0, 5);
 
-       let jogos = [...jogosHome, ...jogosAway];
-       console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
+        // Formatar os resultados
+        const { resultadosHome } = formatarResultados(ultimos5Home, timeHome);
+        const { resultadosAway } = formatarResultados(ultimos5Away, timeAway);
 
-       // Processar os jogos corretamente
-       const jogosHomeFormatados = processarJogos(jogosHome, timeHome);
-       const jogosAwayFormatados = processarJogos(jogosAway, timeAway);
-
-       console.log(`🏠 Jogos Formatado 1 : ${jogosHomeFormatados}`);
-       console.log(`🚀 Jogos Formatado 2 : ${jogosAwayFormatados}`);
-     
-       // 🏆 Formatar os resultados como "VVDED" para os últimos 5 jogos
-       const { resultadosHome, resultadosAway } = formatarResultados([...jogosHomeFormatados, ...jogosAwayFormatados], timeHome);
-
-       console.log(`🏠 Timehome dentro de casa: ${resultadosHome}`);
-       console.log(`🚀 TimeAway fora de casa: ${resultadosAway}`);
-
-       // Enviar a resposta JSON com os resultados formatados
-       res.json({
-           timeHome: resultadosHome,
-           timeAway: resultadosAway
-       });
-
-   } catch (error) {
-       console.error("🔥 Erro ao processar os dados:", error);
-       res.status(500).send("Erro no servidor");
-   }
+        res.json({
+            timeHome: {
+                nome: timeHome,
+                desempenho_casa: resultadosHome // Resultados dos últimos 5 jogos em casa
+            },
+            timeAway: {
+                nome: timeAway,
+                desempenho_fora: resultadosAway // Resultados dos últimos 5 jogos fora
+            }
+        });
+    } catch (error) {
+        console.error("🔥 Erro ao processar os dados:", error);
+        res.status(500).send("Erro no servidor");
+    }
 });
 
+// Função para buscar jogos do timeHome apenas em casa
+const buscarJogosEmCasa = async (team) => {
+    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+
+    const querySQL = `
+        SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+        FROM ${table} 
+        WHERE unaccent(timehome) ILIKE unaccent($1)
+        ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+        LIMIT 5
+    `;
+
+    const jogosResult = await pool.query(querySQL, [team]);
+    return jogosResult.rows;
+};
+
+// Função para buscar jogos do timeAway apenas fora de casa
+const buscarJogosFora = async (team) => {
+    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+
+    const querySQL = `
+        SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+        FROM ${table} 
+        WHERE unaccent(timeaway) ILIKE unaccent($1)
+        ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+        LIMIT 5
+    `;
+
+    const jogosResult = await pool.query(querySQL, [team]);
+    return jogosResult.rows;
+};
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team, isHome) => {
    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
