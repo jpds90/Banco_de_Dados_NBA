@@ -1455,7 +1455,7 @@ function normalizarNomeTime(nome) {
 
 
 
-app.get("/ultimos10jogosfuncionando", async (req, res) => {
+app.get("/ultimos10jogos", async (req, res) => {
    try {
        const timeHome = req.query.timeHome;
        const timeAway = req.query.timeAway;
@@ -1596,7 +1596,7 @@ const processarJogos1 = (jogos, team) => {
     });
 };
 
-app.get("/ultimos10jogos", async (req, res) => {
+app.get("/ultimos5jogos", async (req, res) => {
     try {
         const timeHome = req.query.timeHome;
         const timeAway = req.query.timeAway;
