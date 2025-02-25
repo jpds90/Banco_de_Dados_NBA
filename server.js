@@ -1596,8 +1596,147 @@ const processarJogos1 = (jogos, team) => {
     });
 };
 
-
 app.get("/ultimos10jogos", async (req, res) => {
+   try {
+       const timeHome = req.query.timeHome;
+       const timeAway = req.query.timeAway;
+
+       if (!timeHome || !timeAway) {
+           return res.status(400).json({ error: "Parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
+       }
+
+       // 🔄 Normaliza os nomes dos times da requisição
+       const timeHomeNormalizado = normalizarNomeTime(timeHome);
+       const timeAwayNormalizado = normalizarNomeTime(timeAway);
+
+       console.log(`🏠 Time 1 consultado: ${timeHome}`);
+       console.log(`🚀 Time 2 consultado: ${timeAway}`);
+
+       // Buscar os últimos 5 jogos do timeHome dentro de casa
+       const jogosHome = await buscarJogos(timeHome, true);
+       // Buscar os últimos 5 jogos do timeAway fora de casa
+       const jogosAway = await buscarJogos(timeAway, false);
+
+       let jogos = [...jogosHome, ...jogosAway];
+       console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
+
+       // Processar os jogos corretamente
+       const jogosHomeFormatados = processarJogos(jogosHome, timeHome);
+       const jogosAwayFormatados = processarJogos(jogosAway, timeAway);
+
+       // 🏆 Formatar os resultados como "VVDED" para os últimos 5 jogos
+       const { resultadosHome, resultadosAway } = formatarResultados([...jogosHomeFormatados, ...jogosAwayFormatados], timeHome);
+
+       console.log(`🏠 Timehome dentro de casa: ${resultadosHome}`);
+       console.log(`🚀 TimeAway fora de casa: ${resultadosAway}`);
+
+       // Enviar a resposta JSON com os resultados formatados
+       res.json({
+           timeHome: resultadosHome,
+           timeAway: resultadosAway
+       });
+
+   } catch (error) {
+       console.error("🔥 Erro ao processar os dados:", error);
+       res.status(500).send("Erro no servidor");
+   }
+});
+
+// Função para buscar os jogos do time no banco de dados
+const buscarJogos = async (team, isHome) => {
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '') + "_futebol";
+   console.log(`🔍 Consultando a tabela: ${table}`);
+
+   const tablesResult = await pool.query(
+       `SELECT table_name FROM information_schema.tables WHERE table_name = $1`,
+       [table]
+   );
+
+   if (tablesResult.rows.length > 0) {
+       const querySQL = `
+           SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
+           FROM ${table} 
+           WHERE ${isHome ? "unaccent(timehome) ILIKE unaccent($1)" : "unaccent(timeaway) ILIKE unaccent($1)"}
+           ORDER BY TO_TIMESTAMP(data_hora, 'DD.MM.YYYY HH24:MI') DESC
+           LIMIT 5
+       `;
+
+       console.log(`📄 Executando query para ${table}: ${querySQL}`);
+       const jogosResult = await pool.query(querySQL, [team]);
+       return jogosResult.rows;
+   }
+
+   return [];
+};
+
+// Função para normalizar os nomes dos times
+function normalizarNomeTime(nome) {
+    return nome
+        .normalize("NFD") 
+        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+        .replace(/[\s\-\.]/g, '') // Remove espaços, hífens e pontos
+        .trim()
+        .toLowerCase(); // Deixa tudo minúsculo
+}
+
+// Função para processar os jogos e determinar os resultados
+const processarJogos = (jogos, team) => {
+    const teamNormalizado = normalizarNomeTime(team);
+
+    return jogos.map(row => {
+        const { timehome, timeaway, resultadohome, resultadoaway, data_hora } = row;
+
+        // Normaliza os nomes dos times
+        const timehomeNormalizado = normalizarNomeTime(timehome);
+        const timeawayNormalizado = normalizarNomeTime(timeaway);
+
+        // Definir o status do jogo para o time pesquisado
+        let resultado = "🤝"; // Padrão é empate
+        if (teamNormalizado === timehomeNormalizado) {
+            if (resultadohome > resultadoaway) resultado = "✅"; // Vitória do mandante
+            else if (resultadohome < resultadoaway) resultado = "❌"; // Derrota do mandante
+        } else if (teamNormalizado === timeawayNormalizado) {
+            if (resultadoaway > resultadohome) resultado = "✅"; // Vitória do visitante
+            else if (resultadoaway < resultadohome) resultado = "❌"; // Derrota do visitante
+        }
+
+        // Processar data corretamente
+        const [data, hora] = data_hora.split(" ");
+        const dataFormatada = data.replace(/\./g, "/");
+
+        return {
+            data_hora: dataFormatada,
+            hora,
+            timehome,
+            resultadohome,
+            timeaway,
+            resultadoaway,
+            resultado
+        };
+    });
+};
+
+// Função para formatar os resultados como 'VVDED' para timeHome e 'VDDVE' para timeAway
+const formatarResultados = (jogos, team) => {
+    let resultadosHome = "";
+    let resultadosAway = "";
+
+    jogos.forEach(jogo => {
+        const timePesquisado = normalizarNomeTime(team);
+        const timehomeNormalizado = normalizarNomeTime(jogo.timehome);
+        const timeawayNormalizado = normalizarNomeTime(jogo.timeaway);
+
+        if (timehomeNormalizado === timePesquisado) {
+            resultadosHome += jogo.resultado;
+        } else if (timeawayNormalizado === timePesquisado) {
+            resultadosAway += jogo.resultado;
+        }
+    });
+
+    return { resultadosHome, resultadosAway };
+};
+
+app.get("/ultimos10jogostop10", async (req, res) => {
    try {
        const timeHome = req.query.timeHome;
        const timeAway = req.query.timeAway;
@@ -1738,22 +1877,25 @@ const processarJogos = (jogos, team) => {
     });
 };
 // Função para formatar os resultados como 'VVDED' para timeHome e 'VDDVE' para timeAway
-const formatarResultados = (jogos) => {
+const formatarResultados = (jogos, team) => {
     let resultadosHome = "";
     let resultadosAway = "";
 
     jogos.forEach(jogo => {
-        if (jogo.timehome === jogo.timeaway) return; // Ignora quando os times não são os mesmos
-        
-        if (jogo.timehome === jogo.timeaway) {
+        const timePesquisado = normalizarNomeTime(team);
+        const timehomeNormalizado = normalizarNomeTime(jogo.timehome);
+        const timeawayNormalizado = normalizarNomeTime(jogo.timeaway);
+
+        if (timehomeNormalizado === timePesquisado) {
             resultadosHome += jogo.resultado; // Jogos em casa
-        } else {
+        } else if (timeawayNormalizado === timePesquisado) {
             resultadosAway += jogo.resultado; // Jogos fora de casa
         }
     });
 
     return { resultadosHome, resultadosAway };
 };
+
 
 
 
