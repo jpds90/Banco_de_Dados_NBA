@@ -1666,7 +1666,7 @@ const buscarJogos = async (team, isHome) => {
         `;
 
         console.log(`📄 Executando query para ${table}: ${querySQL}`);
-        const jogosResult = await pool.query(querySQL, [team]);
+        const jogosResult = await pool.query(querySQL, [normalizarNomeTime(team)]);
         console.log(`📊 Resultado da consulta de jogos:`, jogosResult.rows);
         return jogosResult.rows;
     }
