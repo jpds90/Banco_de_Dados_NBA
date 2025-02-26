@@ -574,8 +574,8 @@ app.get('/golsemcasa', async (req, res) => {
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
@@ -594,42 +594,41 @@ app.get('/golsemcasa', async (req, res) => {
        if (tableNames.includes(homeTable)) {
            console.log(`📄 Buscando os 10 últimos jogos de ${timeHome} como mandante...`);
            const homeScoresResult = await pool.query(`
-               SELECT resultadohome
+               SELECT timehome, timeaway, resultadohome, data_hora
                FROM ${homeTable} 
                WHERE unaccent(timehome) ILIKE unaccent($1)
                ORDER BY data_hora DESC
                LIMIT 10
            `, [timeHome]);
 
+           console.log(`🔎 Últimos 10 jogos do ${timeHome} como mandante:`, homeScoresResult.rows);
+
            const homeScores = homeScoresResult.rows
                .map(row => parseInt(row.resultadohome, 10))
                .filter(score => !isNaN(score) && score > threshold);
 
            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
-         
-           console.log(`📄 Buscando os 10 últimos jogos de ${homeAvg}`);
            homeHitsThreshold = homeScores.length;
-         console.log(`📄 Buscando os ${homeHitsThreshold}`);
        }
 
        if (tableNames.includes(awayTable)) {
            console.log(`📄 Buscando os 10 últimos jogos de ${timeAway} como visitante...`);
            const awayScoresResult = await pool.query(`
-               SELECT resultadoaway
+               SELECT timehome, timeaway, resultadoaway, data_hora
                FROM ${awayTable} 
                WHERE unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY data_hora DESC
                LIMIT 10
            `, [timeAway]);
 
+           console.log(`🔎 Últimos 10 jogos do ${timeAway} como visitante:`, awayScoresResult.rows);
+
            const awayScores = awayScoresResult.rows
                .map(row => parseInt(row.resultadoaway, 10))
                .filter(score => !isNaN(score) && score > threshold);
 
            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
-         console.log(`📄 Buscando os 10 últimos jogos de ${awayAvg}`);
            awayHitsThreshold = awayScores.length;
-         console.log(`📄 Buscando os ${awayHitsThreshold}`);
        }
 
        console.log("✅ Resumo final:", {
@@ -657,6 +656,7 @@ app.get('/golsemcasa', async (req, res) => {
        res.status(500).json({ error: 'Erro no servidor' });
    }
 });
+
 
 
 
