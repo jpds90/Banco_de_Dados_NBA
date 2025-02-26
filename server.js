@@ -547,7 +547,7 @@ app.get('/golsfeito', async (req, res) => {
 
 
 
-app.get('/golsemcasafuncionou', async (req, res) => {
+app.get('/golsemcasa', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
@@ -1174,7 +1174,7 @@ app.get('/golsemcasa20', async (req, res) => {
 });
 
 
-app.get('/golsemcasa', async (req, res) => {
+app.get('/golsemcasacancelar', async (req, res) => {
    try {
        const { timeHome, timeAway, threshold = 0.5 } = req.query;
 
