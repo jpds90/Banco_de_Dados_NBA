@@ -761,7 +761,7 @@ function normalizarNomeTime(nome) {
                LIMIT 10
            `, [timeHomeNormalizado]);
          
-       console.log(`📄 Executando query para ${table}: ${homeScoresResult}`);
+       console.log(`📄 Executando query para : ${homeScoresResult}`);
 // Verifica se encontrou resultados
 if (homeScoresResult.rows.length === 0) {
     console.log("🔴 Nenhum resultado encontrado para:", timeHomeNormalizado);
@@ -798,7 +798,7 @@ const homeScores = homeScoresResult.rows
                LIMIT 10
            `, [timeAwayNormalizado]);
          
-       console.log(`📄 Executando query para ${table}: ${awayScoresResult}`);
+       console.log(`📄 Executando query para : ${awayScoresResult}`);
 // Verifica se encontrou resultados
 if (awayScoresResult.rows.length === 0) {
     console.log("🔴 Nenhum resultado encontrado para:", timeAwayNormalizado);
