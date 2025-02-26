@@ -1985,7 +1985,7 @@ app.get('/linksfut', async (req, res) => {
 
         // Construção da consulta para pegar os dados das tabelas
         const queries = tableNames.map(table => `
-            SELECT team_name, link, event_time
+            SELECT DISTINCT team_name, link, event_time
             FROM ${table}
         `);
 
@@ -2010,6 +2010,7 @@ app.get('/linksfut', async (req, res) => {
         client.release();
     }
 });
+
 
 
 
