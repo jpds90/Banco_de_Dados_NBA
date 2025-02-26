@@ -126,17 +126,18 @@
 leagueElement.addEventListener("click", async (event) => {
     event.stopPropagation();
 
-    let formattedCountry = formatText(country);
-    let formattedLeague = formatText(league);
-    let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
 
-    // Gerando o nome da tabela
-    let tableName = formattedLeague
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_") + "_link"; // Substitui caracteres especiais
+let formattedCountry = formatText(country);
+let formattedLeague = formatText(league);
+let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
 
-    console.log(`📌 Nome da tabela extraído: ${tableName}`);
+// Criando o nome da tabela com o país antes da liga
+let tableName = `${formattedCountry}_${formattedLeague}`
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_") + "_link"; // Substitui caracteres especiais por "_"
+
+console.log(`📌 Nome da tabela extraído: ${tableName}`);
 
     leagueElement.classList.add("loading");
 
