@@ -46,7 +46,7 @@ async function getTableName() {
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "_") + "_odds";
 
-    console.log(`📌 Nome da tabela extraído: ${tableName}`);
+    console.log(`📌 Nome da tabela extraído: ${tableName} - ${url}`);
     return { tableName, url };
 }
 
