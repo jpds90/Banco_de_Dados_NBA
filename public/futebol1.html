@@ -162,11 +162,57 @@
                 let formattedLeague = formatText(league);
                 let tableName = formattedLeague.replace(/[^a-z0-9]+/g, "_") + "_link";
 
+                // Botão Processar com lógica modificada
                 let processButton = document.createElement("button");
                 processButton.textContent = "Processar";
                 processButton.classList.add("btn", "btn-process");
-                processButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/futebollink", tableName, "Processar Liga", processButton);
 
+                processButton.onclick = async () => {
+                    processButton.textContent = "Processando...";
+                    processButton.disabled = true;
+
+                    let formattedCountry = formatText(country);
+                    let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
+
+                    let tableName = formattedLeague
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, "_") + "_link"; 
+
+                    console.log(`📌 Nome da tabela extraído: ${tableName}`);
+
+                    leagueElement.classList.add("loading");
+
+                    alert(`⏳ Processando liga ${league}... Aguarde!`);
+
+                    try {
+                        console.log("📤 Enviando URL e tableName:", url, tableName);
+                        const response = await fetch("https://analise-jpnba.onrender.com/salvar-url", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ url, tableName })
+                        });
+
+                        const result = await response.json();
+                        console.log("✅ Resposta do servidor (salvar-url):", result);
+
+                        if (!result.success && result.message !== "URL já está salva!") {
+                            throw new Error("Erro ao salvar a URL.");
+                        }
+
+                        // Após salvar a URL, executa o processo
+                        executeScript("https://analise-jpnba.onrender.com/futebollink", tableName, "Processar Liga", processButton);
+                        
+                    } catch (error) {
+                        console.error("❌ Erro durante o processamento:", error);
+                        alert("❌ Ocorreu um erro durante o processo. Tente novamente.");
+                    }
+
+                    processButton.textContent = "Processar";
+                    processButton.disabled = false;
+                };
+
+                // Botões de Times e Odds
                 let teamsButton = document.createElement("button");
                 teamsButton.textContent = "Times";
                 teamsButton.classList.add("btn", "btn-teams");
