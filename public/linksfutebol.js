@@ -58,82 +58,60 @@ const dbConfig = {
 };
 
 async function scrapeAndSaveLinks(tableName, url) {
-    // 🔹 Inicia o Puppeteer
+    url = url.replace('/lista/', '/classificacoes/');
     const browser = await puppeteer.launch({
-        headless: true, // Modo invisível para otimizar o processamento
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Necessário para rodar no Render
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage();
-    const page2 = await browser.newPage();
-
-    // 🔹 Conexão com o banco de dados
+    
     const client = new Client(dbConfig);
     await client.connect();
 
-    // 🔹 Cria a tabela se não existir
     await client.query(`
         CREATE TABLE IF NOT EXISTS "${tableName}" (
             id SERIAL PRIMARY KEY,
             team_name VARCHAR(255) NOT NULL,
-            link VARCHAR(255) NOT NULL,
-            event_time VARCHAR(50) NOT NULL
+            link VARCHAR(255)
         );
     `);
-
-    // 🔹 Limpa os links antigos antes de inserir os novos
     await client.query(`TRUNCATE TABLE "${tableName}"`);
-    console.log(`🗑️ Tabela Links ${tableName} limpa.`);
+    console.log(`🗑️ Tabela ${tableName} limpa.`);
 
     try {
         console.log("📌 Acessando URL:", url);
         await page.goto(url, { timeout: 120000 });
         await sleep(10000);
-        await page.waitForSelector('.container', { timeout: 90000 });
+        await page.waitForSelector('.ui-table__body');
 
-        // 🔹 Pega os IDs dos jogos
-        const idObjects = await getNewIds(page, [], 20);
+        const rows = await page.$$eval('.ui-table__row', rows => {
+            return rows.map(row => {
+                const teamElement = row.querySelector('.tableCellParticipant__name');
+                const teamName = teamElement?.innerText.trim();
+                const teamUrl = teamElement?.getAttribute('href');
+                const fullUrl = teamUrl ? `https://www.flashscore.pt${teamUrl}` : null;
+                
+                return { teamName, teamUrl: fullUrl };
+            });
+        });
 
-        for (const { id, eventTime } of idObjects) {
-            const gameUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/`;
-            console.log(`⚽ Processando: ${gameUrl}`);
-
-            await page2.goto(gameUrl, { timeout: 120000 });
-            await sleep(10000);
-
-            const rows = await page2.$$('#detail > div.duelParticipant');
-
-            for (const row of rows) {
-                try {
-                    const homeSelector = '#detail > div.duelParticipant > div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a';
-                    const awaySelector = '#detail > div.duelParticipant > div.duelParticipant__away > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a';
-
-                    const homeElement = await row.$(homeSelector);
-                    const awayElement = await row.$(awaySelector);
-
-                    const homeName = await page2.evaluate(el => el.innerText, homeElement);
-                    const awayName = await page2.evaluate(el => el.innerText, awayElement);
-
-                    const homeUrl = await page2.evaluate(el => el.href, homeElement);
-                    const awayUrl = await page2.evaluate(el => el.href, awayElement);
-
-                    // 🔹 Salvar no banco de dados
-                    await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [homeName, homeUrl, eventTime]);
-                    await client.query(`INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, $3)`, [awayName, awayUrl, eventTime]);
-
-                    console.log(`✅ Salvo: ${homeName} | ${awayName}`);
-                } catch (error) {
-                    console.error(`❌ Erro ao processar linha: ${error}`);
-                }
+        for (const { teamName, teamUrl } of rows) {
+            if (teamName && teamUrl) {
+                await client.query(
+                    `INSERT INTO "${tableName}" (team_name, link) VALUES ($1, $2)`,
+                    [teamName, teamUrl]
+                );
+                console.log(`✅ Salvo: ${teamName} (${teamUrl})`);
             }
         }
     } catch (error) {
-        console.error(`❌ Erro geral no scraping: ${error}`);
+        console.error(`❌ Erro no scraping: ${error}`);
     } finally {
-        // 🔹 Fecha Puppeteer e a conexão com o banco
         await browser.close();
         await client.end();
     }
 }
+
 
 // ✅ Função para pegar IDs de jogos
 async function getNewIds(page, excludedIds, neededCount) {
