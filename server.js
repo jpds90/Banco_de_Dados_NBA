@@ -603,7 +603,7 @@ app.get('/golsemcasa', async (req, res) => {
        if (tableNames.includes(homeTable)) {
            console.log(`📄 Consultando dados para a tabela: ${homeTable}`);
            const homeScoresResult = await pool.query(`
-               SELECT timehome, resultadohome, timeaway, resultadoaway 
+               SELECT timehome, resultadohome
                FROM ${homeTable} 
                WHERE unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY data_hora DESC
@@ -621,8 +621,7 @@ app.get('/golsemcasa', async (req, res) => {
            // 🔄 Filtrando apenas jogos válidos e calculando média
            const homeScores = homeScoresResult.rows
                .filter(row =>
-                   normalizarNomeTime(row.timehome) === timeHomeNormalizado ||
-                   normalizarNomeTime(row.timeaway) === timeHomeNormalizado
+                   normalizarNomeTime(row.timehome) === timeHomeNormalizado 
                )
                .map(row => parseInt(row.resultadohome, 10))
                .filter(score => !isNaN(score) && score > threshold);
@@ -634,7 +633,7 @@ app.get('/golsemcasa', async (req, res) => {
        if (tableNames.includes(awayTable)) {
            console.log(`📄 Consultando dados para a tabela: ${awayTable}`);
            const awayScoresResult = await pool.query(`
-               SELECT timehome, resultadohome, timeaway, resultadoaway 
+               SELECT timeaway, resultadoaway 
                FROM ${awayTable} 
                WHERE unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY data_hora DESC
@@ -652,7 +651,6 @@ app.get('/golsemcasa', async (req, res) => {
            // 🔄 Filtrando apenas jogos válidos e calculando média
            const awayScores = awayScoresResult.rows
                .filter(row =>
-                   normalizarNomeTime(row.timehome) === timeAwayNormalizado ||
                    normalizarNomeTime(row.timeaway) === timeAwayNormalizado
                )
                .map(row => parseInt(row.resultadoaway, 10))
