@@ -4,6 +4,9 @@ const { Client } = require('pg');
 const fs = require('fs');
 const { Pool } = require('pg');
 
+console.log("🚀 second_script.js foi chamado com argumento:", process.argv[2]);
+
+
 // ✅ Conexão com o banco de dados
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
