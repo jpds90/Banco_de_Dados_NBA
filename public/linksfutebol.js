@@ -106,8 +106,14 @@ async function scrapeAndSaveLinks(tableName, url) {
             }
         }
     } catch (error) {
-        console.error(`❌ Erro no scraping: ${error}`);
-    } finally {
+    console.error(`❌ Erro no scraping: ${error}`);
+    if (error.message.includes('TimeoutError')) {
+        console.log("🔄 Timeout detectado! Chamando o segundo script...");
+        const secondScript = require('./second_script'); 
+        await secondScript.scrapeAndSaveLinks(tableName, url);
+    }
+}
+ finally {
         await browser.close();
         await client.end();
     }
