@@ -104,15 +104,15 @@ async function scrapeAndSaveLinks(tableName, url) {
                 console.log(`✅ Salvo: ${teamName} (${teamUrl})`);
             }
         }
-    } catch (error) {
-        console.error(`❌ Erro no scraping: ${error}`);
-        if (error.message.includes('TimeoutError')) {
-            console.log("🔄 Timeout detectado! Chamando o segundo script...");
-            // Corrigido para importar e chamar o segundo script corretamente
-            const secondScript = require('./second_script'); 
-            await secondScript.scrapeAndSaveLinks(tableName, url);  // Certifique-se de que `second_script.js` está exportando a função corretamente
-        }
-    } finally {
+} catch (error) {
+    console.error(`❌ Erro no scraping: ${error}`);
+
+    if (error.name === "TimeoutError") {
+        console.log("⏳ Timeout detectado! Encerrando processo com erro...");
+        process.exit(1); // Força a falha para que o servidor saiba que deu erro
+    }
+}
+ finally {
         await browser.close();
         await client.end();
     }
