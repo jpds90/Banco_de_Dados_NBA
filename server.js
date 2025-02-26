@@ -2150,15 +2150,38 @@ app.post('/execute-script', (req, res) => {
 
 
 // Função para executar um script Node.js de forma segura
+
 function runScript(scriptPath, res, scriptName, tableName) {
     console.log(`🚀 Executando script: ${scriptPath} com tableName: ${tableName}`);
 
     exec(`node ${scriptPath} ${tableName}`, (error, stdout, stderr) => {
         if (error) {
             console.error(`❌ Erro ao executar ${scriptName}: ${error.message}`);
+
+            // Verificando se o erro é um timeout e, se for, chamando o segundo script
+            if (error.message.includes('TimeoutError')) {
+                console.log("🔄 Timeout detectado! Chamando o segundo script...");
+                // Caminho do segundo script
+                const secondScriptPath = '/opt/render/project/src/public/second_script.js';
+                
+                // Executando o segundo script
+                exec(`node ${secondScriptPath} ${tableName}`, (secondError, secondStdout, secondStderr) => {
+                    if (secondError) {
+                        console.error(`❌ Erro ao executar o segundo script: ${secondError.message}`);
+                        return res.status(500).json({ success: false, message: `Erro ao executar o segundo script.` });
+                    }
+                    if (secondStderr) {
+                        console.warn(`⚠️ Saída com alerta (Segundo script): ${secondStderr}`);
+                    }
+                    console.log(`✅ Segundo script executado com sucesso: ${secondStdout}`);
+                    res.json({ success: true, message: `Segundo script executado com sucesso.` });
+                });
+                return;  // Não continue com o processo de erro do primeiro script
+            }
+            
             return res.status(500).json({ success: false, message: `Erro ao executar ${scriptName}.` });
         }
-        
+
         if (stderr) {
             console.warn(`⚠️ Saída com alerta (${scriptName}): ${stderr}`);
         }
@@ -2167,7 +2190,6 @@ function runScript(scriptPath, res, scriptName, tableName) {
         res.json({ success: true, message: `${scriptName} executado com sucesso.` });
     });
 }
-
 
 // Rota para executar a atualização de jogadores
 app.post('/execute-Jogadores', async (req, res) => {
