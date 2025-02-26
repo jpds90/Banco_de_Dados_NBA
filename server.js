@@ -2154,40 +2154,50 @@ app.post('/execute-script', (req, res) => {
 function runScript(scriptPath, res, scriptName, tableName) {
     console.log(`🚀 Executando script: ${scriptPath} com tableName: ${tableName}`);
 
-    exec(`node ${scriptPath} ${tableName}`, (error, stdout, stderr) => {
+    const child = exec(`node ${scriptPath} ${tableName}`, (error, stdout, stderr) => {
+        console.log(`📌 Saída do script ${scriptName}: ${stdout}`);
         if (error) {
             console.error(`❌ Erro ao executar ${scriptName}: ${error.message}`);
 
-            // Verificando se o erro é um timeout e, se for, chamando o segundo script
-            if (error.message.includes('TimeoutError')) {
+            // Se for erro de timeout, chamar o segundo script
+            if (stderr.includes("TimeoutError")) {
                 console.log("🔄 Timeout detectado! Chamando o segundo script...");
-                // Caminho do segundo script
-                const secondScriptPath = '/opt/render/project/src/public/second_script.js';
-                
-                // Executando o segundo script
-                exec(`node ${secondScriptPath} ${tableName}`, (secondError, secondStdout, secondStderr) => {
-                    if (secondError) {
-                        console.error(`❌ Erro ao executar o segundo script: ${secondError.message}`);
-                        return res.status(500).json({ success: false, message: `Erro ao executar o segundo script.` });
-                    }
-                    if (secondStderr) {
-                        console.warn(`⚠️ Saída com alerta (Segundo script): ${secondStderr}`);
-                    }
-                    console.log(`✅ Segundo script executado com sucesso: ${secondStdout}`);
-                    res.json({ success: true, message: `Segundo script executado com sucesso.` });
-                });
-                return;  // Não continue com o processo de erro do primeiro script
+                callSecondScript(res, tableName);
+                return;
             }
-            
+
             return res.status(500).json({ success: false, message: `Erro ao executar ${scriptName}.` });
         }
 
-        if (stderr) {
-            console.warn(`⚠️ Saída com alerta (${scriptName}): ${stderr}`);
+        res.json({ success: true, message: `${scriptName} executado com sucesso.` });
+    });
+
+    child.on("exit", (code) => {
+        if (code !== 0) {
+            console.log(`⚠️ Script ${scriptName} saiu com código ${code}, chamando o segundo script...`);
+            callSecondScript(res, tableName);
+        }
+    });
+}
+
+// ✅ Função para chamar o segundo script
+function callSecondScript(res, tableName) {
+    const secondScriptPath = "/opt/render/project/src/public/second_script.js";
+    console.log(`🚀 Chamando o segundo script: ${secondScriptPath} com tableName: ${tableName}`);
+
+    exec(`node ${secondScriptPath} ${tableName}`, (secondError, secondStdout, secondStderr) => {
+        console.log(`📌 Saída do segundo script: ${secondStdout}`);
+        if (secondError) {
+            console.error(`❌ Erro ao executar o segundo script: ${secondError.message}`);
+            return res.status(500).json({ success: false, message: `Erro ao executar o segundo script.` });
         }
 
-        console.log(`✅ ${scriptName} executado com sucesso: ${stdout}`);
-        res.json({ success: true, message: `${scriptName} executado com sucesso.` });
+        if (secondStderr) {
+            console.warn(`⚠️ Saída com alerta (Segundo script): ${secondStderr}`);
+        }
+
+        console.log(`✅ Segundo script executado com sucesso.`);
+        res.json({ success: true, message: `Segundo script executado com sucesso.` });
     });
 }
 
