@@ -72,7 +72,8 @@ async function scrapeAndSaveLinks(tableName, url) {
         CREATE TABLE IF NOT EXISTS "${tableName}" (
             id SERIAL PRIMARY KEY,
             team_name VARCHAR(255) NOT NULL,
-            link VARCHAR(255)
+            link VARCHAR(255),
+            event_time VARCHAR(50) NOT NULL
         );
     `);
     await client.query(`TRUNCATE TABLE "${tableName}"`);
@@ -98,7 +99,7 @@ async function scrapeAndSaveLinks(tableName, url) {
         for (const { teamName, teamUrl } of rows) {
             if (teamName && teamUrl) {
                 await client.query(
-                    `INSERT INTO "${tableName}" (team_name, link) VALUES ($1, $2)`,
+                    `INSERT INTO "${tableName}" (team_name, link, event_time) VALUES ($1, $2, NOW())`,
                     [teamName, teamUrl]
                 );
                 console.log(`✅ Salvo: ${teamName} (${teamUrl})`);
