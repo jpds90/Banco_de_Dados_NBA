@@ -1985,8 +1985,9 @@ app.get('/linksfut', async (req, res) => {
 
         // Construção da consulta para pegar os dados das tabelas
         const queries = tableNames.map(table => `
-            SELECT DISTINCT team_name, link, event_time
+            SELECT team_name, link, MAX(event_time) AS event_time
             FROM ${table}
+            GROUP BY team_name, link
         `);
 
         // Junta todas as consultas com UNION ALL
@@ -2010,6 +2011,7 @@ app.get('/linksfut', async (req, res) => {
         client.release();
     }
 });
+
 
 
 
