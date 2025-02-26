@@ -561,7 +561,6 @@ app.get('/golsemcasa', async (req, res) => {
            return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
        }
 
-       // 🔄 Função para normalizar os nomes dos times
        function normalizarNomeTime(nome) {
            return nome
                .toLowerCase()
@@ -572,27 +571,19 @@ app.get('/golsemcasa', async (req, res) => {
                .trim(); 
        }
 
-       // 🔄 Normalizando os nomes dos times
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
 
-       console.log(`📌 Time da casa recebido: ${timeHome} (Normalizado: ${timeHomeNormalizado})`);
-       console.log(`📌 Time visitante recebido: ${timeAway} (Normalizado: ${timeAwayNormalizado})`);
-
-       // 🔍 Gerando nomes das tabelas
        const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
        const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
 
-       // 🔎 Verificando se as tabelas existem no banco de dados
        const tablesResult = await pool.query(
            `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
            [homeTable, awayTable]
        );
-
-       console.log("🔎 Tabelas encontradas:", tablesResult.rows);
 
        const tableNames = tablesResult.rows.map(row => row.table_name);
        let homeHitsThreshold = 0;
@@ -601,28 +592,16 @@ app.get('/golsemcasa', async (req, res) => {
        let awayAvg = 0;
 
        if (tableNames.includes(homeTable)) {
-           console.log(`📄 Consultando dados para a tabela: ${homeTable}`);
+           console.log(`📄 Buscando os 10 últimos jogos de ${timeHome} como mandante...`);
            const homeScoresResult = await pool.query(`
-               SELECT timehome, resultadohome
+               SELECT resultadohome
                FROM ${homeTable} 
-               WHERE unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1)
+               WHERE unaccent(timehome) ILIKE unaccent($1)
                ORDER BY data_hora DESC
                LIMIT 10
            `, [timeHome]);
 
-           console.log("📊 Resultados do time da casa:", homeScoresResult.rows);
-
-           if (homeScoresResult.rows.length === 0) {
-               console.log("🔴 Nenhum resultado encontrado para:", timeHome);
-           } else {
-               console.log("🟢 Resultados encontrados:", homeScoresResult.rows);
-           }
-
-           // 🔄 Filtrando apenas jogos válidos e calculando média
            const homeScores = homeScoresResult.rows
-               .filter(row =>
-                   normalizarNomeTime(row.timehome) === timeHomeNormalizado 
-               )
                .map(row => parseInt(row.resultadohome, 10))
                .filter(score => !isNaN(score) && score > threshold);
 
@@ -631,28 +610,16 @@ app.get('/golsemcasa', async (req, res) => {
        }
 
        if (tableNames.includes(awayTable)) {
-           console.log(`📄 Consultando dados para a tabela: ${awayTable}`);
+           console.log(`📄 Buscando os 10 últimos jogos de ${timeAway} como visitante...`);
            const awayScoresResult = await pool.query(`
-               SELECT timeaway, resultadoaway 
+               SELECT resultadoaway
                FROM ${awayTable} 
-               WHERE unaccent(timehome) ILIKE unaccent($1) OR unaccent(timeaway) ILIKE unaccent($1)
+               WHERE unaccent(timeaway) ILIKE unaccent($1)
                ORDER BY data_hora DESC
                LIMIT 10
            `, [timeAway]);
 
-           console.log("📊 Resultados do time visitante:", awayScoresResult.rows);
-
-           if (awayScoresResult.rows.length === 0) {
-               console.log("🔴 Nenhum resultado encontrado para:", timeAway);
-           } else {
-               console.log("🟢 Resultados encontrados:", awayScoresResult.rows);
-           }
-
-           // 🔄 Filtrando apenas jogos válidos e calculando média
            const awayScores = awayScoresResult.rows
-               .filter(row =>
-                   normalizarNomeTime(row.timeaway) === timeAwayNormalizado
-               )
                .map(row => parseInt(row.resultadoaway, 10))
                .filter(score => !isNaN(score) && score > threshold);
 
@@ -685,6 +652,7 @@ app.get('/golsemcasa', async (req, res) => {
        res.status(500).json({ error: 'Erro no servidor' });
    }
 });
+
 
 
 app.get('/golsemcasa2', async (req, res) => {
