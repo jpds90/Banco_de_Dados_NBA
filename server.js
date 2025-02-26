@@ -521,14 +521,18 @@ app.get('/golsfeito', async (req, res) => {
        }
 
        const homeAvg = homeGoals.length ? (homeGoals.reduce((a, b) => a + b, 0) / homeGoals.length).toFixed(2) : 0;
+       homeHitsThreshold = homeGoals.length;
        const awayAvg = awayGoals.length ? (awayGoals.reduce((a, b) => a + b, 0) / awayGoals.length).toFixed(2) : 0;
-
+       awayHitsThreshold = awayGoals.length;
+     
        console.log("✅ Resumo final:", {
            time_home: timeHome,
            time_away: timeAway,
            home_avg: homeAvg,
            away_avg: awayAvg,
-           total_pontos: homeAvg + awayAvg
+           total_pontos: homeAvg + awayAvg,
+           home_hits_threshold: homeHitsThreshold,
+           away_hits_threshold: awayHitsThreshold
        });
 
        res.json({
@@ -536,7 +540,9 @@ app.get('/golsfeito', async (req, res) => {
            time_away: timeAway,
            home_avg: homeAvg,
            away_avg: awayAvg,
-           total_pontos: homeAvg + awayAvg
+           total_pontos: homeAvg + awayAvg,
+           home_hits_threshold: homeHitsThreshold,
+           away_hits_threshold: awayHitsThreshold
        });
 
    } catch (error) {
