@@ -606,7 +606,10 @@ app.get('/golsemcasa', async (req, res) => {
                .filter(score => !isNaN(score) && score > threshold);
 
            homeAvg = homeScores.length ? Math.round(homeScores.reduce((a, b) => a + b, 0) / homeScores.length) : 0;
+         
+           console.log(`📄 Buscando os 10 últimos jogos de ${homeAvg}`);
            homeHitsThreshold = homeScores.length;
+         console.log(`📄 Buscando os ${homeHitsThreshold}`);
        }
 
        if (tableNames.includes(awayTable)) {
@@ -624,7 +627,9 @@ app.get('/golsemcasa', async (req, res) => {
                .filter(score => !isNaN(score) && score > threshold);
 
            awayAvg = awayScores.length ? Math.round(awayScores.reduce((a, b) => a + b, 0) / awayScores.length) : 0;
+         console.log(`📄 Buscando os 10 últimos jogos de ${awayAvg}`);
            awayHitsThreshold = awayScores.length;
+         console.log(`📄 Buscando os ${awayHitsThreshold}`);
        }
 
        console.log("✅ Resumo final:", {
