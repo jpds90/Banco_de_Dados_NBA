@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Atualizar Dados</title>
     <style>
+        /* Estilos existentes */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -36,30 +37,31 @@
             margin-top: 10px;
         }
 
-        /* Monitor de Logs */
+        /* Estilos para o monitor de logs */
         #logMonitor {
             position: fixed;
             top: 10px;
             right: 10px;
             width: 300px;
             height: 200px;
-            background: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 10px;
-            font-size: 14px;
+            overflow-y: auto;
             border-radius: 5px;
-            z-index: 1000;
-            overflow-y: auto;
             font-family: monospace;
-            border-left: 3px solid lime;
-        }
-        #logContent {
-            max-height: 180px;
-            overflow-y: auto;
+            font-size: 12px;
+            z-index: 1000;
         }
     </style>
 </head>
 <body>
+
+    <!-- Monitor de Logs -->
+    <div id="logMonitor">
+        <strong>Logs:</strong>
+        <div id="logContent"></div>
+    </div>
 
     <h1>Atualizar Dados NBA - Futebol</h1>
 
@@ -92,12 +94,6 @@
 
     <p id="loadingMessage">Carregando...</p>
 
-    <!-- Monitor de Logs -->
-    <div id="logMonitor">
-        <h3>Monitor de Logs</h3>
-        <div id="logContent"></div>
-    </div>
-
     <table>
         <thead>
             <tr>
@@ -111,15 +107,63 @@
     </table>
 
     <script>
-        let data = [];
-
+        // Função para adicionar logs
         function addLog(message) {
             const logContent = document.getElementById('logContent');
-            const timestamp = new Date().toLocaleTimeString();
-            logContent.innerHTML += `<p>[${timestamp}] ${message}</p>`;
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logContent.appendChild(logEntry);
+
+            // Rolagem automática para o final
             logContent.scrollTop = logContent.scrollHeight;
         }
 
+        // Exemplo de uso da função addLog
+        addLog('Página carregada.');
+
+        // Modificação das funções de API para exibir logs em tempo real
+        async function executeApiCall(endpoint, successMessage) {
+            showLoadingMessage(true);
+            addLog(`Iniciando chamada para ${endpoint}...`);
+
+            try {
+                const response = await fetch(endpoint, { method: 'POST' });
+                if (response.ok) {
+                    addLog(successMessage);
+                    alert(successMessage);
+                    window.location.reload();
+                } else {
+                    const errorDetails = await response.text();
+                    addLog(`Erro ao chamar ${endpoint}: ${errorDetails}`);
+                    alert('Erro ao executar a ação.');
+                }
+            } catch (error) {
+                addLog(`Erro ao chamar ${endpoint}: ${error.message}`);
+                console.error('Erro ao chamar a API:', error);
+                alert('Erro ao executar a ação.');
+            } finally {
+                showLoadingMessage(false);
+            }
+        }
+
+        // Função para carregar links
+        function loadLinks(endpoint) {
+            addLog(`Carregando links de ${endpoint}...`);
+            fetch(endpoint)
+                .then(response => response.json())
+                .then(fetchedData => {
+                    data = fetchedData;
+                    renderTable(data);
+                    addLog(`Links carregados com sucesso: ${fetchedData.length} itens.`);
+                })
+                .catch(error => {
+                    addLog(`Erro ao carregar os links: ${error.message}`);
+                    console.error('Erro ao carregar os links:', error);
+                    alert('Erro ao carregar os links.');
+                });
+        }
+
+        // Função para renderizar a tabela
         function renderTable(data) {
             const tableBody = document.getElementById('linksTable');
             tableBody.innerHTML = '';
@@ -135,60 +179,146 @@
             });
         }
 
-        function loadLinks(endpoint) {
-            addLog(`Carregando links de ${endpoint}...`);
-            fetch(endpoint)
-                .then(response => response.json())
-                .then(fetchedData => {
-                    data = fetchedData;
-                    renderTable(data);
-                    addLog(`Links carregados com sucesso.`);
-                })
-                .catch(error => {
-                    addLog(`Erro ao carregar links: ${error.message}`);
-                });
-        }
-
-        function executeApiCall(endpoint, successMessage) {
-            addLog(`Iniciando ${endpoint}...`);
-            showLoadingMessage(true, `Processando ${endpoint}...`);
-
-            fetch(endpoint, { method: 'POST' })
-                .then(response => {
-                    if (response.ok) {
-                        addLog(successMessage);
-                        alert(successMessage);
-                        window.location.reload();
-                    } else {
-                        addLog(`Erro ao executar ${endpoint}`);
-                        alert('Erro ao executar a ação.');
-                    }
-                })
-                .catch(error => {
-                    addLog(`Erro: ${error.message}`);
-                    alert('Erro ao executar a ação.');
-                })
-                .finally(() => {
-                    showLoadingMessage(false);
-                });
-        }
-
-        function showLoadingMessage(show, message = '') {
+        // Função para mostrar/ocultar a mensagem de carregamento
+        function showLoadingMessage(show) {
             document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
-            if (show) addLog(message);
         }
 
+        // Evento para selecionar/deselecionar todos os checkboxes
+        document.getElementById('selectAll').addEventListener('change', function () {
+            document.querySelectorAll('.teamCheckbox').forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // Eventos para carregar links
         document.getElementById('loadNBA').addEventListener('click', () => loadLinks('/links'));
         document.getElementById('loadFutebol').addEventListener('click', () => loadLinks('/linksfut'));
 
+        // Eventos para executar ações
         document.getElementById('executeRank').addEventListener('click', () => executeApiCall('/execute-rank', 'Rank atualizado com sucesso!'));
         document.getElementById('executeOdds').addEventListener('click', () => executeApiCall('/execute-odds', 'Odds atualizados com sucesso!'));
         document.getElementById('executeScript').addEventListener('click', () => executeApiCall('/execute-script', 'Links atualizados com sucesso!'));
         document.getElementById('executeScript1').addEventListener('click', () => executeApiCall('/futebollink', 'Links de Futebol atualizados com sucesso!'));
-        document.getElementById('executeAll1').addEventListener('click', () => executeApiCall('/execute-jogadores', 'Jogadores atualizados com sucesso!'));
-        document.getElementById('executeAll2').addEventListener('click', () => executeApiCall('/execute-lesoes', 'Lesões atualizadas com sucesso!'));
-        document.getElementById('executeAll10').addEventListener('click', () => executeApiCall('/execute-futebol', 'TIME atualizado com sucesso!'));
-    </script>
 
+        // Função para executar ações com base nos itens selecionados
+        async function executeAction(endpoint, successMessage, sendFullData = false) {
+            const selectedItems = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
+                .map(checkbox => sendFullData 
+                    ? { link: checkbox.getAttribute('data-link'), team_name: checkbox.getAttribute('data-team_name') } 
+                    : checkbox.getAttribute('data-link')
+                );
+
+            if (selectedItems.length === 0) {
+                addLog('Nenhuma equipe selecionada.');
+                alert('Por favor, selecione pelo menos uma equipe.');
+                return;
+            }
+
+            showLoadingMessage(true);
+            addLog(`Iniciando ação para ${endpoint}...`);
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(sendFullData ? { laliga_links: selectedItems } : { links: selectedItems }),
+                });
+
+                if (!response.ok) {
+                    const errorDetails = await response.text();
+                    addLog(`Erro ao atualizar ${endpoint}: ${errorDetails}`);
+                    alert(`Erro ao atualizar ${endpoint}: ${errorDetails || 'Verifique os logs.'}`);
+                    return;
+                }
+
+                addLog(successMessage);
+                alert(successMessage);
+                window.location.reload();
+            } catch (error) {
+                addLog(`Erro ao atualizar ${endpoint}: ${error.message}`);
+                console.error('Erro ao chamar a API:', error);
+                alert(`Erro ao atualizar ${endpoint}.`);
+            } finally {
+                showLoadingMessage(false);
+            }
+        }
+
+        // Eventos para executar ações específicas
+        document.getElementById('executeAll1').addEventListener('click', () => executeAction('/execute-jogadores', 'Jogadores atualizados com sucesso!'));
+        document.getElementById('executeAll2').addEventListener('click', () => executeAction('/execute-lesoes', 'Lesões atualizadas com sucesso!'));
+        document.getElementById('executeAll10').addEventListener('click', () => executeAction('/execute-futebol', 'TIME atualizado com sucesso!', true));
+
+        // Função para ordenar a tabela
+        function sortTable(column) {
+            const order = column.dataset.order;
+            data.sort((a, b) => {
+                if (a[column.dataset.column] < b[column.dataset.column]) return order === "asc" ? -1 : 1;
+                if (a[column.dataset.column] > b[column.dataset.column]) return order === "asc" ? 1 : -1;
+                return 0;
+            });
+            column.dataset.order = order === "asc" ? "desc" : "asc";
+            renderTable(data);
+        }
+
+        // Eventos para ordenar a tabela
+        document.querySelectorAll("th[data-column]").forEach(th => {
+            th.addEventListener("click", () => sortTable(th));
+        });
+
+        // Função para executar múltiplas ações
+        async function executeMultipleActions() {
+            const selectedItems = Array.from(document.querySelectorAll('.teamCheckbox:checked'))
+                .map(checkbox => checkbox.getAttribute('data-link'));
+
+            if (selectedItems.length === 0) {
+                addLog('Nenhuma equipe selecionada.');
+                alert('Por favor, selecione pelo menos uma equipe.');
+                return;
+            }
+
+            showLoadingMessage(true);
+            addLog('Iniciando atualização de todos os dados...');
+
+            try {
+                const endpoints = [
+                    { url: '/execute-jogos', message: 'Jogos atualizados com sucesso!' },
+                    { url: '/execute-jogadores', message: 'Jogadores atualizados com sucesso!' },
+                    { url: '/execute-lesoes', message: 'Lesões atualizadas com sucesso!' },
+                    { url: '/execute-odds', message: 'Odds atualizados com sucesso!' },
+                    { url: '/execute-rank', message: 'Rank atualizado com sucesso!' }
+                ];
+
+                for (const endpoint of endpoints) {
+                    const response = await fetch(endpoint.url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ links: selectedItems })
+                    });
+
+                    if (!response.ok) {
+                        const errorDetails = await response.text();
+                        addLog(`Erro ao atualizar ${endpoint.url}: ${errorDetails}`);
+                        alert(`Erro ao atualizar ${endpoint.url}: ${errorDetails || 'Verifique os logs.'}`);
+                        return;
+                    }
+                    addLog(endpoint.message);
+                }
+
+                addLog('Todos os dados foram atualizados com sucesso!');
+                alert('Todos os dados foram atualizados com sucesso!');
+                window.location.reload();
+            } catch (error) {
+                addLog(`Erro ao atualizar os dados: ${error.message}`);
+                console.error('Erro ao chamar a API:', error);
+                alert('Erro ao atualizar os dados.');
+            } finally {
+                showLoadingMessage(false);
+            }
+        }
+
+        // Evento para executar todas as ações
+        document.getElementById('executeAll').addEventListener('click', executeMultipleActions);
+    </script>
 </body>
 </html>
