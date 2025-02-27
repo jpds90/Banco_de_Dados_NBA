@@ -1496,9 +1496,10 @@ function callSecondScript(res, tableName) {
 
     exec(`node ${secondScriptPath} ${tableName}`, (secondError, secondStdout, secondStderr) => {
         console.log(`📌 Saída do segundo script: ${secondStdout}`);
+        
         if (secondError) {
             console.error(`❌ Erro ao executar o segundo script: ${secondError.message}`);
-            return res.status(500).json({ success: false, message: `Erro ao executar o segundo script.` });
+            return res.status(500).json({ success: false, message: `Erro ao executar o segundo script.` }); // Adicionado 'return' aqui
         }
 
         if (secondStderr) {
@@ -1506,9 +1507,12 @@ function callSecondScript(res, tableName) {
         }
 
         console.log(`✅ Segundo script executado com sucesso.`);
-        res.json({ success: true, message: `Segundo script executado com sucesso.` });
+        if (!res.headersSent) { // Garante que a resposta só seja enviada uma vez
+            res.json({ success: true, message: `Segundo script executado com sucesso.` });
+        }
     });
 }
+
 
 // Rota para executar a atualização de jogadores
 app.post('/execute-Jogadores', async (req, res) => {
