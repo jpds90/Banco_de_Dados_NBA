@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualizar Dados</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #loadingMessage {
+            display: none;
+            color: blue;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        /* Monitor de Logs */
+        #logMonitor {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            z-index: 1000;
+            overflow-y: auto;
+            font-family: monospace;
+            border-left: 3px solid lime;
+        }
+        #logContent {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Atualizar Dados NBA - Futebol</h1>
+
+    <div class="container">
+        <div class="column">
+            <h2>NBA</h2>
+            <div class="buttons">
+                <button id="loadNBA">NBA</button>
+                <button id="executeScript">Atualizar Links - NBA</button>
+                <button id="executeAll">Atualizar Tudo - NBA</button>
+                <button id="executeAll1">Atualizar Jogadores - NBA</button>
+                <button id="executeAll2">Atualizar Lesões - NBA</button>
+                <button id="executeOdds">Atualizar Odds - NBA</button>
+                <button id="executeRank">Atualizar Rank - NBA</button>
+            </div>
+        </div>
+
+        <div class="column">
+            <h2>Futebol</h2>
+            <div class="buttons">
+                <button id="loadFutebol">Futebol</button>
+                <button id="executeAll10">Atualizar Time Futebol</button>
+                <button id="executeScript1">Atualizar Links Futebol</button>
+                <button onclick="window.location.href='futebol1.html';">Atualizar Dados</button>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="window.location.href='principal.html';">Home</button>
+
+    <p id="loadingMessage">Carregando...</p>
+
+    <!-- Monitor de Logs -->
+    <div id="logMonitor">
+        <h3>Monitor de Logs</h3>
+        <div id="logContent"></div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="selectAll"></th>
+                <th data-column="team_name" data-order="asc">Equipe</th>
+                <th data-column="link" data-order="asc">Link</th>
+                <th data-column="event_time" data-order="asc">Horário</th>
+            </tr>
+        </thead>
+        <tbody id="linksTable"></tbody>
+    </table>
+
+    <script>
+        let data = [];
+
+        function addLog(message) {
+            const logContent = document.getElementById('logContent');
+            const timestamp = new Date().toLocaleTimeString();
+            logContent.innerHTML += `<p>[${timestamp}] ${message}</p>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+
+        function renderTable(data) {
+            const tableBody = document.getElementById('linksTable');
+            tableBody.innerHTML = '';
+            data.forEach(link => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="teamCheckbox" data-link="${link.link}" data-team_name="${link.team_name}"></td>
+                    <td>${link.team_name}</td>
+                    <td><a href="${link.link}" target="_blank">${link.link}</a></td>
+                    <td>${link.event_time}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function loadLinks(endpoint) {
+            addLog(`Carregando links de ${endpoint}...`);
+            fetch(endpoint)
+                .then(response => response.json())
+                .then(fetchedData => {
+                    data = fetchedData;
+                    renderTable(data);
+                    addLog(`Links carregados com sucesso.`);
+                })
+                .catch(error => {
+                    addLog(`Erro ao carregar links: ${error.message}`);
+                });
+        }
+
+        function executeApiCall(endpoint, successMessage) {
+            addLog(`Iniciando ${endpoint}...`);
+            showLoadingMessage(true, `Processando ${endpoint}...`);
+
+            fetch(endpoint, { method: 'POST' })
+                .then(response => {
+                    if (response.ok) {
+                        addLog(successMessage);
+                        alert(successMessage);
+                        window.location.reload();
+                    } else {
+                        addLog(`Erro ao executar ${endpoint}`);
+                        alert('Erro ao executar a ação.');
+                    }
+                })
+                .catch(error => {
+                    addLog(`Erro: ${error.message}`);
+                    alert('Erro ao executar a ação.');
+                })
+                .finally(() => {
+                    showLoadingMessage(false);
+                });
+        }
+
+        function showLoadingMessage(show, message = '') {
+            document.getElementById('loadingMessage').style.display = show ? 'block' : 'none';
+            if (show) addLog(message);
+        }
+
+        document.getElementById('loadNBA').addEventListener('click', () => loadLinks('/links'));
+        document.getElementById('loadFutebol').addEventListener('click', () => loadLinks('/linksfut'));
+
+        document.getElementById('executeRank').addEventListener('click', () => executeApiCall('/execute-rank', 'Rank atualizado com sucesso!'));
+        document.getElementById('executeOdds').addEventListener('click', () => executeApiCall('/execute-odds', 'Odds atualizados com sucesso!'));
+        document.getElementById('executeScript').addEventListener('click', () => executeApiCall('/execute-script', 'Links atualizados com sucesso!'));
+        document.getElementById('executeScript1').addEventListener('click', () => executeApiCall('/futebollink', 'Links de Futebol atualizados com sucesso!'));
+        document.getElementById('executeAll1').addEventListener('click', () => executeApiCall('/execute-jogadores', 'Jogadores atualizados com sucesso!'));
+        document.getElementById('executeAll2').addEventListener('click', () => executeApiCall('/execute-lesoes', 'Lesões atualizadas com sucesso!'));
+        document.getElementById('executeAll10').addEventListener('click', () => executeApiCall('/execute-futebol', 'TIME atualizado com sucesso!'));
+    </script>
+
+</body>
+</html>
