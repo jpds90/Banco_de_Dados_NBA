@@ -41,14 +41,25 @@ async function getTableName() {
     }
 
     const url = await getSavedUrl(tableNameFromArg); // Usa a tabela certa
-    const tableName = url.split('/').slice(-3, -2)[0]
+    const parts = url.split('/');
+    
+    // Extraindo as partes da URL
+    const region = parts.slice(-4, -3)[0] // america-do-sul
         .toLowerCase()
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "_") + "_odds";
+        .replace(/[^a-z0-9]+/g, "_");
+
+    const tournament = parts.slice(-3, -2)[0] // taca-dos-libertadores
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_");
+
+    const tableName = `${region}_${tournament}_odds`; // Formando o nome da tabela final
 
     console.log(`📌 Nome da tabela extraído: ${tableName} - ${url}`);
     return { tableName, url };
 }
+
 
 
 
