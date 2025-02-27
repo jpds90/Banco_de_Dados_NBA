@@ -126,6 +126,7 @@ app.post("/salvar-url", async (req, res) => {
     }
 });
 
+
 // Variáveis para armazenar logs e clientes conectados
 let clients = [];
 let logBuffer = [];
@@ -137,12 +138,14 @@ function storeLog(message) {
     console.log(logEntry); // Exibir no terminal do Render
 }
 
-// Interceptar logs do console e armazená-los
+// Captura a função original do console.log
 const originalConsoleLog = console.log;
-console.log = (...args) => {
+
+// Interceptar o console.log para capturar as mensagens sem chamar recursivamente
+console.log = function (...args) {
     const logMessage = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : arg)).join(' ');
     storeLog(logMessage);
-    originalConsoleLog(...args);
+    originalConsoleLog.apply(console, args); // Chama o console.log original sem causar recursão
 };
 
 // Função para enviar logs para os clientes conectados
