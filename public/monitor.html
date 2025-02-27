@@ -42,16 +42,17 @@
             position: fixed;
             top: 10px;
             right: 10px;
-            width: 300px;
-            height: 200px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
+            width: 400px;
+            height: 300px;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #00ff00; /* Cor verde para simular terminal */
             padding: 10px;
             overflow-y: auto;
             border-radius: 5px;
             font-family: monospace;
             font-size: 12px;
             z-index: 1000;
+            white-space: pre-wrap; /* Mantém a formatação dos logs */
         }
     </style>
 </head>
@@ -107,7 +108,7 @@
     </table>
 
     <script>
-        // Função para adicionar logs
+        // Função para adicionar logs ao monitor
         function addLog(message) {
             const logContent = document.getElementById('logContent');
             const logEntry = document.createElement('div');
@@ -118,33 +119,23 @@
             logContent.scrollTop = logContent.scrollHeight;
         }
 
+        // Conectar ao servidor para receber logs em tempo real
+        const eventSource = new EventSource('/logs'); // Endpoint do servidor para logs
+
+        eventSource.onmessage = function (event) {
+            addLog(event.data); // Adiciona o log recebido ao monitor
+        };
+
+        eventSource.onerror = function () {
+            addLog('Conexão com o servidor de logs perdida. Tentando reconectar...');
+            eventSource.close();
+            setTimeout(() => {
+                new EventSource('/logs'); // Reconecta após 5 segundos
+            }, 5000);
+        };
+
         // Exemplo de uso da função addLog
-        addLog('Página carregada.');
-
-        // Modificação das funções de API para exibir logs em tempo real
-        async function executeApiCall(endpoint, successMessage) {
-            showLoadingMessage(true);
-            addLog(`Iniciando chamada para ${endpoint}...`);
-
-            try {
-                const response = await fetch(endpoint, { method: 'POST' });
-                if (response.ok) {
-                    addLog(successMessage);
-                    alert(successMessage);
-                    window.location.reload();
-                } else {
-                    const errorDetails = await response.text();
-                    addLog(`Erro ao chamar ${endpoint}: ${errorDetails}`);
-                    alert('Erro ao executar a ação.');
-                }
-            } catch (error) {
-                addLog(`Erro ao chamar ${endpoint}: ${error.message}`);
-                console.error('Erro ao chamar a API:', error);
-                alert('Erro ao executar a ação.');
-            } finally {
-                showLoadingMessage(false);
-            }
-        }
+        addLog('Página carregada. Conectando ao servidor de logs...');
 
         // Função para carregar links
         function loadLinks(endpoint) {
@@ -194,6 +185,31 @@
         // Eventos para carregar links
         document.getElementById('loadNBA').addEventListener('click', () => loadLinks('/links'));
         document.getElementById('loadFutebol').addEventListener('click', () => loadLinks('/linksfut'));
+
+        // Função para executar chamadas de API
+        async function executeApiCall(endpoint, successMessage) {
+            showLoadingMessage(true);
+            addLog(`Iniciando chamada para ${endpoint}...`);
+
+            try {
+                const response = await fetch(endpoint, { method: 'POST' });
+                if (response.ok) {
+                    addLog(successMessage);
+                    alert(successMessage);
+                    window.location.reload();
+                } else {
+                    const errorDetails = await response.text();
+                    addLog(`Erro ao chamar ${endpoint}: ${errorDetails}`);
+                    alert('Erro ao executar a ação.');
+                }
+            } catch (error) {
+                addLog(`Erro ao chamar ${endpoint}: ${error.message}`);
+                console.error('Erro ao chamar a API:', error);
+                alert('Erro ao executar a ação.');
+            } finally {
+                showLoadingMessage(false);
+            }
+        }
 
         // Eventos para executar ações
         document.getElementById('executeRank').addEventListener('click', () => executeApiCall('/execute-rank', 'Rank atualizado com sucesso!'));
