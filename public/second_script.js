@@ -13,6 +13,20 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false },
 });
 
+const loadPageWithRetries = async (page, url, retries = 3) => {
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            console.log(`Tentativa ${attempt + 1} de carregar a página: ${url}`);
+            await page.goto(url, { timeout: 120000, waitUntil: 'domcontentloaded' });
+            console.log("Página carregada com sucesso.");
+            return;
+        } catch (error) {
+            console.error(`Erro ao carregar a página na tentativa ${attempt + 1}:`, error.message);
+            if (attempt === retries - 1) throw error;
+        }
+    }
+};
+
 // ✅ Função para carregar a URL da liga salva no banco de dados
 async function getSavedUrl(tableName) {
     const client = await pool.connect();
@@ -89,18 +103,16 @@ async function scrapeAndSaveLinks(tableName, url) {
 
     try {
         console.log("📌 Acessando URL:", url);
-        await page.goto(url, { timeout: 120000 });
+        await loadPageWithRetries(page, url);
         await sleep(10000);
         await page.waitForSelector('.container', { timeout: 90000 });
 
-        // 🔹 Pega os IDs dos jogos
         const idObjects = await getNewIds(page, [], 20);
 
         for (const { id, eventTime } of idObjects) {
             const gameUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/sumario-do-jogo/`;
             console.log(`⚽ Processando: ${gameUrl}`);
-
-            await page2.goto(gameUrl, { timeout: 120000 });
+            await loadPageWithRetries(page2, gameUrl);
             await sleep(10000);
 
             const rows = await page2.$$('#detail > div.duelParticipant');
