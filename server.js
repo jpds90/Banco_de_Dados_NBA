@@ -130,23 +130,23 @@ app.post("/salvar-url", async (req, res) => {
 // Variáveis para armazenar logs e clientes conectados
 let clients = [];
 let logBuffer = [];
+let isLogging = false; // Flag para evitar recursão infinita
 
 // Função para armazenar logs
 function storeLog(message) {
+    // Evitar recursão infinita usando a flag
+    if (isLogging) return;
+
+    isLogging = true; // Marcar como em processo de log
+
     const logEntry = `[${new Date().toLocaleTimeString()}] ${message}`;
     logBuffer.push(logEntry);
-    console.log(logEntry); // Exibir no terminal do Render
+    
+    // Simplesmente log no terminal para renderizar logs
+    process.stdout.write(`${logEntry}\n`); // Usar process.stdout.write para evitar chamar o console.log diretamente
+    
+    isLogging = false; // Desmarcar o processo de log
 }
-
-// Captura a função original do console.log
-const originalConsoleLog = console.log;
-
-// Interceptar o console.log para capturar as mensagens sem chamar recursivamente
-console.log = function (...args) {
-    const logMessage = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : arg)).join(' ');
-    storeLog(logMessage);
-    originalConsoleLog.apply(console, args); // Chama o console.log original sem causar recursão
-};
 
 // Função para enviar logs para os clientes conectados
 function broadcastLogs() {
@@ -176,7 +176,6 @@ app.post('/trigger-logs', (req, res) => {
     broadcastLogs();
     res.json({ success: true, message: 'Logs enviados com sucesso!' });
 });
-
 //Futebol------------------Futebol------------futebol------------------------
 
 // ✅ Função para buscar dados da tabela no banco de dados
