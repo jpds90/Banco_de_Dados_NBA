@@ -170,6 +170,22 @@ app.post('/futebollink', (req, res) => {
 
 
 
+app.post('/futebolrank', (req, res) => {
+    const { tableName } = req.body;  // Recebe o nome da tabela do frontend
+     console.log("🔹 Recebendo request em /futebolrank com tableName:", tableName);
+    if (!tableName) {
+        return res.status(400).json({ success: false, message: "tableName ausente" });
+    }
+
+    const scriptPath = path.join(__dirname, 'public', 'futebolrank.js');
+    console.log(`📂 Caminho do script para o Rank: ${scriptPath}`);
+    runScript(scriptPath, res, 'Extrair Rank da Liga', [tableName]);
+});
+
+
+
+
+
 app.post('/timefutebol', async (req, res) => {
     const { tableName } = req.body;
     console.log(`🔍 Recebido Futebol.js: ${tableName}`);
