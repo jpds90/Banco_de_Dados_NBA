@@ -335,63 +335,63 @@ o<!DOCTYPE html>
     "Tunísia": ["Liga Profissional 1"]
     };
 
-    const countrySelect = document.getElementById("countrySelect");
-    const leagueSelect = document.getElementById("leagueSelect");
-    const fetchGamesButton = document.getElementById("fetchGames");
-    const matchesDiv = document.getElementById("matches");
-    const headToHeadTable = document.querySelector("#headToHeadTable tbody");
-    const winProbabilityTable = document.getElementById("winProbabilityTable");
+const countrySelect = document.getElementById("countrySelect");
+const leagueSelect = document.getElementById("leagueSelect");
+const fetchGamesButton = document.getElementById("fetchGames");
+const matchesDiv = document.getElementById("matches");
+const headToHeadTable = document.querySelector("#headToHeadTable tbody");
+const winProbabilityTable = document.getElementById("winProbabilityTable");
 
-    for (let country in countries) {
-        let option = document.createElement("option");
-        option.value = country;
-        option.textContent = country;
-        countrySelect.appendChild(option);
+for (let country in countries) {
+    let option = document.createElement("option");
+    option.value = country;
+    option.textContent = country;
+    countrySelect.appendChild(option);
+}
+
+countrySelect.addEventListener("change", function() {
+    leagueSelect.innerHTML = "<option value=''>Escolha uma liga</option>";
+    leagueSelect.style.display = "none";
+    fetchGamesButton.style.display = "none";
+    matchesDiv.innerHTML = "";
+
+    if (this.value) {
+        countries[this.value].forEach(league => {
+            let option = document.createElement("option");
+            option.value = league;
+            option.textContent = league;
+            leagueSelect.appendChild(option);
+        });
+        leagueSelect.style.display = "block";
     }
+});
 
-    countrySelect.addEventListener("change", function() {
-        leagueSelect.innerHTML = "<option value=''>Escolha uma liga</option>";
-        leagueSelect.style.display = "none";
-        fetchGamesButton.style.display = "none";
-        matchesDiv.innerHTML = "";
-
-        if (this.value) {
-            countries[this.value].forEach(league => {
-                let option = document.createElement("option");
-                option.value = league;
-                option.textContent = league;
-                leagueSelect.appendChild(option);
-            });
-            leagueSelect.style.display = "block";
-        }
-    });
-
-    leagueSelect.addEventListener("change", function() {
-        fetchGamesButton.style.display = this.value ? "block" : "none";
-    });
+leagueSelect.addEventListener("change", function() {
+    fetchGamesButton.style.display = this.value ? "block" : "none";
+});
 
 function formatarNomeTime(nome) {
     return nome
         .replace(/(\([^()]*\)|Segue em frente)/g, '');
 }
 
-
-
-
-
 fetchGamesButton.addEventListener("click", async function() {
+    const selectedCountry = countrySelect.value;
     const selectedLeague = leagueSelect.value;
-    if (!selectedLeague) return;
+    if (!selectedLeague || !selectedCountry) return;
 
-    let tableName = selectedLeague
-    .normalize("NFD") // Decompõe os caracteres acentuados
-    .replace(/[\u0300-\u036f]/g, "") // Remove os acentos e sinais diacríticos
-    .replace(/\s+/g, "_") // Substitui espaços por _
-    .toLowerCase() + "_odds"; // Converte para minúsculas e adiciona "_odds"
+    let formattedCountry = selectedCountry
+        .normalize("NFD") // Decompõe os caracteres acentuados
+        .replace(/[\u0300-\u036f]/g, "") // Remove os acentos e sinais diacríticos
+        .replace(/\s+/g, "_") // Substitui espaços por _
+        .toLowerCase(); // Converte para minúsculas
+
+    let tableName = `${formattedCountry}_${selectedLeague.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "_").toLowerCase()}_odds`;
 
     console.log(`Buscando dados para a tabela: ${tableName}`);
 
     matchesDiv.innerHTML = "Carregando...";
+
 
 try {
     const response = await fetch(`https://analise-jpnba.onrender.com/buscar-times?tableName=${tableName}`);
