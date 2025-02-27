@@ -946,8 +946,8 @@ function normalizarNomeTime(nome) {
 
        // Processar os jogos corretamente, garantindo que não haja erros com times sem registros
        const jogosFormatados = [
-           ...(jogosHome.length ? processarJogos(jogosHome, timeHome) : []),
-           ...(jogosAway.length ? processarJogos(jogosAway, timeAway) : [])
+           ...(jogosHome.length ? processarJogos1(jogosHome, timeHome) : []),
+           ...(jogosAway.length ? processarJogos1(jogosAway, timeAway) : [])
        ];
 
        // Ordenar os jogos pela data mais recente primeiro
