@@ -56,6 +56,14 @@
             .replace(/^_|_$/g, ""); // Remove "_" do início e do fim
     }
 
+        function formatText1(text) {
+            return text
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-")
+                .replace(/^-+|-+$/g, "");
+        }
         const countries = {
              "AMÉRICA DO SUL": ["Taça dos Libertadores"],
     "Europa": ["Liga dos Campeões", "Liga Europa", "Liga Conferência", "Liga das Nações"],
@@ -161,9 +169,10 @@
                 leagueElement.classList.add("league");
 
                 let formattedCountry = formatText(country);
+                let formattedLeague1 = formatText1(league);
                 let formattedLeague = formatText(league);
-
-                let tableName = `${formattedCountry}_${formattedLeague}_link`;
+                
+                let tableName = `${formattedCountry}_${formattedLeague1}_link`;
 
                 console.log(`📌 Nome da tabela corrigido: ${tableName}`);
 
