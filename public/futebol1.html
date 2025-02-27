@@ -35,6 +35,7 @@
         .btn-process { background-color: orange; color: white; }
         .btn-teams { background-color: blue; color: white; }
         .btn-odds { background-color: green; color: white; }
+        .btn-rank { background-color: beige; color: black; }
         .loading { color: gray !important; }
         .success { color: green !important; }
         .error { color: red !important; }
@@ -225,10 +226,17 @@ console.log(`📌 Nome da tabela extraído: ${tableName}`);
                 oddsButton.classList.add("btn", "btn-odds");
                 oddsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/oddsfutebol", tableName, "Odds Futebol", oddsButton);
 
+                let oddsButton = document.createElement("button");
+                rankButton.textContent = "Rank";
+                rankButton.classList.add("btn", "btn-rank");
+                rankButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/futebolrank", tableName, "Rank Liga", rankButton);
+                
+                
                 leagueContainer.appendChild(leagueElement);
                 leagueContainer.appendChild(processButton);
                 leagueContainer.appendChild(teamsButton);
                 leagueContainer.appendChild(oddsButton);
+                leagueContainer.appendChild(rankButton);
 
                 leaguesDiv.appendChild(leagueContainer);
             });
