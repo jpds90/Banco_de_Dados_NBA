@@ -126,6 +126,28 @@ app.post("/salvar-url", async (req, res) => {
     }
 });
 
+// Rota para enviar logs em tempo real
+app.get('/logs', (req, res) => {
+    // Configura o cabeçalho para SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    // Função para enviar logs
+    const sendLog = (message) => {
+        res.write(`data: ${JSON.stringify(message)}\n\n`);
+    };
+
+    // Exemplo de logs sendo enviados
+    setInterval(() => {
+        sendLog(`Log de exemplo: ${new Date().toLocaleTimeString()}`);
+    }, 2000);
+
+    // Fecha a conexão quando o cliente desconecta
+    req.on('close', () => {
+        res.end();
+    });
+});
 
 //Futebol------------------Futebol------------futebol------------------------
 
