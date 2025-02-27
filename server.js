@@ -126,27 +126,52 @@ app.post("/salvar-url", async (req, res) => {
     }
 });
 
-// Rota para enviar logs em tempo real
+// Variáveis para armazenar logs e clientes conectados
+let clients = [];
+let logBuffer = [];
+
+// Função para armazenar logs
+function storeLog(message) {
+    const logEntry = `[${new Date().toLocaleTimeString()}] ${message}`;
+    logBuffer.push(logEntry);
+    console.log(logEntry); // Exibir no terminal do Render
+}
+
+// Interceptar logs do console e armazená-los
+const originalConsoleLog = console.log;
+console.log = (...args) => {
+    const logMessage = args.map(arg => (typeof arg === 'object' ? JSON.stringify(arg) : arg)).join(' ');
+    storeLog(logMessage);
+    originalConsoleLog(...args);
+};
+
+// Função para enviar logs para os clientes conectados
+function broadcastLogs() {
+    if (logBuffer.length > 0) {
+        const logsToSend = logBuffer.join('\n');
+        clients.forEach(res => res.write(`data: ${JSON.stringify({ logs: logsToSend })}\n\n`));
+        logBuffer = []; // Limpar buffer após envio
+    }
+}
+
+// Rota SSE para fornecer logs em tempo real
 app.get('/logs', (req, res) => {
-    // Configura o cabeçalho para SSE
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Função para enviar logs
-    const sendLog = (message) => {
-        res.write(`data: ${JSON.stringify(message)}\n\n`);
-    };
-
-    // Exemplo de logs sendo enviados
-    setInterval(() => {
-        sendLog(`Log de exemplo: ${new Date().toLocaleTimeString()}`);
-    }, 2000);
-
-    // Fecha a conexão quando o cliente desconecta
+    clients.push(res);
+    
     req.on('close', () => {
-        res.end();
+        clients = clients.filter(client => client !== res);
     });
+});
+
+// Rota para acionar logs sob demanda
+app.post('/trigger-logs', (req, res) => {
+    storeLog(req.body.message || 'Ação acionada no sistema.');
+    broadcastLogs();
+    res.json({ success: true, message: 'Logs enviados com sucesso!' });
 });
 
 //Futebol------------------Futebol------------futebol------------------------
