@@ -574,8 +574,8 @@ app.get('/golsemcasa', async (req, res) => {
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
@@ -597,7 +597,17 @@ app.get('/golsemcasa', async (req, res) => {
                SELECT timehome, timeaway, resultadohome, data_hora
                FROM ${homeTable} 
                WHERE unaccent(timehome) ILIKE unaccent($1)
-               ORDER BY data_hora DESC
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
                LIMIT 10
            `, [timeHome]);
 
@@ -617,7 +627,17 @@ app.get('/golsemcasa', async (req, res) => {
                SELECT timehome, timeaway, resultadoaway, data_hora
                FROM ${awayTable} 
                WHERE unaccent(timeaway) ILIKE unaccent($1)
-               ORDER BY data_hora DESC
+               ORDER BY 
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 1
+                     ELSE 2
+                 END,
+                 CASE
+                     WHEN data_hora LIKE '__.__. __:__' THEN 
+                         TO_TIMESTAMP(CONCAT('2025.', data_hora), 'YYYY.DD.MM HH24:MI')
+                     WHEN data_hora LIKE '__.__.____ __:__' THEN 
+                         TO_TIMESTAMP(data_hora, 'DD.MM.YYYY')
+                 END DESC
                LIMIT 10
            `, [timeAway]);
 
