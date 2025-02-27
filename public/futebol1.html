@@ -216,21 +216,25 @@ console.log(`📌 Nome da tabela extraído: ${tableName}`);
                 };
 
                 // Botões de Times e Odds
-                let teamsButton = document.createElement("button");
-                teamsButton.textContent = "Times";
-                teamsButton.classList.add("btn", "btn-teams");
-                teamsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/timefutebol", tableName, "Dados dos Times", teamsButton);
+ let processButton = document.createElement("button");
+processButton.textContent = "Processar";
+processButton.classList.add("btn", "btn-process");
+processButton.onclick = async () => executeScript("https://analise-jpnba.onrender.com/futebollink", tableName, "Processar Liga", processButton);
 
-                let oddsButton = document.createElement("button");
-                oddsButton.textContent = "Odds";
-                oddsButton.classList.add("btn", "btn-odds");
-                oddsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/oddsfutebol", tableName, "Odds Futebol", oddsButton);
+let teamsButton = document.createElement("button");
+teamsButton.textContent = "Times";
+teamsButton.classList.add("btn", "btn-teams");
+teamsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/timefutebol", tableName, "Dados dos Times", teamsButton);
 
-                let rankButton = document.createElement("button");
-                rankButton.textContent = "Rank";
-                rankButton.classList.add("btn", "btn-rank");
-                rankButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/futebolrank", tableName, "Rank Liga", rankButton);
-                
+let oddsButton = document.createElement("button");
+oddsButton.textContent = "Odds";
+oddsButton.classList.add("btn", "btn-odds");
+oddsButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/oddsfutebol", tableName, "Odds Futebol", oddsButton);
+
+let rankButton = document.createElement("button");
+rankButton.textContent = "Rank";
+rankButton.classList.add("btn", "btn-rank");
+rankButton.onclick = () => executeScript("https://analise-jpnba.onrender.com/futebolrank", tableName, "Rank Liga", rankButton);
                 
                 leagueContainer.appendChild(leagueElement);
                 leagueContainer.appendChild(processButton);
