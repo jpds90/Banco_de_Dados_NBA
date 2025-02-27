@@ -141,10 +141,10 @@ function storeLog(message) {
 
     const logEntry = `[${new Date().toLocaleTimeString()}] ${message}`;
     logBuffer.push(logEntry);
-    
+
     // Simplesmente log no terminal para renderizar logs
     process.stdout.write(`${logEntry}\n`); // Usar process.stdout.write para evitar chamar o console.log diretamente
-    
+
     isLogging = false; // Desmarcar o processo de log
 }
 
@@ -164,7 +164,7 @@ app.get('/logs', (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     clients.push(res);
-    
+
     req.on('close', () => {
         clients = clients.filter(client => client !== res);
     });
@@ -175,6 +175,23 @@ app.post('/trigger-logs', (req, res) => {
     storeLog(req.body.message || 'Ação acionada no sistema.');
     broadcastLogs();
     res.json({ success: true, message: 'Logs enviados com sucesso!' });
+});
+
+// Rota para iniciar o scraping e gerar logs detalhados
+app.post('/start-scraping', async (req, res) => {
+    const links = req.body.links || [];
+    for (let link of links) {
+        storeLog(`Iniciando o scraping para o link: ${link}`);
+        try {
+            await scrapeResults(link); // Chama sua função de scraping
+            storeLog(`Scraping para o link ${link} concluído com sucesso.`);
+        } catch (err) {
+            storeLog(`Erro durante o scraping do link ${link}: ${err.message}`);
+        }
+    }
+
+    broadcastLogs(); // Enviar os logs para os clientes conectados
+    res.json({ success: true, message: 'Scraping iniciado.' });
 });
 //Futebol------------------Futebol------------futebol------------------------
 
