@@ -46,15 +46,15 @@
     <div id="countries"></div>
     
     <script>
-        function formatText(text) {
-            return text
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "_") // Substitui caracteres especiais por "_"
-                .replace(/_+/g, "_") // Remove múltiplos "_"
-                .replace(/^_|_$/g, ""); // Remove "_" do início e do fim
-        }
+    function formatText(text) {
+        return text
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+            .toLowerCase()
+            .replace(/[^a-z0-9-]+/g, "_") // Mantém o hífen e substitui outros caracteres especiais por "_"
+            .replace(/_+/g, "_") // Remove múltiplos "_"
+            .replace(/^_|_$/g, ""); // Remove "_" do início e do fim
+    }
 
         const countries = {
              "AMÉRICA DO SUL": ["Taça dos Libertadores"],
