@@ -49,14 +49,15 @@
         function formatText(text) {
             return text
                 .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "")
+                .replace(/[\u0300-\u036f]/g, "") // Remove acentos
                 .toLowerCase()
-                .replace(/[^a-z0-9]+/g, "-")
-                .replace(/^-+|-+$/g, "");
+                .replace(/[^a-z0-9]+/g, "_") // Substitui caracteres especiais por "_"
+                .replace(/_+/g, "_") // Remove múltiplos "_"
+                .replace(/^_|_$/g, ""); // Remove "_" do início e do fim
         }
 
         const countries = {
-    "AMÉRICA DO SUL": ["Taça dos Libertadores"],
+             "AMÉRICA DO SUL": ["Taça dos Libertadores"],
     "Europa": ["Liga dos Campeões", "Liga Europa", "Liga Conferência", "Liga das Nações"],
     "Brasil": ["Taça do Brasil", "Paulista", "Carioca", "Gaucho", "Mineiro", "Taça do Nordeste", "Goiano", "Catarinense", "Baiano"],
     "Portugal": ["Liga Portugal Betclic", "Taça de Portugal", "Liga Portugal 2", "Liga 3"],
@@ -115,7 +116,7 @@
     "Tailândia": ["Liga 1"],
     "Tanzânia": ["Liga Kuu Bara"],
     "Tunísia": ["Liga Profissional 1"]
-       };
+  };
 
         const countryContainer = document.getElementById("countries");
 
@@ -161,22 +162,23 @@
 
                 let formattedCountry = formatText(country);
                 let formattedLeague = formatText(league);
+
                 let tableName = `${formattedCountry}_${formattedLeague}_link`;
 
-                console.log(`📌 Nome da tabela extraído: ${tableName}`);
+                console.log(`📌 Nome da tabela corrigido: ${tableName}`);
 
                 let processButton = document.createElement("button");
                 processButton.textContent = "Processar";
                 processButton.classList.add("btn", "btn-process");
 
                 processButton.onclick = async () => {
+                    let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
+
                     processButton.textContent = "Processando...";
                     processButton.disabled = true;
 
-                    let url = `https://www.flashscore.pt/futebol/${formattedCountry}/${formattedLeague}/lista/`;
-                    console.log("📤 Enviando URL e tableName:", url, tableName);
-
                     try {
+                        console.log("📤 Enviando URL e tableName:", url, tableName);
                         const response = await fetch("https://analise-jpnba.onrender.com/salvar-url", {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
@@ -184,7 +186,7 @@
                         });
 
                         const result = await response.json();
-                        console.log("✅ Resposta do servidor (salvar-url):", result);
+                        console.log("✅ Resposta do servidor:", result);
 
                         if (!result.success && result.message !== "URL já está salva!") {
                             throw new Error("Erro ao salvar a URL.");
