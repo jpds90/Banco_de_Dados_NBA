@@ -177,7 +177,7 @@ app.post('/futebolrank', (req, res) => {
         return res.status(400).json({ success: false, message: "tableName ausente" });
     }
 
-    const scriptPath = path.join(__dirname, 'public', 'futebolrank.js');
+    const scriptPath = path.join(__dirname, 'public', 'rankfutebol.js');
     console.log(`📂 Caminho do script para o Rank: ${scriptPath}`);
     runScript(scriptPath, res, 'Extrair Rank da Liga', [tableName]);
 });
