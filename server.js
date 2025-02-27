@@ -938,8 +938,8 @@ function normalizarNomeTime(nome) {
        console.log(`🚀 Time 2 consultado: ${timeAway}`);
 
        // Buscar os jogos dos dois times (mandante e visitante)
-       const jogosHome = await buscarJogos(timeHome);
-       const jogosAway = await buscarJogos(timeAway);
+       const jogosHome = await buscarJogos1(timeHome);
+       const jogosAway = await buscarJogos1(timeAway);
 
        let jogos = [...jogosHome, ...jogosAway];
        console.log(`📊 Total de jogos encontrados: ${jogos.length}`);
