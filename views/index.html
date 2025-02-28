@@ -28,6 +28,7 @@
             padding: 5px;
             margin: 5px 0;
             border-radius: 3px;
+            list-style: none;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -45,17 +46,16 @@
 <body>
     <h1>Dados - Futebol - NBA</h1>
     <button id="clearAllTablesExceptLinksButton">Apagar Todas as Tabelas (Exceto Links)</button>
-    <button id="deleteSelectedButton">Excluir Selecionados</button>
-    
-    <script>
+    <button id="deleteSelectedTablesButton">Excluir Tabelas Selecionadas</button>
+
+    <div class="container">
+        <% 
         // Criar categorias
         const categorias = { 
             futebol: [], 
             lesoes: [], 
             jogadores: [], 
-            link: [], 
-            links: [],
-            odds: [],  
+            links: [], 
             outros: [] 
         };
 
@@ -67,27 +67,27 @@
                 categorias.lesoes.push(table);
             } else if (table.includes('_jogadores')) {
                 categorias.jogadores.push(table);
-            } else if (table.includes('_link')) {
-                categorias.link.push(table);
-            } else if (table.includes('_links')) {
+            } else if (table.includes('_link') || table.includes('_links')) {
                 categorias.links.push(table);
-            } else if (table.includes('_odds')) {
-                categorias.odds.push(table);
             } else {
                 categorias.outros.push(table);
             }
         });
-    </script>
 
-    <div class="container">
+        // Ordenar cada categoria alfabeticamente
+        Object.keys(categorias).forEach(categoria => {
+            categorias[categoria].sort();
+        });
+        %>
+
         <% Object.keys(categorias).forEach(categoria => { %>
             <% if (categorias[categoria].length > 0) { %>
                 <div class="category">
                     <h2><%= categoria.charAt(0).toUpperCase() + categoria.slice(1) %></h2>
                     <% categorias[categoria].forEach(table => { %>
                         <div class="table-item">
-                            <input type="checkbox" class="table-checkbox" value="<%= table %>">
                             <a href="/table/<%= table %>"><%= table %></a>
+                            <input type="checkbox" class="table-checkbox" value="<%= table %>">
                         </div>
                     <% }); %>
                 </div>
@@ -96,22 +96,48 @@
     </div>
 
     <script>
-        document.querySelector('#deleteSelectedButton').addEventListener('click', async () => {
-            const selectedTables = Array.from(document.querySelectorAll('.table-checkbox:checked'))
-                .map(checkbox => checkbox.value);
+        const clearAllTablesExceptLinks = async () => {
+            const button = document.querySelector('#clearAllTablesExceptLinksButton');
+            button.disabled = true;
+            button.textContent = 'Apagando...';
+    
+            try {
+                const response = await fetch('/clear-all-tables-except-links', { method: 'POST' });
+    
+                if (response.ok) {
+                    alert('Todas as tabelas (exceto links) foram apagadas com sucesso!');
+                    window.location.reload();
+                } else {
+                    alert('Erro ao apagar as tabelas.');
+                }
+            } catch (error) {
+                console.error('Erro na solicitação:', error);
+                alert('Erro ao apagar as tabelas.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Apagar Todas as Tabelas (Exceto Links)';
+            }
+        };
+
+        const deleteSelectedTables = async () => {
+            const selectedTables = Array.from(document.querySelectorAll('.table-checkbox:checked')).map(checkbox => checkbox.value);
 
             if (selectedTables.length === 0) {
-                alert('Nenhuma tabela selecionada!');
+                alert('Nenhuma tabela selecionada para exclusão.');
                 return;
             }
 
-            if (!confirm('Tem certeza que deseja excluir as tabelas selecionadas?')) return;
+            const button = document.querySelector('#deleteSelectedTablesButton');
+            button.disabled = true;
+            button.textContent = 'Excluindo...';
 
             try {
                 const response = await fetch('/delete-selected-tables', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tables: selectedTables })
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ tables: selectedTables }),
                 });
 
                 if (response.ok) {
@@ -123,8 +149,14 @@
             } catch (error) {
                 console.error('Erro na solicitação:', error);
                 alert('Erro ao excluir as tabelas.');
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Excluir Tabelas Selecionadas';
             }
-        });
+        };
+
+        document.querySelector('#clearAllTablesExceptLinksButton').addEventListener('click', clearAllTablesExceptLinks);
+        document.querySelector('#deleteSelectedTablesButton').addEventListener('click', deleteSelectedTables);
     </script>
 </body>
 </html>
