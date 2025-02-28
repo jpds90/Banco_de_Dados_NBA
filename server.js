@@ -127,6 +127,27 @@ app.post("/salvar-url", async (req, res) => {
 });
 
 
+app.post('/delete-selected-tables', async (req, res) => {
+    const { tables } = req.body;
+
+    if (!tables || tables.length === 0) {
+        return res.status(400).json({ error: "Nenhuma tabela selecionada para exclusão." });
+    }
+
+    try {
+        for (const table of tables) {
+            await db.query(`DROP TABLE IF EXISTS "${table}" CASCADE`); // Apaga cada tabela
+        }
+
+        res.json({ message: "Tabelas excluídas com sucesso!" });
+    } catch (error) {
+        console.error("Erro ao excluir tabelas:", error);
+        res.status(500).json({ error: "Erro ao excluir tabelas." });
+    }
+});
+
+
+
 // Variáveis para armazenar logs e clientes conectados
 let clients = [];
 let logBuffer = [];
