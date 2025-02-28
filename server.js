@@ -136,7 +136,7 @@ app.post('/delete-selected-tables', async (req, res) => {
 
     try {
         for (const table of tables) {
-            await db.query(`DROP TABLE IF EXISTS "${table}" CASCADE`); // Apaga cada tabela
+            await pool.query(`DROP TABLE IF EXISTS "${table}" CASCADE`); // Use pool.query() aqui
         }
 
         res.json({ message: "Tabelas excluídas com sucesso!" });
