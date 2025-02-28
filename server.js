@@ -214,6 +214,26 @@ app.post('/start-scraping', async (req, res) => {
     broadcastLogs(); // Enviar os logs para os clientes conectados
     res.json({ success: true, message: 'Scraping iniciado.' });
 });
+//jogos ao vivo-----------jogos ao vivo------------- jogos ao vivo ---------
+// Rota para obter informações ao vivo dos jogos
+app.get('/live-games', async (req, res) => {
+  try {
+    const response = await axios.get('https://v3.football.api-sports.io/live', {
+      headers: {
+        'x-rapidapi-key': 'd6db9473fe5b77e7f299cadd12f2c0bc',
+        'x-rapidapi-host': 'api-football.com'
+      }
+    });
+
+    res.json(response.data);
+  } catch (error) {
+    console.error('Erro ao obter dados ao vivo:', error);
+    res.status(500).json({ error: 'Erro ao obter dados ao vivo' });
+  }
+});
+
+
+
 //Futebol------------------Futebol------------futebol------------------------
 
 // ✅ Função para buscar dados da tabela no banco de dados
