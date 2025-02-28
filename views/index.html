@@ -43,15 +43,17 @@
 <body>
     <h1>Dados - Futebol - NBA</h1>
     <button id="clearAllTablesExceptLinksButton">Apagar Todas as Tabelas (Exceto Links)</button>
-
-    <div class="container">
-        <% 
+    <button id="deleteSelectedButton">Excluir Selecionados</button>
+    
+    <script>
         // Criar categorias
         const categorias = { 
             futebol: [], 
             lesoes: [], 
             jogadores: [], 
-            links: [], 
+            link: [], 
+            links: [],
+            odds: [],  
             outros: [] 
         };
 
@@ -63,25 +65,26 @@
                 categorias.lesoes.push(table);
             } else if (table.includes('_jogadores')) {
                 categorias.jogadores.push(table);
-            } else if (table.includes('_link') || table.includes('_links')) {
+            } else if (table.includes('_link')) {
+                categorias.link.push(table);
+            } else if (table.includes('_links')) {
                 categorias.links.push(table);
+            } else if (table.includes('_odds')) {
+                categorias.odds.push(table);
             } else {
                 categorias.outros.push(table);
             }
         });
+    </script>
 
-        // Ordenar cada categoria alfabeticamente
-        Object.keys(categorias).forEach(categoria => {
-            categorias[categoria].sort();
-        });
-        %>
-
+    <div class="container">
         <% Object.keys(categorias).forEach(categoria => { %>
             <% if (categorias[categoria].length > 0) { %>
                 <div class="category">
                     <h2><%= categoria.charAt(0).toUpperCase() + categoria.slice(1) %></h2>
                     <% categorias[categoria].forEach(table => { %>
                         <div class="table-item">
+                            <input type="checkbox" class="table-checkbox" value="<%= table %>">
                             <a href="/table/<%= table %>"><%= table %></a>
                         </div>
                     <% }); %>
@@ -91,30 +94,34 @@
     </div>
 
     <script>
-        const clearAllTablesExceptLinks = async () => {
-            const button = document.querySelector('#clearAllTablesExceptLinksButton');
-            button.disabled = true;
-            button.textContent = 'Apagando...';
-    
+        document.querySelector('#deleteSelectedButton').addEventListener('click', async () => {
+            const selectedTables = Array.from(document.querySelectorAll('.table-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+
+            if (selectedTables.length === 0) {
+                alert('Nenhuma tabela selecionada!');
+                return;
+            }
+
+            if (!confirm('Tem certeza que deseja excluir as tabelas selecionadas?')) return;
+
             try {
-                const response = await fetch('/clear-all-tables-except-links', { method: 'POST' });
-    
+                const response = await fetch('/delete-selected-tables', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tables: selectedTables })
+                });
+
                 if (response.ok) {
-                    alert('Todas as tabelas (exceto links) foram apagadas com sucesso!');
+                    alert('Tabelas excluídas com sucesso!');
                     window.location.reload();
                 } else {
-                    alert('Erro ao apagar as tabelas.');
+                    alert('Erro ao excluir as tabelas.');
                 }
             } catch (error) {
                 console.error('Erro na solicitação:', error);
-                alert('Erro ao apagar as tabelas.');
-            } finally {
-                button.disabled = false;
-                button.textContent = 'Apagar Todas as Tabelas (Exceto Links)';
+                alert('Erro ao excluir as tabelas.');
             }
-        };
-    
-        document.querySelector('#clearAllTablesExceptLinksButton').addEventListener('click', clearAllTablesExceptLinks);
+        });
     </script>
-</body>
 </html>
