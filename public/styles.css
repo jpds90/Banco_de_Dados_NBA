@@ -1,0 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+}
+
+h1 {
+    text-align: center;
+}
+
+#games-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.game {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px;
+    width: 300px;
+    text-align: center;
+}
+
+button {
+    padding: 5px 10px;
+    margin-top: 10px;
+}
