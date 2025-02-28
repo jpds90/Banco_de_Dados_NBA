@@ -370,11 +370,13 @@ const scrapeResults10 = async (link, team_name) => {
     let teamID10 = null;
     if (team_name && typeof team_name === 'string') {
         // Exemplo: transforma "Girona" em "girona_futebol"
-        teamID10 = team_name
+         teamID10 = team_name
     .replace(/\./g, '') // Remove pontos
-    .replace(/\s+/g, '_') // Substitui espaços por _
-    .replace(/[()]/g, '') // Remove parênteses
+    .replace(/\s*\(\s*/g, '_') // Substitui " (" ou "( " por "_"
+    .replace(/\s*\)/g, '') // Remove ") " ou " )"
+    .replace(/\s+/g, '_') // Substitui espaços extras por um único "_"
     .toLowerCase() + '_futebol';
+
         console.log(`ID do time processado (via team_name): ${teamID10}`);
     } else {
         console.log('Erro: team_name não foi fornecido ou não é válido.');
