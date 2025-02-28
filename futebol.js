@@ -112,6 +112,7 @@ const createPlayersTable = async (teamName) => {
     .normalize("NFD")                  // Normaliza para decompor caracteres acentuados
     .replace(/[\u0300-\u036f]/g, "")   // Remove os acentos
     .replace(/[^a-zA-Z0-9/]/g, "_")    // Substitui todos os caracteres não alfanuméricos (exceto "/") por "_"
+    .replace(/\s*\([^)]*\)/g, '')
     .toLowerCase();
 
 
@@ -190,6 +191,7 @@ const saveDataToPlayersTable = async (teamName, data) => {
     .normalize("NFD")                  // Normaliza para decompor caracteres acentuados
     .replace(/[\u0300-\u036f]/g, "")   // Remove os acentos
     .replace(/[^a-zA-Z0-9/]/g, "_")    // Substitui todos os caracteres não alfanuméricos (exceto "/") por "_"
+    .replace(/\s*\([^)]*\)/g, '')
     .toLowerCase();
 
         console.log(`🔵 Salvando dados na tabela "${tableName}"...`);
@@ -372,8 +374,7 @@ const scrapeResults10 = async (link, team_name) => {
         // Exemplo: transforma "Girona" em "girona_futebol"
          teamID10 = team_name
     .replace(/\./g, '') // Remove pontos
-    .replace(/\s*\(\s*/g, '_') // Substitui " (" ou "( " por "_"
-    .replace(/\s*\)/g, '') // Remove ") " ou " )"
+    .replace(/\s*\([^)]*\)/g, '')
     .replace(/\s+/g, '_') // Substitui espaços extras por um único "_"
     .toLowerCase() + '_futebol';
 
