@@ -56,6 +56,7 @@
             lesoes: [], 
             jogadores: [], 
             links: [], 
+            odds: [], 
             outros: [] 
         };
 
@@ -69,6 +70,8 @@
                 categorias.jogadores.push(table);
             } else if (table.includes('_link') || table.includes('_links')) {
                 categorias.links.push(table);
+            } else if (table.includes('_odds')) {
+                categorias.odds.push(table);
             } else {
                 categorias.outros.push(table);
             }
