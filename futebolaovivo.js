@@ -445,7 +445,7 @@ const scrapeResults10 = async (link, team_name) => {
                 let rowData = '';
 
                 // Extração da data do jogo
-                let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__startTime`, el => el.textContent.trim()).catch(() => '0');
+                let data_hora = await row.$eval(`div.duelParticipant > div.duelParticipant__score > div > div.detailScore__status`, el => el.textContent.trim()).catch(() => '0');
                 rowData += `${data_hora}, `;
 
                 // Extração dos times
