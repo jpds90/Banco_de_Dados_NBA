@@ -358,8 +358,8 @@ app.get('/probabilidade', async (req, res) => {
             return res.status(400).json({ error: "Os parâmetros 'timeHome' e 'timeAway' são obrigatórios." });
         }
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
         const queryStats = async (table) => {
             const result = await pool.query(`
@@ -449,8 +449,8 @@ app.get('/golssofrido',  async (req, res) => {
        console.log(`📌 Time da casa: ${timeHome} (Normalizado: ${timeHomeNormalizado})`);
        console.log(`📌 Time visitante: ${timeAway} (Normalizado: ${timeAwayNormalizado})`);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela timeHome: ${homeTable}`);
        console.log(`📌 Tabela timeAway: ${awayTable}`);
@@ -572,8 +572,8 @@ app.get('/golsfeito', async (req, res) => {
        console.log(`📌 Time da casa: ${timeHome} (Normalizado: ${timeHomeNormalizado})`);
        console.log(`📌 Time visitante: ${timeAway} (Normalizado: ${timeAwayNormalizado})`);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela timeHome: ${homeTable}`);
        console.log(`📌 Tabela timeAway: ${awayTable}`);
@@ -698,8 +698,8 @@ app.get('/golsemcasa', async (req, res) => {
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        console.log(`📌 Tabela do time da casa: ${homeTable}`);
        console.log(`📌 Tabela do time visitante: ${awayTable}`);
@@ -825,8 +825,8 @@ app.get('/ambas', async (req, res) => {
        const timeHomeNormalizado = normalizarNomeTime(timeHome);
        const timeAwayNormalizado = normalizarNomeTime(timeAway);
 
-       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
-       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const homeTable = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const awayTable = timeAway.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        const tablesResult = await pool.query(
            `SELECT table_name FROM information_schema.tables WHERE table_name = $1 OR table_name = $2`,
@@ -945,7 +945,7 @@ function normalizarNomeTime(nome) {
        console.log(`🏠 Time Home consultado: ${timeHome}`);
        console.log(`🚀 Time Away consultado: ${timeAway}`);
 
-       const tableHome = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+       const tableHome = timeHome.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
        // Verifica se a tabela existe no banco
        const tablesResult = await pool.query(
@@ -1089,7 +1089,7 @@ function normalizarNomeTime(nome) {
 
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos1 = async (team) => {
-   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace('ç', 'c').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
    console.log(`🔍 Consultando a tabela: ${table}`); 
 
    const tablesResult = await pool.query(
@@ -1226,7 +1226,7 @@ app.get("/ultimos5jogos", async (req, res) => {
 
 // Função para buscar jogos do timeHome apenas em casa
 const buscarJogosEmCasa = async (team) => {
-    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
     const querySQL = `
         SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
@@ -1242,7 +1242,7 @@ const buscarJogosEmCasa = async (team) => {
 
 // Função para buscar jogos do timeAway apenas fora de casa
 const buscarJogosFora = async (team) => {
-    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+    const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
 
     const querySQL = `
         SELECT timehome, resultadohome, timeaway, resultadoaway, data_hora 
@@ -1257,7 +1257,7 @@ const buscarJogosFora = async (team) => {
 };
 // Função para buscar os jogos do time no banco de dados
 const buscarJogos = async (team, isHome) => {
-   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
+   const table = team.toLowerCase().replace(/\s/g, '_').replace(/\./g, '').replace(/[\u0300-\u036f]/g, '').replace('ã', 'a').replace('ó', 'o').replace('ç', 'c').replace(/[\s\-]/g, '').replace(/\./g, '') + "_futebol";
    console.log(`🔍 Consultando a tabela: ${table}`);
 
    const tablesResult = await pool.query(
