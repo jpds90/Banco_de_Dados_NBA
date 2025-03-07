@@ -4,18 +4,17 @@ const { Client } = require('pg');
 
 // Configuração do banco de dados
 const dbConfig = {
- connectionString: process.env.DATABASE_URL, // Usando a URL completa
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 };
 
 async function scrapeAndSaveLinks() {
-      const browser = await puppeteer.launch({
-        headless: true, // Garante que o navegador rode em modo headless
-        args: ['--no-sandbox', '--disable-setuid-sandbox'], // Evita restrições no ambiente do Render
-    });
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
   const page = await browser.newPage();
   const page2 = await browser.newPage();
-
   const client = new Client(dbConfig);
   await client.connect();
 
@@ -29,7 +28,7 @@ async function scrapeAndSaveLinks() {
     );
   `);
 
-  // Limpar tabela de links antes de adicionar novos dados
+  // Limpar a tabela de links antes de adicionar novos dados
   await client.query('TRUNCATE TABLE links');
   console.log('Tabela "links" limpa com sucesso.');
 
@@ -47,37 +46,35 @@ async function scrapeAndSaveLinks() {
       await page2.goto(url, { timeout: 120000 });
       await sleep(10000);
 
-      const rows = await page2.$$('#detail > div.duelParticipant');
+      const homeNameElement = await page2.$(
+        '#detail > div.duelParticipant > div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a'
+      );
+      const awayNameElement = await page2.$(
+        '#detail > div.duelParticipant > div.duelParticipant__away > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a'
+      );
 
-      for (const row of rows) {
-        try {
-          const homeNameSelector = '#detail > div.duelParticipant > div.duelParticipant__home > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a';
-          const awayNameSelector = '#detail > div.duelParticipant > div.duelParticipant__away > div.participant__participantNameWrapper > div.participant__participantName.participant__overflow > a';
-
-          const homeNameElement = await row.$(homeNameSelector);
-          const awayNameElement = await row.$(awayNameSelector);
-
-          const homeName = await page2.evaluate(el => el.innerText, homeNameElement);
-          const awayName = await page2.evaluate(el => el.innerText, awayNameElement);
-
-          const homeUrl = await page2.evaluate(el => el.href, homeNameElement);
-          const awayUrl = await page2.evaluate(el => el.href, awayNameElement);
-
-          // Salvar no banco de dados
-          await client.query(
-            'INSERT INTO links (team_name, link, event_time) VALUES ($1, $2, $3)',
-            [homeName, homeUrl, eventTime]
-          );
-          await client.query(
-            'INSERT INTO links (team_name, link, event_time) VALUES ($1, $2, $3)',
-            [awayName, awayUrl, eventTime]
-          );
-
-          console.log(`Salvo: ${homeName}, ${awayName}`);
-        } catch (error) {
-          console.error(`Erro ao processar linha: ${error}`);
-        }
+      if (!homeNameElement || !awayNameElement) {
+        console.warn(`Elementos não encontrados para o jogo ${id}`);
+        continue;
       }
+
+      const homeName = await page2.evaluate(el => el.innerText, homeNameElement);
+      const awayName = await page2.evaluate(el => el.innerText, awayNameElement);
+
+      const homeUrl = await page2.evaluate(el => el.href, homeNameElement);
+      const awayUrl = await page2.evaluate(el => el.href, awayNameElement);
+
+      // Salvar no banco de dados
+      await client.query(
+        'INSERT INTO links (team_name, link, event_time) VALUES ($1, $2, $3)',
+        [homeName, homeUrl, eventTime]
+      );
+      await client.query(
+        'INSERT INTO links (team_name, link, event_time) VALUES ($1, $2, $3)',
+        [awayName, awayUrl, eventTime]
+      );
+
+      console.log(`Salvo: ${homeName}, ${awayName}`);
     }
   } catch (error) {
     console.error(`Erro geral: ${error}`);
@@ -89,17 +86,12 @@ async function scrapeAndSaveLinks() {
 
 async function getNewIds(page, excludedIds, neededCount) {
   return await page.evaluate((excludedIds, neededCount) => {
-    const ids = [];
-    document.querySelectorAll('[id]').forEach(el => {
-      if (!excludedIds.includes(el.id)) {
-        const timeElement = el.querySelector('.event__time');
-        if (timeElement) {
-          ids.push({ id: el.id, eventTime: timeElement.textContent.trim() });
-        }
-      }
-    });
-    return ids.slice(0, neededCount);
+    return Array.from(document.querySelectorAll('[id]'))
+      .filter(el => !excludedIds.includes(el.id) && el.querySelector('.event__time'))
+      .slice(0, neededCount)
+      .map(el => ({ id: el.id, eventTime: el.querySelector('.event__time').textContent.trim() }));
   }, excludedIds, neededCount);
 }
 
 scrapeAndSaveLinks();
+
