@@ -374,6 +374,9 @@ const scrapeResults10 = async (link, team_name) => {
         // Exemplo: transforma "Girona" em "girona_futebol"
          teamID10 = team_name
     .replace(/\./g, '') // Remove pontos
+    .replace('ã', 'a')
+    .replace('ó', 'o')
+    .replace('ç', 'c')
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/\s+/g, '_') // Substitui espaços extras por um único "_"
