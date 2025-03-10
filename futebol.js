@@ -377,6 +377,7 @@ const scrapeResults10 = async (link, team_name) => {
     .replace('ã', 'a')
     .replace('ó', 'o')
     .replace('ç', 'c')
+    .replace(/[\s\-]/g, '_')
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/\s+/g, '_') // Substitui espaços extras por um único "_"
