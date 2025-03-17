@@ -183,7 +183,7 @@ for (let id of ids) {
                     console.log(`Handicap: ${handicappontos}`);
                 }
             } catch (error) {
-                console.error('Erro ao processar a página de odds mais de/menos de:', error);
+                console.error('Erro ao processar a página Handicap de:', error);
                 continue;
             }
 
@@ -239,7 +239,7 @@ for (let id of ids) {
                     }
                 }
             } catch (error) {
-                console.error('Erro ao processar a página de odds mais de/menos de:', error);
+                console.error('Erro ao processar a página de Pontos:', error);
                 continue;
             }
             futureGamesData.push({
