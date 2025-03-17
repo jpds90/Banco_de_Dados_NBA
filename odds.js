@@ -181,6 +181,8 @@ for (let id of ids) {
                             overDoisMeioOdds = await oddsCells[0].evaluate((element) => element.textContent.trim());
                             overOdds = await oddsCells[0].evaluate(element => element.textContent.trim());
                             overOdds = parseInt(overOdds); // Remove a parte decimal
+                         
+                         console.log(`Ponto 1 ${overOdds}, Odds  ${overDoisMeioOdds}`);
                         }
                     }
                 }
