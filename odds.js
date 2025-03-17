@@ -159,36 +159,6 @@ for (let id of ids) {
                 continue;
             }
 
-
-            const handicapUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/handicap-asiatico/tr-incluindo-prol`;
-            console.log("Processando URL Pontos:", handicapUrl);
-            await page2.goto(handicapUrl, { timeout: 180000 });
-            await sleep(10000);
-
-            
-
-            let handicappontos = '';
-
-            try {
-                const maisMenosRows = await page2.$$('.ui-table__body .ui-table__row');
-            
-                if (maisMenosRows.length > 0) {
-                    const maisMenosRow = maisMenosRows[0];
-                    const oddsCells = await maisMenosRow.$$('.oddsCell__noOddsCell');
-            
-                    if (oddsCells.length >= 0) {
-                        handicappontos = await oddsCells[0].evaluate(element => element.textContent.trim());
-                        handicappontos = parseInt(handicappontos); // Remove a parte decimal
-                    }
-                    console.log(`Handicap: ${handicappontos}`);
-                }
-            } catch (error) {
-                console.error('Erro ao processar a página Handicap de:', error);
-                continue;
-            }
-
-           
-
             const oddsmaisemenosUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/mais-de-menos-de`;
             console.log("Processando URL Pontos:", oddsmaisemenosUrl);
             await page2.goto(oddsmaisemenosUrl, { timeout: 180000 });
@@ -242,6 +212,32 @@ for (let id of ids) {
                 console.error('Erro ao processar a página de Pontos:', error);
                 continue;
             }
+
+             const handicapUrl = `https://www.flashscore.pt/jogo/${id.substring(4)}/#/comparacao-de-odds/handicap-asiatico/tr-incluindo-prol`;
+            console.log("Processando URL Pontos:", handicapUrl);
+            await page2.goto(handicapUrl, { timeout: 180000 });
+            await sleep(10000);
+
+            let handicappontos = 0; // Define o valor padrão como 0
+
+            try {
+                const maisMenosRows = await page2.$$('.ui-table__body .ui-table__row');
+
+                if (maisMenosRows.length > 0) {
+                    const maisMenosRow = maisMenosRows[0];
+                    const oddsCells = await maisMenosRow.$$('.oddsCell__noOddsCell');
+
+                    if (oddsCells.length > 0) {
+                        handicappontos = await oddsCells[0].evaluate(element => element.textContent.trim());
+                        handicappontos = parseInt(handicappontos) || 0; // Converte e garante que seja um número
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao processar a página Handicap:', error);
+            }
+
+            console.log(`Handicap: ${handicappontos}`);
+
             futureGamesData.push({
                 dataJogo: gameDateStr || 0, // Substitua por NULL se o valor estiver vazio
                 timeHome: timeHome || 'Indefinido',
