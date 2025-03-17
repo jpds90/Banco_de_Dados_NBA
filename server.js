@@ -13,6 +13,7 @@ const cors = require('cors');
 const { scrapeResults3 } = require('./lesoes');
 const { scrapeResults10 } = require('./futebol');
 const axios = require('axios');
+const { spawn } = require('child_process');
 
 const app = express();
 // Configuração da porta para Render (usa a variável PORT ou padrão 3000)
