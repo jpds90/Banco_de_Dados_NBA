@@ -1529,7 +1529,7 @@ app.post('/execute-rank', (req, res) => {
 });
 
 // Rota para executar o script odds.js
-app.post('/execute-odds', (req, res) => {
+app.post('/execute-oddsoriginal', (req, res) => {
     const oddsPath = path.join(__dirname, 'odds.js');
     console.log('Executando script odds.js...');
     exec(`node ${oddsPath}`, (error, stdout, stderr) => {
@@ -1546,6 +1546,34 @@ app.post('/execute-odds', (req, res) => {
     });
 });
 
+app.post('/execute-odds', (req, res) => {
+    const oddsPath = path.join(__dirname, 'odds.js');
+    console.log('Executando script odds.js...');
+
+    const process = spawn('node', [oddsPath]);
+
+    // Captura a saída padrão (console.log) do script em tempo real
+    process.stdout.on('data', (data) => {
+        console.log(`[STDOUT]: ${data.toString()}`);
+    });
+
+    // Captura os erros (console.error) do script em tempo real
+    process.stderr.on('data', (data) => {
+        console.error(`[STDERR]: ${data.toString()}`);
+    });
+
+    // Captura quando o processo termina
+    process.on('close', (code) => {
+        console.log(`Script odds.js finalizado com código ${code}`);
+        res.send(`Script Odds executado com sucesso. Código de saída: ${code}`);
+    });
+
+    // Captura erros ao tentar iniciar o processo
+    process.on('error', (error) => {
+        console.error(`Erro ao iniciar o script: ${error.message}`);
+        res.status(500).send(`Erro ao iniciar o script: ${error.message}`);
+    });
+});
 
 // Rota para executar o script saveLinks.js
 app.post('/execute-script', (req, res) => {
