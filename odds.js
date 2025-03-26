@@ -241,15 +241,16 @@ for (let id of ids) {
             console.log(`Handicap: ${handicappontos}`);
 
             futureGamesData.push({
-                dataJogo: gameDateStr || 0, // Substitua por NULL se o valor estiver vazio
-                timeHome: timeHome || 'Indefinido',
-                timeAway: timeAway || 'Indefinido',
-                homeOdds: isNaN(homeOdds) ? 0 : parseFloat(homeOdds), // Certifique-se de que é numérico
-                awayOdds: isNaN(awayOdds) ? 0 : parseFloat(awayOdds),
-                overDoisMeioOdds: isNaN(overDoisMeioOdds) ? 0 : parseFloat(overDoisMeioOdds),
-                overOdds: isNaN(overOdds) ? 0 : parseFloat(overOdds),
-                handicappontos: isNaN(handicappontos) ? 0 : parseFloat(handicappontos),
-            });
+    dataJogo: gameDateStr || 0,
+    timeHome: timeHome || 'Indefinido',
+    timeAway: timeAway || 'Indefinido',
+    homeOdds: 0, // Definir como 0
+    awayOdds: 0, // Definir como 0
+    overDoisMeioOdds: 0, // Definir como 0
+    overOdds: 0, // Definir como 0
+    handicappontos: 0, // Definir como 0
+});
+
             
         }
 
