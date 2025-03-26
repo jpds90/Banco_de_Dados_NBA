@@ -20,7 +20,7 @@ async function saveToDatabase(data) {
 
         const queryText = `
             INSERT INTO odds (data_jogo, time_home, time_away, home_odds, away_odds, over_dois_meio, over_odds, handicap)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, 0, 0, 0, 0, 0)
             RETURNING id
         `;
 
